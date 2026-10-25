@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#16191a">
+<title>Rjúpnakort</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: full-screen map, status band pinned top, coordinate strip + round buttons at bottom, layer sheet slides up */
+:root{
+  --bg:#f3f4f2; --panel:#ffffff; --fg:#1b1f20; --muted:#5f6a6c; --line:#d9dddb;
+  --accent:#e8590c;            /* veiðiappelsínugulur */
+  --bann:#d62f25; --leyfi:#e39400; --athuga:#9b4fc4; --info:#2577c4; --ok:#2b8a4b;
+  --shadow:0 4px 18px rgba(0,0,0,.18);
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121516; --panel:#1c2122; --fg:#e9ecea; --muted:#9aa5a6; --line:#2e3638;
+  --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#c27ef0; --info:#5aa8f0; --ok:#4cc47a;
+  --shadow:0 4px 18px rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121516; --panel:#1c2122; --fg:#e9ecea; --muted:#9aa5a6; --line:#2e3638;
+  --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#c27ef0; --info:#5aa8f0; --ok:#4cc47a;
+  --shadow:0 4px 18px rgba(0,0,0,.5); color-scheme:dark}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.4 var(--f-body);overflow:hidden}
+#map{position:fixed;inset:0;background:var(--bg)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Status band */
+#status{position:fixed;left:0;right:0;top:0;z-index:1000;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+  display:flex;gap:12px;align-items:center;color:#fff;background:#4a5254;box-shadow:var(--shadow);transition:background .25s}
+#status .dot{width:14px;height:14px;border-radius:50%;background:#fff;flex:none;opacity:.9}
+#status .txt{min-width:0;flex:1}
+#stTitle{font:700 22px/1.05 var(--f-display);letter-spacing:.02em;text-transform:uppercase}
+#stSub{font-size:13.5px;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#status.s-ok{background:var(--ok)} #status.s-info{background:var(--info)}
+#status.s-near{background:var(--leyfi);color:#1b1300} #status.s-near .dot{background:#1b1300}
+#status.s-leyfi{background:var(--leyfi);color:#1b1300} #status.s-leyfi .dot{background:#1b1300}
+#status.s-athuga{background:var(--athuga)}
+#status.s-bann{background:var(--bann)} #status.s-bann .dot{animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){#status.s-bann .dot{animation:none}}
+
+/* Bottom strip */
+#bottom{position:fixed;left:0;right:0;bottom:0;z-index:1000;pointer-events:none;
+  padding:0 max(12px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(12px,env(safe-area-inset-left,0px));
+  display:flex;align-items:flex-end;gap:10px}
+#coords{pointer-events:auto;flex:1;min-width:0;background:var(--panel);border-radius:12px;box-shadow:var(--shadow);
+  padding:8px 12px;display:flex;align-items:center;gap:10px}
+#coords .c{min-width:0;flex:1}
+#cLatLon{font:500 14px/1.3 var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cMeta{font-size:12px;color:var(--muted)}
+#btnCopy{border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px 10px;font-size:13px;flex:none}
+.fabs{display:flex;flex-direction:column;gap:10px;pointer-events:auto}
+.fab{width:54px;height:54px;border-radius:50%;border:none;background:var(--panel);box-shadow:var(--shadow);display:grid;place-items:center}
+.fab svg{width:26px;height:26px;fill:none;stroke:var(--fg);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#btnGps.on{background:var(--accent)} #btnGps.on svg{stroke:#fff}
+#btnGps.follow svg circle.c{fill:#fff}
+
+/* Sheet */
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:1100;max-height:82%;overflow:auto;background:var(--panel);
+  border-radius:16px 16px 0 0;box-shadow:0 -6px 30px rgba(0,0,0,.3);
+  padding:6px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 20px) max(16px,env(safe-area-inset-left,0px))}
+#scrim{position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,.35)}
+.grab{width:42px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 10px}
+.sh-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sh-head h2{font:700 24px/1 var(--f-display);margin:0;text-transform:uppercase;letter-spacing:.02em}
+.x{border:none;background:transparent;font-size:28px;line-height:1;padding:4px 8px;color:var(--muted)}
+h3{font:700 15px/1.2 var(--f-display);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 8px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 14px}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--panel);border-color:var(--fg)}
+.layer{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.layer:first-child{border-top:none}
+.sw{width:16px;height:16px;border-radius:4px;flex:none;border:2px solid currentColor}
+.layer .t{min-width:0;flex:1}
+.layer .n{font-weight:600}
+.layer .m{font-size:12.5px;color:var(--muted)}
+.chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1px solid currentColor;margin-right:6px}
+.chip.v{color:var(--ok)} .chip.w{color:var(--leyfi)} .chip.e{color:var(--bann)} .chip.l{color:var(--muted)}
+.tog{appearance:none;width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;margin:0;cursor:pointer;transition:background .2s}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tog:checked{background:var(--accent)} .tog:checked::after{transform:translateX(18px)}
+.del{border:none;background:transparent;color:var(--muted);font-size:20px;padding:4px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+input[type=text],input[type=url],select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;box-sizing:border-box;min-width:0}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1;min-width:140px}
+.btn{border:none;border-radius:10px;padding:10px 14px;background:var(--accent);color:#fff;font-weight:600}
+.btn.sec{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.note{font-size:13px;color:var(--muted);margin:0}
+.msg{font-size:13px;margin:0}
+.msg.err{color:var(--bann)}
+.links{display:grid;gap:6px;font-size:14px}
+.links a{color:var(--info)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:13.5px;align-items:center}
+.legend i{width:14px;height:14px;border-radius:3px;display:block}
+
+/* Map bits */
+.leaflet-container{font:inherit}
+.leaflet-top{top:calc(env(safe-area-inset-top,0px) + 74px)}
+.leaflet-control-attribution{font-size:10px}
+.leaflet-bottom.leaflet-right{bottom:calc(env(safe-area-inset-bottom,0px) + 74px)}
+.me{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 0 0 2px var(--accent),0 2px 8px rgba(0,0,0,.4);box-sizing:border-box;position:relative}
+.me .hd{position:absolute;left:50%;top:-15px;width:0;height:0;margin-left:-6px;border:6px solid transparent;border-bottom:10px solid var(--accent);transform-origin:6px 26px}
+.pop b{display:block;font-size:15px;margin-bottom:4px}
+.pop table{border-collapse:collapse;font-size:12px}
+.pop td{padding:1px 6px 1px 0;vertical-align:top}
+.pop td:first-child{color:#667}
+.leaflet-popup-content{max-height:240px;overflow:auto}
+</style>
+</head>
+<body>
+<div id="map" role="application" aria-label="Kort"></div>
+
+<header id="status" aria-live="polite">
+  <span class="dot"></span>
+  <div class="txt">
+    <div id="stTitle">Kveiktu á GPS</div>
+    <div id="stSub">Ýttu á staðsetningarhnappinn neðst til hægri</div>
+  </div>
+</header>
+
+<div id="bottom">
+  <div id="coords">
+    <div class="c">
+      <div id="cLatLon">— ° —′ N &nbsp; — ° —′ V</div>
+      <div id="cMeta">Engin staðsetning enn</div>
+    </div>
+    <button id="btnCopy" type="button">Afrita</button>
+  </div>
+  <div class="fabs">
+    <button class="fab" id="btnLayers" type="button" aria-label="Lög og stillingar">
+      <svg viewBox="0 0 24 24"><path d="M12 3 2 8.5 12 14l10-5.5z"/><path d="m2 13 10 5.5L22 13"/><path d="m2 17.5 10 5.5 10-5.5" opacity=".5"/></svg>
+    </button>
+    <button class="fab" id="btnGps" type="button" aria-label="Staðsetning">
+      <svg viewBox="0 0 24 24"><circle class="c" cx="12" cy="12" r="3.5"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg>
+    </button>
+  </div>
+</div>
+
+<div id="scrim" hidden></div>
+<section id="sheet" hidden aria-label="Lög og stillingar">
+  <div class="grab"></div>
+  <div class="sh-head"><h2>Lög</h2><button class="x" id="btnClose" type="button" aria-label="Loka">×</button></div>
+
+  <h3>Grunnkort</h3>
+  <div class="seg" id="baseSeg"></div>
+
+  <h3>Svæði</h3>
+  <div id="layerList"></div>
+
+  <h3>Litir</h3>
+  <div class="legend">
+    <i style="background:var(--bann)"></i><span>Veiði bönnuð — rauð viðvörun</span>
+    <i style="background:var(--athuga)"></i><span>Friðlýst — kannaðu reglur svæðisins</span>
+    <i style="background:var(--leyfi)"></i><span>Leyfi landeiganda/umsjónaraðila þarf</span>
+    <i style="background:var(--info)"></i><span>Upplýsingar (t.d. þjóðlenda)</span>
+  </div>
+
+  <h3>Bæta við gögnum úr skrá</h3>
+  <div class="card">
+    <p class="note">GeoJSON, KML eða Shapefile í .zip (t.d. þjóðlendur eða ríkisjarðir). Gögnin eru vistuð í símanum og virka án nets.</p>
+    <input type="file" id="fileIn" accept=".geojson,.json,.kml,.zip">
+    <div id="impForm" hidden class="card" style="border-style:dashed">
+      <label class="f">Heiti
+        <input type="text" id="impName">
+      </label>
+      <label class="f">Flokkur
+        <select id="impCat">
+          <option value="info">Upplýsingar (t.d. þjóðlenda)</option>
+          <option value="leyfi">Leyfi þarf (t.d. ríkisjörð)</option>
+          <option value="athuga">Friðlýst — athuga reglur</option>
+          <option value="bann">Veiði bönnuð</option>
+        </select>
+      </label>
+      <button class="btn" id="impAdd" type="button">Bæta við korti</button>
+    </div>
+    <p class="msg" id="impMsg"></p>
+  </div>
+
+  <h3>Bæta við WMS lagi</h3>
+  <div class="card">
+    <p class="note">Sýnir lag frá kortaþjóni sem mynd. Viðvaranir virka aðeins fyrir gögn úr skrá eða vektorgögn.</p>
+    <label class="f">Slóð á WMS þjón
+      <input type="url" id="wmsUrl" placeholder="https://…/geoserver/wms">
+    </label>
+    <div class="row">
+      <button class="btn sec" id="wmsCaps" type="button">Sækja lagalista</button>
+    </div>
+    <label class="f">Lag
+      <input type="text" id="wmsLayer" list="wmsList" placeholder="vinnusvæði:lag">
+      <datalist id="wmsList"></datalist>
+    </label>
+    <label class="f">Heiti á korti
+      <input type="text" id="wmsName" placeholder="t.d. Þjóðlendur">
+    </label>
+    <button class="btn" id="wmsAdd" type="button">Bæta við</button>
+    <p class="msg" id="wmsMsg"></p>
+  </div>
+
+  <h3>Viðvörun nálægt mörkum</h3>
+  <div class="card">
+    <label class="f" for="nearIn">Vara við þegar ég er nær en <b id="nearOut">300 m</b> frá svæði</label>
+    <input type="range" id="nearIn" min="50" max="1000" step="50" value="300">
+    <label class="row" style="align-items:center;gap:10px;font-size:14px">
+      <input type="checkbox" class="tog" id="vibIn" checked style="flex:none;min-width:0"> <span style="min-width:0">Titra þegar staða breytist</span>
+    </label>
+  </div>
+
+  <h3>Hvar fæ ég gögnin</h3>
+  <div class="links">
+    <a href="https://www.stjornarradid.is/verkefni/rekstur-og-eignir-rikisins/eignir-rikisins/thjodlendur/kort/" target="_blank" rel="noopener">Þjóðlendur — kortasjá og niðurhal (LUK)</a>
+    <a href="https://www.stjornarradid.is/verkefni/rekstur-og-eignir-rikisins/eignir-rikisins/rikisjardir-og-annad-land-i-eigu-rikisins/" target="_blank" rel="noopener">Ríkisjarðir — kortavefsjá FSRE</a>
+    <a href="https://mapshaper.org" target="_blank" rel="noopener">mapshaper.org — breyta í GeoJSON / WGS84</a>
+  </div>
+  <p class="note" style="margin-top:16px">Línur á kortinu eru til hliðsjónar. Úrskurðir, auglýsingar um friðlýsingu og leyfi landeigenda ráða alltaf.</p>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(() => {
+"use strict";
+
+/* ---------- Geymsla ---------- */
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem("rk:"+k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem("rk:"+k, JSON.stringify(v)); }catch(e){} }
+};
+const IDB = (() => {
+  let dbp = null;
+  function open(){
+    if (dbp) return dbp;
+    dbp = new Promise((res, rej) => {
+      try{
+        const r = indexedDB.open("rjupnakort", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("kv");
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      }catch(e){ rej(e); }
+    });
+    return dbp;
+  }
+  async function tx(mode, fn){
+    const db = await open();
+    return new Promise((res, rej) => {
+      const t = db.transaction("kv", mode), s = t.objectStore("kv");
+      const q = fn(s);
+      t.oncomplete = () => res(q && q.result);
+      t.onerror = () => rej(t.error);
+    });
+  }
+  return {
+    get: k => tx("readonly", s => s.get(k)).catch(() => undefined),
+    set: (k, v) => tx("readwrite", s => s.put(v, k)).catch(() => undefined),
+    del: k => tx("readwrite", s => s.delete(k)).catch(() => undefined)
+  };
+})();
+
+/* ---------- Flokkar ---------- */
+const css = getComputedStyle(document.documentElement);
+const color = c => css.getPropertyValue("--"+c).trim() || "#888";
+const CAT = {
+  bann:   {rank:4, label:"Veiði bönnuð"},
+  athuga: {rank:3, label:"Friðlýst svæði"},
+  leyfi:  {rank:2, label:"Leyfi þarf"},
+  info:   {rank:1, label:"Upplýsingar"}
+};
+
+/* ---------- Innbyggð lög ---------- */
+const BUILTIN = [
+  { id:"b_rjupa", name:"Bannsvæði rjúpnaveiða", cat:"bann", owner:"Umhverfisstofnun",
+    wfs:[["https://gis.ust.is/geoserver/wfs","fridlyst_svaedi:veidibann_rjupa"],
+         ["https://gis.natt.is/geoserver/wfs","fridlyst_svaedi:veidibann_rjupa"]],
+    wms:["https://gis.ust.is/geoserver/wms","fridlyst_svaedi:veidibann_rjupa"] },
+  { id:"b_fridlyst", name:"Friðlýst svæði", cat:"athuga", owner:"Umhverfisstofnun",
+    wfs:[["https://gis.ust.is/geoserver/wfs","fridlyst_svaedi:fridlyst_svaedi"],
+         ["https://gis.natt.is/geoserver/wfs","fridlyst_svaedi:fridlyst_svaedi"]],
+    wms:["https://gis.ust.is/geoserver/wms","fridlyst_svaedi:fridlyst_svaedi"] }
+];
+const MAX_AGE = 7*24*3600*1000;
+
+/* ---------- Kort ---------- */
+const map = L.map("map", {zoomControl:true, attributionControl:true, preferCanvas:true})
+  .setView(LS.get("view", [64.9, -18.6]), LS.get("zoom", 7));
+map.on("moveend", () => { const c = map.getCenter(); LS.set("view", [c.lat, c.lng]); LS.set("zoom", map.getZoom()); });
+
+const BASES = {
+  topo: {name:"Landslag", layer:L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+          {maxZoom:17, attribution:"© OpenStreetMap, SRTM | © OpenTopoMap (CC-BY-SA)"})},
+  osm:  {name:"Götukort", layer:L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+          {maxZoom:19, attribution:"© OpenStreetMap"})},
+  sat:  {name:"Loftmynd", layer:L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          {maxZoom:19, attribution:"Esri, Maxar, Earthstar Geographics"})}
+};
+let baseKey = LS.get("base", "topo");
+if (!BASES[baseKey]) baseKey = "topo";
+BASES[baseKey].layer.addTo(map);
+
+const renderer = L.canvas({padding:.5});
+map.createPane("zones"); map.getPane("zones").style.zIndex = 420;
+map.createPane("wms");   map.getPane("wms").style.zIndex = 410;
+
+/* ---------- Ástand laga ---------- */
+// layer: {id,name,cat,kind:'vector'|'wms',src:'builtin'|'file'|'custom',on,status,statusKind,updated,wmsUrl,wmsLayer}
+let layers = LS.get("layers", null);
+if (!Array.isArray(layers)) layers = [];
+for (const b of BUILTIN){
+  if (!layers.find(l => l.id === b.id)) layers.push({id:b.id, name:b.name, cat:b.cat, kind:"vector", src:"builtin", on:true});
+}
+const runtime = {}; // id -> {leaflet, feats}
+const saveLayers = () => LS.set("layers", layers.map(({id,name,cat,kind,src,on,updated,wmsUrl,wmsLayer}) => ({id,name,cat,kind,src,on,updated,wmsUrl,wmsLayer})));
+
+function setStatus(l, text, kind){ l.status = text; l.statusKind = kind; renderList(); }
+
+/* ---------- Rúmfræði ---------- */
+function fixAxes(gj){
+  // Ísland: lengd -25..-13, breidd 63..67. Víxla ef hnitin koma öfug.
+  let sample = null;
+  (function find(c){ if (sample) return; if (typeof c[0] === "number") sample = c; else for (const x of c) find(x); })
+    ((gj.features.find(f => f.geometry) || {geometry:{coordinates:[]}}).geometry.coordinates);
+  if (!sample) return gj;
+  if (Math.abs(sample[0]) > 1000) throw new Error("Hnitin virðast vera í ISN93 (metrar). Vistaðu skrána sem WGS84 / EPSG:4326, t.d. í mapshaper.org.");
+  if (sample[0] > 0 && sample[1] < 0){
+    const sw = c => typeof c[0] === "number" ? [c[1], c[0]] : c.map(sw);
+    gj.features.forEach(f => { if (f.geometry) f.geometry.coordinates = sw(f.geometry.coordinates); });
+  }
+  return gj;
+}
+function polysOf(g){
+  if (!g) return [];
+  if (g.type === "Polygon") return [g.coordinates];
+  if (g.type === "MultiPolygon") return g.coordinates;
+  if (g.type === "GeometryCollection") return g.geometries.flatMap(polysOf);
+  return [];
+}
+function prep(gj){
+  const out = [];
+  for (const f of gj.features){
+    const polys = polysOf(f.geometry);
+    if (!polys.length) continue;
+    let a=180,b=90,c=-180,d=-90;
+    for (const p of polys) for (const pt of p[0]){ if(pt[0]<a)a=pt[0]; if(pt[0]>c)c=pt[0]; if(pt[1]<b)b=pt[1]; if(pt[1]>d)d=pt[1]; }
+    out.push({polys, bbox:[a,b,c,d], name:nameOf(f.properties||{}), props:f.properties||{}});
+  }
+  return out;
+}
+function nameOf(p){
+  const keys = ["nafn","heiti","name","NAFN","HEITI","NAME","Nafn","Heiti","Name","svaedi","titill","landeign","jord","jörð"];
+  for (const k of keys) if (p[k] && typeof p[k] === "string") return p[k];
+  for (const k in p) if (typeof p[k] === "string" && p[k].length > 2 && p[k].length < 80 && !/^\d/.test(p[k])) return p[k];
+  return "Ónefnt svæði";
+}
+function inRing(x, y, r){
+  let ins = false;
+  for (let i=0, j=r.length-1; i<r.length; j=i++){
+    const xi=r[i][0], yi=r[i][1], xj=r[j][0], yj=r[j][1];
+    if (((yi>y) !== (yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) ins = !ins;
+  }
+  return ins;
+}
+function inPoly(x, y, p){ if (!inRing(x,y,p[0])) return false; for (let k=1;k<p.length;k++) if (inRing(x,y,p[k])) return false; return true; }
+function edgeDist(lon, lat, polys){
+  const kx = Math.cos(lat*Math.PI/180)*111320, ky = 110540;
+  let best = Infinity;
+  for (const p of polys) for (const r of p){
+    for (let i=1;i<r.length;i++){
+      const ax=(r[i-1][0]-lon)*kx, ay=(r[i-1][1]-lat)*ky, bx=(r[i][0]-lon)*kx, by=(r[i][1]-lat)*ky;
+      const dx=bx-ax, dy=by-ay, L2=dx*dx+dy*dy;
+      let t = L2 ? -(ax*dx+ay*dy)/L2 : 0; t = t<0?0:t>1?1:t;
+      const ex=ax+t*dx, ey=ay+t*dy, dd=ex*ex+ey*ey;
+      if (dd<best) best=dd;
+    }
+  }
+  return Math.sqrt(best);
+}
+
+/* ---------- Teikna ---------- */
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function popupHtml(l, p){
+  const rows = Object.entries(p).filter(([k,v]) => v!=null && v!=="" && typeof v !== "object").slice(0,14)
+    .map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
+  return `<div class="pop"><b>${esc(nameOf(p))}</b><div style="color:${color(l.cat)};font-weight:600;margin-bottom:4px">${esc(l.name)}</div><table>${rows}</table></div>`;
+}
+function drawVector(l, gj){
+  removeRuntime(l.id);
+  const c = color(l.cat);
+  const lay = L.geoJSON(gj, {
+    pane:"zones", renderer,
+    filter: f => !!polysOf(f.geometry).length,
+    style: () => ({color:c, weight:2, fillColor:c, fillOpacity:l.cat==="info"?0.08:0.18, dashArray:l.cat==="leyfi"?"6 4":null}),
+    onEachFeature: (f, ly) => ly.bindPopup(() => popupHtml(l, f.properties||{}))
+  });
+  runtime[l.id] = {leaflet:lay, feats:prep(gj)};
+  if (l.on) lay.addTo(map);
+}
+function drawWms(l, url, name){
+  removeRuntime(l.id);
+  const lay = L.tileLayer.wms(url, {layers:name, format:"image/png", transparent:true, version:"1.1.1", pane:"wms", opacity:.75, maxZoom:19});
+  let errs = 0;
+  lay.on("tileerror", () => { if (++errs === 4) setStatus(l, "Þjónn svarar ekki myndum", "e"); });
+  runtime[l.id] = {leaflet:lay, feats:null};
+  if (l.on) lay.addTo(map);
+}
+function removeRuntime(id){ const r = runtime[id]; if (r && r.leaflet) map.removeLayer(r.leaflet); delete runtime[id]; }
+
+/* ---------- Sækja innbyggð lög ---------- */
+async function fetchWfs(url, type){
+  const q = `${url}?service=WFS&version=1.0.0&request=GetFeature&typeName=${encodeURIComponent(type)}&outputFormat=application%2Fjson&srsName=EPSG:4326`;
+  const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 45000);
+  try{
+    const r = await fetch(q, {signal:ctl.signal});
+    if (!r.ok) throw new Error("HTTP "+r.status);
+    const gj = await r.json();
+    if (!gj || !Array.isArray(gj.features)) throw new Error("Ekki GeoJSON");
+    return fixAxes(gj);
+  } finally { clearTimeout(tm); }
+}
+async function loadBuiltin(l, force){
+  const b = BUILTIN.find(x => x.id === l.id);
+  const cached = await IDB.get("gj:"+l.id);
+  if (cached){ drawVector(l, cached); setStatus(l, `Vistað ${fmtDate(l.updated)} · ${cached.features.length} svæði`, "v"); }
+  const stale = !l.updated || Date.now()-l.updated > MAX_AGE;
+  if (!force && cached && !stale) return;
+  if (!navigator.onLine && cached) return;
+  if (!cached) setStatus(l, "Sæki gögn…", "l");
+  for (const [url, type] of b.wfs){
+    try{
+      const gj = await fetchWfs(url, type);
+      l.updated = Date.now(); l.kind = "vector"; saveLayers();
+      await IDB.set("gj:"+l.id, gj);
+      drawVector(l, gj);
+      setStatus(l, `Uppfært ${fmtDate(l.updated)} · ${gj.features.length} svæði`, "v");
+      evaluate();
+      return;
+    }catch(e){ /* reyni næsta */ }
+  }
+  if (cached) { setStatus(l, `Vistað ${fmtDate(l.updated)} · gat ekki uppfært`, "w"); return; }
+  // Varaleið: sýna sem mynd
+  drawWms(l, b.wms[0], b.wms[1]);
+  setStatus(l, "Aðeins mynd — engin viðvörun (vektorgögn fengust ekki)", "w");
+}
+function fmtDate(t){ if (!t) return "—"; const d = new Date(t); return `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`; }
+
+/* ---------- Ræsa lög ---------- */
+async function bootLayers(){
+  for (const l of layers){
+    if (l.src === "builtin") loadBuiltin(l, false);
+    else if (l.kind === "vector"){
+      const gj = await IDB.get("gj:"+l.id);
+      if (gj){ drawVector(l, gj); setStatus(l, `Úr skrá · ${gj.features.length} svæði`, "v"); }
+      else setStatus(l, "Gögn vantar — fluttu inn aftur", "e");
+    } else if (l.kind === "wms"){ drawWms(l, l.wmsUrl, l.wmsLayer); setStatus(l, "WMS mynd · engin viðvörun", "l"); }
+  }
+  renderList();
+}
+
+/* ---------- Listi í lagaspjaldi ---------- */
+const listEl = document.getElementById("layerList");
+function renderList(){
+  listEl.innerHTML = "";
+  for (const l of layers){
+    const row = document.createElement("div"); row.className = "layer";
+    const kindChip = l.statusKind ? `<span class="chip ${l.statusKind}">${{v:"Virkt",w:"Athuga",e:"Villa",l:"…"}[l.statusKind]}</span>` : "";
+    row.innerHTML = `<span class="sw" style="color:${color(l.cat)};background:${color(l.cat)}33"></span>
+      <div class="t"><div class="n">${esc(l.name)}</div><div class="m">${kindChip}${esc(CAT[l.cat]?.label||"")} · ${esc(l.status||"")}</div></div>`;
+    if (l.src === "builtin"){
+      const rb = document.createElement("button"); rb.className = "del"; rb.type="button"; rb.title = "Uppfæra"; rb.setAttribute("aria-label","Uppfæra "+l.name); rb.textContent = "↻";
+      rb.onclick = () => loadBuiltin(l, true); row.appendChild(rb);
+    } else {
+      const db = document.createElement("button"); db.className = "del"; db.type="button"; db.setAttribute("aria-label","Eyða "+l.name); db.textContent = "✕";
+      let armed = false;
+      db.onclick = async () => {
+        if (!armed){ armed = true; db.textContent = "Eyða?"; db.style.color = color("bann"); setTimeout(() => { armed=false; db.textContent="✕"; db.style.color=""; }, 3000); return; }
+        removeRuntime(l.id); await IDB.del("gj:"+l.id);
+        layers = layers.filter(x => x !== l); saveLayers(); renderList(); evaluate();
+      };
+      row.appendChild(db);
+    }
+    const t = document.createElement("input"); t.type = "checkbox"; t.className = "tog"; t.checked = !!l.on; t.id = "tog_"+l.id;
+    t.setAttribute("aria-label", "Sýna "+l.name);
+    t.onchange = () => { l.on = t.checked; saveLayers(); const r = runtime[l.id]; if (r){ l.on ? r.leaflet.addTo(map) : map.removeLayer(r.leaflet); } evaluate(); };
+    row.appendChild(t);
+    listEl.appendChild(row);
+  }
+}
+
+/* ---------- Grunnkort hnappar ---------- */
+const seg = document.getElementById("baseSeg");
+for (const [k, b] of Object.entries(BASES)){
+  const btn = document.createElement("button"); btn.type="button"; btn.textContent = b.name; btn.setAttribute("aria-pressed", k===baseKey);
+  btn.onclick = () => { map.removeLayer(BASES[baseKey].layer); baseKey = k; BASES[k].layer.addTo(map); LS.set("base", k);
+    seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x===btn)); };
+  seg.appendChild(btn);
+}
+
+/* ---------- Innflutningur ---------- */
+const fileIn = document.getElementById("fileIn"), impForm = document.getElementById("impForm"), impMsg = document.getElementById("impMsg");
+let pendingGj = null;
+function msg(el, t, err){ el.textContent = t; el.className = "msg" + (err ? " err" : ""); }
+function parseKml(text){
+  const doc = new DOMParser().parseFromString(text, "application/xml");
+  if (doc.querySelector("parsererror")) throw new Error("Gat ekki lesið KML skrána.");
+  const coords = s => s.trim().split(/\s+/).map(t => t.split(",").map(Number)).filter(c => c.length>=2 && !isNaN(c[0])).map(c => [c[0], c[1]]);
+  const ringsOf = poly => {
+    const out = [];
+    const o = poly.querySelector("outerBoundaryIs coordinates"); if (!o) return null;
+    out.push(coords(o.textContent));
+    poly.querySelectorAll("innerBoundaryIs coordinates").forEach(i => out.push(coords(i.textContent)));
+    return out;
+  };
+  const feats = [];
+  doc.querySelectorAll("Placemark").forEach(pm => {
+    const props = {};
+    const nm = pm.querySelector(":scope > name"); if (nm) props.name = nm.textContent.trim();
+    pm.querySelectorAll("SimpleData, Data").forEach(d => {
+      const k = d.getAttribute("name"); const v = d.tagName.endsWith("Data") && d.querySelector("value") ? d.querySelector("value").textContent : d.textContent;
+      if (k) props[k] = v.trim();
+    });
+    const polys = [...pm.querySelectorAll("Polygon")].map(ringsOf).filter(Boolean);
+    if (polys.length) feats.push({type:"Feature", properties:props, geometry: polys.length===1 ? {type:"Polygon",coordinates:polys[0]} : {type:"MultiPolygon",coordinates:polys}});
+  });
+  return {type:"FeatureCollection", features:feats};
+}
+function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Náði ekki í lesara fyrir Shapefile (þarf net).")); document.head.appendChild(s); }); }
+fileIn.onchange = async () => {
+  const f = fileIn.files[0]; if (!f) return;
+  pendingGj = null; impForm.hidden = true; msg(impMsg, "Les skrá…");
+  try{
+    let gj;
+    const n = f.name.toLowerCase();
+    if (n.endsWith(".zip")){
+      if (!window.shp) await loadScript("https://cdn.jsdelivr.net/npm/shpjs@4.0.4/dist/shp.min.js");
+      let r = await window.shp(await f.arrayBuffer());
+      if (Array.isArray(r)) r = {type:"FeatureCollection", features:r.flatMap(x => x.features)};
+      gj = r;
+    } else if (n.endsWith(".kml")) gj = parseKml(await f.text());
+    else {
+      gj = JSON.parse(await f.text());
+      if (gj.type === "Feature") gj = {type:"FeatureCollection", features:[gj]};
+    }
+    if (!gj || !Array.isArray(gj.features)) throw new Error("Skráin inniheldur engin svæði.");
+    gj = fixAxes(gj);
+    const nPoly = gj.features.filter(x => polysOf(x.geometry).length).length;
+    if (!nPoly) throw new Error("Fann engin flatarsvæði (polygon) í skránni.");
+    pendingGj = gj;
+    document.getElementById("impName").value = f.name.replace(/\.[^.]+$/, "");
+    const lc = n; document.getElementById("impCat").value = /thjodl|þjóðl/.test(lc) ? "info" : /rikis|ríkis|jard|jörð/.test(lc) ? "leyfi" : /frid|frið/.test(lc) ? "athuga" : "info";
+    impForm.hidden = false;
+    msg(impMsg, `${nPoly} svæði fundust. Veldu flokk og bættu við.`);
+  }catch(e){ msg(impMsg, e.message || "Gat ekki lesið skrána.", true); }
+};
+document.getElementById("impAdd").onclick = async () => {
+  if (!pendingGj) return;
+  const l = {id:"f_"+Date.now().toString(36), name:document.getElementById("impName").value.trim() || "Innflutt svæði",
+             cat:document.getElementById("impCat").value, kind:"vector", src:"file", on:true, updated:Date.now()};
+  await IDB.set("gj:"+l.id, pendingGj);
+  layers.push(l); saveLayers();
+  drawVector(l, pendingGj);
+  setStatus(l, `Úr skrá · ${pendingGj.features.length} svæði`, "v");
+  try{ map.fitBounds(runtime[l.id].leaflet.getBounds(), {padding:[30,30]}); }catch(e){}
+  pendingGj = null; impForm.hidden = true; fileIn.value = ""; msg(impMsg, "Bætt við og vistað í símanum.");
+  evaluate();
+};
+
+/* ---------- WMS ---------- */
+const wmsMsg = document.getElementById("wmsMsg");
+document.getElementById("wmsCaps").onclick = async () => {
+  const url = document.getElementById("wmsUrl").value.trim(); if (!url) return msg(wmsMsg, "Settu inn slóð fyrst.", true);
+  msg(wmsMsg, "Sæki lagalista…");
+  try{
+    const r = await fetch(url + (url.includes("?")?"&":"?") + "service=WMS&request=GetCapabilities&version=1.1.1");
+    const xml = new DOMParser().parseFromString(await r.text(), "application/xml");
+    const dl = document.getElementById("wmsList"); dl.innerHTML = "";
+    let n = 0;
+    xml.querySelectorAll("Layer > Name").forEach(el => {
+      const o = document.createElement("option"); o.value = el.textContent;
+      const t = el.parentNode.querySelector(":scope > Title"); if (t) o.label = t.textContent;
+      dl.appendChild(o); n++;
+    });
+    msg(wmsMsg, n ? `${n} lög fundust. Byrjaðu að skrifa í „Lag“ til að velja.` : "Engin lög fundust.", !n);
+  }catch(e){ msg(wmsMsg, "Þjónninn leyfir ekki að lagalisti sé sóttur héðan. Skrifaðu nafn lagsins beint.", true); }
+};
+document.getElementById("wmsAdd").onclick = () => {
+  const url = document.getElementById("wmsUrl").value.trim(), lay = document.getElementById("wmsLayer").value.trim();
+  if (!url || !lay) return msg(wmsMsg, "Bæði slóð og lag þarf.", true);
+  const l = {id:"w_"+Date.now().toString(36), name:document.getElementById("wmsName").value.trim() || lay, cat:"info",
+             kind:"wms", src:"custom", on:true, wmsUrl:url, wmsLayer:lay};
+  layers.push(l); saveLayers(); drawWms(l, url, lay); setStatus(l, "WMS mynd · engin viðvörun", "l");
+  msg(wmsMsg, "Bætt við.");
+};
+
+/* ---------- Stillingar ---------- */
+const nearIn = document.getElementById("nearIn"), nearOut = document.getElementById("nearOut"), vibIn = document.getElementById("vibIn");
+nearIn.value = LS.get("near", 300); nearOut.textContent = nearIn.value + " m";
+vibIn.checked = LS.get("vib", true);
+nearIn.oninput = () => { nearOut.textContent = nearIn.value + " m"; LS.set("near", +nearIn.value); evaluate(); };
+vibIn.onchange = () => LS.set("vib", vibIn.checked);
+
+/* ---------- Spjald ---------- */
+const sheet = document.getElementById("sheet"), scrim = document.getElementById("scrim");
+const openSheet = () => { sheet.hidden = false; scrim.hidden = false; renderList(); };
+const closeSheet = () => { sheet.hidden = true; scrim.hidden = true; };
+document.getElementById("btnLayers").onclick = openSheet;
+document.getElementById("btnClose").onclick = closeSheet;
+scrim.onclick = closeSheet;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+
+/* ---------- GPS ---------- */
+const btnGps = document.getElementById("btnGps");
+let watchId = null, pos = null, follow = false, meMarker = null, accCircle = null, wake = null;
+const meIcon = L.divIcon({className:"", html:'<div class="me"><span class="hd" hidden></span></div>', iconSize:[22,22], iconAnchor:[11,11]});
+
+function ddm(v, pos, neg){
+  const a = Math.abs(v), d = Math.floor(a), m = (a-d)*60;
+  return `${d}°${m.toFixed(3).padStart(6,"0").replace(".",",")}′${v>=0?pos:neg}`;
+}
+async function keepAwake(){
+  try{ if ("wakeLock" in navigator && !wake) { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => wake = null); } }catch(e){}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && watchId != null) keepAwake(); });
+
+function startGps(){
+  if (!("geolocation" in navigator)) return showState("none", "GPS ekki í boði", "Vafrinn styður ekki staðsetningu");
+  showState("none", "Leita að GPS…", "Getur tekið nokkrar sekúndur úti");
+  watchId = navigator.geolocation.watchPosition(onPos, onErr, {enableHighAccuracy:true, maximumAge:3000, timeout:30000});
+  btnGps.classList.add("on"); follow = true; btnGps.classList.add("follow");
+  keepAwake();
+}
+function onPos(p){
+  const c = p.coords; pos = {lat:c.latitude, lon:c.longitude, acc:c.accuracy, alt:c.altitude, hd:c.heading, sp:c.speed, t:p.timestamp};
+  const ll = [pos.lat, pos.lon];
+  if (!meMarker){
+    meMarker = L.marker(ll, {icon:meIcon, zIndexOffset:1000, keyboard:false}).addTo(map);
+    accCircle = L.circle(ll, {radius:pos.acc, color:color("accent"), weight:1, fillOpacity:.08, interactive:false}).addTo(map);
+    map.setView(ll, Math.max(map.getZoom(), 14));
+  } else { meMarker.setLatLng(ll); accCircle.setLatLng(ll).setRadius(pos.acc); }
+  const hd = meMarker.getElement() && meMarker.getElement().querySelector(".hd");
+  if (hd){ if (pos.hd != null && !isNaN(pos.hd) && (pos.sp||0) > 0.5){ hd.hidden = false; hd.style.transform = `rotate(${pos.hd}deg)`; } else hd.hidden = true; }
+  if (follow) map.panTo(ll, {animate:true});
+  document.getElementById("cLatLon").textContent = `${ddm(pos.lat,"N","S")}  ${ddm(pos.lon,"A","V")}`;
+  document.getElementById("cMeta").textContent =
+    `±${Math.round(pos.acc)} m` + (pos.alt!=null ? ` · ${Math.round(pos.alt)} m y.s.` : "") + ` · ${new Date(pos.t).toLocaleTimeString("is-IS",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
+  evaluate();
+}
+function onErr(e){
+  if (e.code === 1) { stopGps(); showState("none", "Aðgangi hafnað", "Leyfðu staðsetningu fyrir þessa síðu í stillingum vafrans"); }
+  else showState("none", "GPS merki týnt", "Reyni áfram…");
+}
+function stopGps(){
+  if (watchId != null) navigator.geolocation.clearWatch(watchId);
+  watchId = null; btnGps.classList.remove("on","follow"); follow = false;
+  try{ wake && wake.release(); }catch(e){}
+}
+btnGps.onclick = () => {
+  if (watchId == null) return startGps();
+  if (!follow){ follow = true; btnGps.classList.add("follow"); if (pos) map.setView([pos.lat,pos.lon], Math.max(map.getZoom(),14)); return; }
+  stopGps(); showState("none", "GPS slökkt", "Ýttu aftur til að kveikja");
+};
+map.on("dragstart", () => { if (follow){ follow = false; btnGps.classList.remove("follow"); } });
+
+document.getElementById("btnCopy").onclick = async (ev) => {
+  if (!pos) return;
+  const t = `${pos.lat.toFixed(6)}, ${pos.lon.toFixed(6)}  (${ddm(pos.lat,"N","S")} ${ddm(pos.lon,"A","V")}, ±${Math.round(pos.acc)} m)`;
+  const b = ev.currentTarget;
+  try{ await navigator.clipboard.writeText(t); b.textContent = "Afritað"; }
+  catch(e){ const s = window.getSelection(), r = document.createRange(); r.selectNodeContents(document.getElementById("cLatLon")); s.removeAllRanges(); s.addRange(r); b.textContent = "Valið"; }
+  setTimeout(() => b.textContent = "Afrita", 1800);
+};
+
+/* ---------- Mat á stöðu ---------- */
+const stEl = document.getElementById("status"), stTitle = document.getElementById("stTitle"), stSub = document.getElementById("stSub");
+let lastLevel = null;
+function showState(cls, title, sub){
+  stEl.className = cls === "none" ? "" : "s-"+cls; stTitle.textContent = title; stSub.textContent = sub;
+}
+function evaluate(){
+  if (!pos) return;
+  const near = +nearIn.value;
+  const padLat = near/110540, padLon = near/(Math.cos(pos.lat*Math.PI/180)*111320);
+  const inside = [], close = [];
+  let anyVector = false;
+  for (const l of layers){
+    if (!l.on) continue;
+    const r = runtime[l.id]; if (!r || !r.feats) continue;
+    anyVector = true;
+    for (const f of r.feats){
+      const [a,b,c,d] = f.bbox;
+      if (pos.lon < a-padLon || pos.lon > c+padLon || pos.lat < b-padLat || pos.lat > d+padLat) continue;
+      if (f.polys.some(p => inPoly(pos.lon, pos.lat, p))) inside.push({l, f, d:edgeDist(pos.lon,pos.lat,f.polys)});
+      else if (l.cat !== "info"){ const dd = edgeDist(pos.lon, pos.lat, f.polys); if (dd <= near) close.push({l, f, d:dd}); }
+    }
+  }
+  inside.sort((x,y) => CAT[y.l.cat].rank - CAT[x.l.cat].rank);
+  close.sort((x,y) => x.d - y.d);
+  let level, cls, title, sub;
+  const top = inside[0];
+  const m = v => v < 1000 ? `${Math.round(v)} m` : `${(v/1000).toFixed(1).replace(".",",")} km`;
+  if (top && top.l.cat === "bann"){ level=5; cls="bann"; title="Innan bannsvæðis"; sub=`${top.f.name} · ${m(top.d)} að mörkum`; }
+  else if (top && top.l.cat === "athuga"){ level=4; cls="athuga"; title="Innan friðlýsts svæðis"; sub=`${top.f.name} · kannaðu reglur · ${m(top.d)} að mörkum`; }
+  else if (top && top.l.cat === "leyfi"){ level=3; cls="leyfi"; title="Leyfi þarf"; sub=`${top.f.name} (${top.l.name})`; }
+  else if (close.length){ level=2; cls="near"; title=`${m(close[0].d)} að svæði`; sub=`${close[0].f.name} · ${CAT[close[0].l.cat].label}`; }
+  else if (top){ level=1; cls="info"; title=top.f.name; sub=`${top.l.name} · ekkert bannsvæði innan ${m(near)}`; }
+  else if (anyVector){ level=0; cls="ok"; title="Ekkert svæði nálægt"; sub=`Ekkert merkt svæði innan ${m(near)}`; }
+  else { level=0; cls="none"; title="Engin svæðisgögn"; sub="Opnaðu lög og bættu við gögnum — viðvaranir óvirkar"; }
+  if (top && top.l.cat !== "info" && inside.find(x => x.l.cat === "info")) sub += " · " + inside.find(x => x.l.cat === "info").f.name;
+  showState(cls, title, sub);
+  if (lastLevel != null && level > lastLevel && level >= 2 && vibIn.checked && navigator.vibrate){
+    try{ navigator.vibrate(level >= 5 ? [400,150,400,150,400] : [250,120,250]); }catch(e){}
+  }
+  lastLevel = level;
+}
+
+/* ---------- Ræsing ---------- */
+renderList();
+bootLayers();
+window.addEventListener("online", () => layers.filter(l => l.src==="builtin" && (!l.updated || Date.now()-l.updated > MAX_AGE)).forEach(l => loadBuiltin(l, false)));
+})();
+</script>
+</body>
+</html>
