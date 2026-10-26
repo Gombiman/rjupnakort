@@ -5,6 +5,10 @@
   const C = window.Capacitor;
   if (!C || typeof C.isNativePlatform !== "function" || !C.isNativePlatform()) return;
   window.RK_APP = true;
+  if (typeof C.registerPlugin !== "function") {
+    window.addEventListener("load", () => window.RK && window.RK.toast("Villa í appinu: Capacitor kjarni hlóðst ekki. Veiðihamur óvirkur.", 10000));
+    return;
+  }
 
   const BG = C.registerPlugin("BackgroundGeolocation");
   const LN = C.registerPlugin("LocalNotifications");
