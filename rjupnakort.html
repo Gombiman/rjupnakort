@@ -329,6 +329,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <div id="setList"></div>
   </div>
 
+  <div id="getApp">
+    <h3>Android app</h3>
+    <div class="card">
+      <p class="note">Í appinu virka viðvaranir um bannsvæði líka með slökktan skjá (veiðihamur).</p>
+      <a class="btn" href="https://github.com/Gombiman/rjupnakort/releases/download/app/rjupnakort.apk">Sækja appið (.apk)</a>
+    </div>
+  </div>
+
   <h3>Hvar fæ ég gögnin</h3>
   <div class="links">
     <a href="https://www.stjornarradid.is/verkefni/rekstur-og-eignir-rikisins/eignir-rikisins/thjodlendur/kort/" target="_blank" rel="noopener">Þjóðlendur — kortasjá og niðurhal (LUK)</a>
@@ -1537,6 +1545,7 @@ window.__applyAll = () => { applyPower(); onBatt(); updateSun(); updateCar(); };
 
 /* Opið viðmót fyrir Android appið */
 window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, getPos: () => pos };
+if (window.RK_APP) document.getElementById("getApp").hidden = true;
 
 /* ---------- Ræsing ---------- */
 renderList();
