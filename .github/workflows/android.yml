@@ -50,7 +50,7 @@ jobs:
             echo "RK_KEYSTORE=$RUNNER_TEMP/rk.p12" >> "$GITHUB_ENV"
             echo "Undirritað með lykli hópsins"
           else
-            echo "::warning::Enginn undirskriftarlykill (RK_KEYSTORE_B64). Byggt með prófunarlykli og ekki gefið út."
+            echo "::warning::Enginn undirskriftarlykill (RK_KEYSTORE_B64). Byggt með prófunarlykli og gefið út sem prufa."
           fi
 
       - name: Byggja .apk
@@ -78,3 +78,14 @@ jobs:
           gh release view app >/dev/null 2>&1 || gh release create app --title "Rjúpnakort app" --notes "Nýjasta útgáfa af Android appinu. Sæktu rjupnakort.apk hér fyrir neðan." --latest
           gh release upload app rjupnakort.apk --clobber
           gh release edit app --notes "Nýjasta útgáfa: 0.1.${{ github.run_number }} ($(date -u +%Y-%m-%d)). Sæktu rjupnakort.apk hér fyrir neðan."
+
+      - name: Gefa út prufu (ekki undirritað með lykli hópsins)
+        if: env.RK_KEYSTORE == ''
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp rjupnakort.apk rjupnakort-prufa.apk
+          gh release view app-prufa >/dev/null 2>&1 || gh release create app-prufa --title "Rjúpnakort app (prufa)" --notes "Prufuútgáfa." --prerelease
+          gh release upload app-prufa rjupnakort-prufa.apk --clobber
+          gh release edit app-prufa --notes "Prufuútgáfa 0.1.${{ github.run_number }} ($(date -u +%Y-%m-%d)). Til að setja upp nýja prufu þarf fyrst að fjarlægja þá gömlu."
