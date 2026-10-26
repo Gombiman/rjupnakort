@@ -859,7 +859,7 @@ const nearIn = document.getElementById("nearIn"), nearOut = document.getElementB
 nearIn.value = LS.get("near", 300); nearOut.textContent = nearIn.value + " m";
 nearIn.oninput = () => { nearOut.textContent = nearIn.value + " m"; LS.set("near", +nearIn.value); evaluate(); };
 const SETTINGS = [
-  ["wake",      "Halda skjánum vakandi", "Skjárinn slokknar ekki á meðan GPS er í gangi. Notar mest af rafhlöðunni.", true],
+  ["wake",      "Halda skjánum vakandi", "Skjárinn slokknar ekki sjálfkrafa á meðan GPS er í gangi. Viðvaranir virka þá stöðugt, en þetta tæmir rafhlöðuna hratt.", false],
   ["compass",   "Áttaviti", "Örin að bílnum eða punktinum snýst með símanum.", true],
   ["vib",       "Titra við viðvaranir", "Titrar þegar þú nálgast eða ferð inn á svæði.", true],
   ["sun",       "Tími til myrkurs", "Niðurtalning í sólsetur efst til vinstri.", true],
