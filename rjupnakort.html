@@ -27,6 +27,7 @@
   --bg:#121516; --panel:#1c2122; --fg:#e9ecea; --muted:#9aa5a6; --line:#2e3638;
   --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#c27ef0; --info:#5aa8f0; --ok:#4cc47a;
   --shadow:0 4px 18px rgba(0,0,0,.5); color-scheme:dark}
+[hidden]{display:none!important}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 var(--f-body);overflow:hidden}
 #map{position:fixed;inset:0;background:var(--bg)}
@@ -58,7 +59,50 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #coords .c{min-width:0;flex:1}
 #cLatLon{font:500 14px/1.3 var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #cMeta{font-size:12px;color:var(--muted)}
-#btnCopy{border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px 10px;font-size:13px;flex:none}
+#coords{cursor:pointer}
+.left{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.acts{display:flex;gap:8px;pointer-events:auto}
+.act{flex:1;min-width:0;border:none;border-radius:999px;padding:9px 6px;background:var(--panel);box-shadow:var(--shadow);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act.sos{flex:0 0 auto;padding:9px 16px;background:var(--bann);color:#fff;letter-spacing:.04em}
+#chips{position:fixed;z-index:999;left:max(12px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 82px);display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-width:calc(100% - 90px)}
+.ichip{display:flex;align-items:center;gap:8px;border:none;background:var(--panel);box-shadow:var(--shadow);border-radius:999px;padding:6px 12px 6px 8px;font-size:13.5px;font-weight:600;max-width:100%;text-align:left}
+.ichip .ic{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;flex:none;color:#fff}
+.ichip .ic svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.ichip .tx{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.ichip .tx small{font-weight:500;color:var(--muted);margin-left:4px}
+#sunChip .ic{background:#d98a1c} #sunChip.warn .ic{background:var(--leyfi)} #sunChip.warn{color:var(--leyfi)}
+#sunChip.dark .ic{background:#3b4a6b} #sunChip.dark{color:var(--fg)}
+#carChip .ic{background:#2577c4}
+#toast{position:fixed;z-index:1300;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 150px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:var(--shadow);max-width:calc(100% - 40px);text-align:center}
+.pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45);display:grid;place-items:center;box-sizing:border-box}
+.pin svg{transform:rotate(45deg);width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.pop .pb{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.pop .pb button{border:1px solid #c9cfcf;background:#fff;color:#1b1f20;border-radius:8px;padding:6px 10px;font:600 13px var(--f-body)}
+.pop .dist{font:500 13px var(--f-mono);margin:4px 0}
+.ptrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.ptrow:first-child{border-top:none}
+.ptrow .dotp{width:12px;height:12px;border-radius:50%;flex:none}
+.ptrow .t{flex:1;min-width:0}
+.ptrow .t b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptrow .t span{font-size:12.5px;color:var(--muted)}
+.ptrow button.go{border:1px solid var(--line);background:transparent;border-radius:8px;padding:5px 10px;font-size:13px}
+pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(--f-mono);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin:0}
+a.btn{text-decoration:none;text-align:center;display:block}
+/* Neyðarskjár: ein föst ásýnd, óháð þema */
+#sos{position:fixed;inset:0;z-index:1400;background:#141414;color:#fff;overflow:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) max(16px,env(safe-area-inset-left,0px))}
+#sos .top{display:flex;justify-content:space-between;align-items:center}
+#sos h2{font:700 26px/1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:0;color:#ff5247}
+#sos .x{color:#bbb}
+#sos .big{font:500 clamp(26px,8.6vw,44px)/1.15 var(--f-mono);font-variant-numeric:tabular-nums;margin:22px 0 6px;letter-spacing:-.01em}
+#sos .dec{font:500 17px var(--f-mono);color:#ddd}
+#sos .meta{font-size:15px;color:#bbb;margin:8px 0 0}
+#sos .warn{color:#ffb020;font-weight:600}
+#sos .lbl{font:700 13px var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:#999;margin-top:22px}
+#sos .acts2{display:grid;gap:10px;margin-top:22px}
+#sos .acts2 a,#sos .acts2 button{display:block;text-align:center;text-decoration:none;border:none;border-radius:12px;padding:15px;font:700 18px var(--f-body);color:#fff;background:#2c2c2c}
+#sos .acts2 .call{background:#d62f25;font-size:22px}
+#sos p.tip{font-size:14px;color:#bbb;line-height:1.5;margin:20px 0 0;max-width:60ch}
 .fabs{display:flex;flex-direction:column;gap:10px;pointer-events:auto}
 .fab{width:54px;height:54px;border-radius:50%;border:none;background:var(--panel);box-shadow:var(--shadow);display:grid;place-items:center}
 .fab svg{width:26px;height:26px;fill:none;stroke:var(--fg);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -66,7 +110,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #btnGps.follow svg circle.c{fill:#fff}
 
 /* Sheet */
-#sheet{position:fixed;left:0;right:0;bottom:0;z-index:1100;max-height:82%;overflow:auto;background:var(--panel);
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:1100;max-height:82%;overflow:auto;background:var(--panel);
   border-radius:16px 16px 0 0;box-shadow:0 -6px 30px rgba(0,0,0,.3);
   padding:6px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 20px) max(16px,env(safe-area-inset-left,0px))}
 #scrim{position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,.35)}
@@ -109,8 +153,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 /* Map bits */
 .leaflet-container{font:inherit}
 .leaflet-top{top:calc(env(safe-area-inset-top,0px) + 74px)}
+.leaflet-bottom.leaflet-left{display:none}
 .leaflet-control-attribution{font-size:10px}
-.leaflet-bottom.leaflet-right{bottom:calc(env(safe-area-inset-bottom,0px) + 74px)}
+.leaflet-bottom.leaflet-right{bottom:calc(env(safe-area-inset-bottom,0px) + 128px)}
 .me{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 0 0 2px var(--accent),0 2px 8px rgba(0,0,0,.4);box-sizing:border-box;position:relative}
 .me .hd{position:absolute;left:50%;top:-15px;width:0;height:0;margin-left:-6px;border:6px solid transparent;border-bottom:10px solid var(--accent);transform-origin:6px 26px}
 .pop b{display:block;font-size:15px;margin-bottom:4px}
@@ -131,13 +176,30 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   </div>
 </header>
 
+<div id="chips">
+  <button class="ichip" id="carChip" type="button" hidden>
+    <span class="ic"><svg viewBox="0 0 24 24" id="carArrow"><path d="M12 3v18M5 10l7-7 7 7"/></svg></span>
+    <span class="tx" id="carTx">Bíll</span>
+  </button>
+  <div class="ichip" id="sunChip" hidden>
+    <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M4.9 10.9l2 2M19.1 10.9l-2 2"/></svg></span>
+    <span class="tx" id="sunTx"></span>
+  </div>
+</div>
+
 <div id="bottom">
-  <div id="coords">
-    <div class="c">
-      <div id="cLatLon">— ° —′ N &nbsp; — ° —′ V</div>
-      <div id="cMeta">Engin staðsetning enn</div>
+  <div class="left">
+    <div class="acts">
+      <button class="act" id="btnMark" type="button">Merkja hér</button>
+      <button class="act" id="btnPing" type="button">Senda ping</button>
+      <button class="act sos" id="btnSos" type="button">NEYÐ</button>
     </div>
-    <button id="btnCopy" type="button">Afrita</button>
+    <div id="coords" role="button" tabindex="0" aria-label="Opna hnit í stóru letri">
+      <div class="c">
+        <div id="cLatLon">— ° —′ N &nbsp; — ° —′ V</div>
+        <div id="cMeta">Engin staðsetning enn</div>
+      </div>
+    </div>
   </div>
   <div class="fabs">
     <button class="fab" id="btnLayers" type="button" aria-label="Lög og stillingar">
@@ -150,12 +212,44 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 </div>
 
 <div id="scrim" hidden></div>
-<section id="sheet" hidden aria-label="Lög og stillingar">
+<section id="sheet" class="sheet" hidden aria-label="Lög og stillingar">
   <div class="grab"></div>
   <div class="sh-head"><h2>Lög</h2><button class="x" id="btnClose" type="button" aria-label="Loka">×</button></div>
 
   <h3>Grunnkort</h3>
   <div class="seg" id="baseSeg"></div>
+
+  <h3>Kort án nets</h3>
+  <div class="card">
+    <p class="note">Þysjaðu kortið þannig að veiðisvæðið fylli skjáinn, lokaðu spjaldinu ekki, og ýttu á „Reikna“. Landslagskortið fyrir það svæði vistast í símanum.</p>
+    <label class="f">Nákvæmni
+      <select id="offZoom">
+        <option value="14">Gott (aðdráttur 14)</option>
+        <option value="15" selected>Mjög gott (aðdráttur 15)</option>
+        <option value="16">Mest (aðdráttur 16, stórt)</option>
+      </select>
+    </label>
+    <div class="row">
+      <button class="btn sec" id="offCalc" type="button">Reikna stærð</button>
+      <button class="btn" id="offGo" type="button" hidden>Vista svæði</button>
+      <button class="btn sec" id="offStop" type="button" hidden>Stöðva</button>
+    </div>
+    <div id="offBarWrap" hidden style="height:8px;border-radius:4px;background:var(--line);overflow:hidden"><div id="offBar" style="height:100%;width:0;background:var(--accent);transition:width .2s"></div></div>
+    <p class="msg" id="offMsg"></p>
+    <div class="row" style="align-items:center">
+      <p class="note" id="offStat" style="flex:2">Vistað: —</p>
+      <button class="btn sec" id="offClear" type="button" style="flex:1">Eyða vistuðu</button>
+    </div>
+  </div>
+
+  <h3>Punktar</h3>
+  <div class="card">
+    <p class="note">Haltu fingri á kortinu til að merkja punkt þar, eða ýttu á „Merkja hér“. Ping frá öðrum birtast hér þegar þú opnar hlekkinn þeirra.</p>
+    <div id="ptList"></div>
+    <div class="row">
+      <button class="btn sec" id="clrPings" type="button">Eyða öllum pingum</button>
+    </div>
+  </div>
 
   <h3>Svæði</h3>
   <div id="layerList"></div>
@@ -227,6 +321,53 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   <p class="note" style="margin-top:16px">Línur á kortinu eru til hliðsjónar. Úrskurðir, auglýsingar um friðlýsingu og leyfi landeigenda ráða alltaf.</p>
 </section>
 
+<section id="ptSheet" class="sheet" hidden aria-label="Nýr punktur">
+  <div class="grab"></div>
+  <div class="sh-head"><h2>Nýr punktur</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
+  <p class="note" id="ptWhere" style="margin-top:8px"></p>
+  <h3>Tegund</h3>
+  <div class="seg" id="ptTypes"></div>
+  <h3>Nafn (má sleppa)</h3>
+  <input type="text" id="ptName" placeholder="t.d. Bíllinn við afleggjarann" maxlength="40">
+  <div class="row" style="margin-top:16px">
+    <button class="btn" id="ptSave" type="button">Vista punkt</button>
+  </div>
+</section>
+
+<section id="pingSheet" class="sheet" hidden aria-label="Senda ping">
+  <div class="grab"></div>
+  <div class="sh-head"><h2 id="pingTitle">Senda ping</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
+  <label class="f" style="margin-top:12px">Nafnið þitt
+    <input type="text" id="myName" placeholder="t.d. Grétar" maxlength="24">
+  </label>
+  <h3>Skilaboðin</h3>
+  <pre class="preview" id="pingPrev">Bíð eftir GPS…</pre>
+  <p class="msg" id="pingMsg" style="margin-top:8px"></p>
+  <div class="row" style="margin-top:12px">
+    <a class="btn" id="pingSms" href="#">SMS</a>
+    <button class="btn" id="pingShare" type="button">Deila…</button>
+    <button class="btn sec" id="pingCopy" type="button">Afrita</button>
+  </div>
+  <p class="note" style="margin-top:12px">SMS kemst oft í gegn þó ekkert netsamband sé. Viðtakandinn ýtir á hlekkinn og punkturinn birtist á hans korti. Hnitin standa líka í textanum.</p>
+</section>
+
+<section id="sos" hidden aria-label="Neyðarskjár">
+  <div class="top"><h2>Staðsetning fyrir 112</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
+  <div class="big" id="sosBig">Engin staðsetning</div>
+  <div class="dec" id="sosDec"></div>
+  <p class="meta" id="sosMeta">Kveiktu á GPS (hnappurinn neðst til hægri).</p>
+  <div class="lbl" id="sosCarL" hidden>Bíll</div>
+  <p class="meta" id="sosCar" hidden></p>
+  <div class="acts2">
+    <a class="call" href="tel:112">Hringja í 112</a>
+    <a id="sosSms" href="#">Senda hnitin í SMS</a>
+    <button id="sosCopy" type="button">Afrita hnit</button>
+  </div>
+  <p class="tip">Lestu fyrst gráður og mínútur (efsta línan), svo tugabrotin ef beðið er um þau. Ef 112 Iceland appið er í símanum sendir það staðsetninguna sjálfkrafa.</p>
+</section>
+
+<div id="toast" hidden role="status"></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 (() => {
@@ -291,7 +432,7 @@ const BUILTIN = [
 const MAX_AGE = 7*24*3600*1000;
 
 /* ---------- Kort ---------- */
-const map = L.map("map", {zoomControl:true, attributionControl:true, preferCanvas:true})
+const map = L.map("map", {zoomControl:false, attributionControl:true, preferCanvas:true})
   .setView(LS.get("view", [64.9, -18.6]), LS.get("zoom", 7));
 map.on("moveend", () => { const c = map.getCenter(); LS.set("view", [c.lat, c.lng]); LS.set("zoom", map.getZoom()); });
 
@@ -307,6 +448,7 @@ let baseKey = LS.get("base", "topo");
 if (!BASES[baseKey]) baseKey = "topo";
 BASES[baseKey].layer.addTo(map);
 
+L.control.zoom({position:"topright"}).addTo(map);
 const renderer = L.canvas({padding:.5});
 map.createPane("zones"); map.getPane("zones").style.zIndex = 420;
 map.createPane("wms");   map.getPane("wms").style.zIndex = 410;
@@ -344,22 +486,24 @@ function polysOf(g){
   if (g.type === "GeometryCollection") return g.geometries.flatMap(polysOf);
   return [];
 }
-function prep(gj){
+function prep(gj, fallback){
   const out = [];
   for (const f of gj.features){
     const polys = polysOf(f.geometry);
     if (!polys.length) continue;
     let a=180,b=90,c=-180,d=-90;
     for (const p of polys) for (const pt of p[0]){ if(pt[0]<a)a=pt[0]; if(pt[0]>c)c=pt[0]; if(pt[1]<b)b=pt[1]; if(pt[1]>d)d=pt[1]; }
-    out.push({polys, bbox:[a,b,c,d], name:nameOf(f.properties||{}), props:f.properties||{}});
+    out.push({polys, bbox:[a,b,c,d], name:nameOf(f.properties||{}) || fallback, props:f.properties||{}});
   }
   return out;
 }
 function nameOf(p){
-  const keys = ["nafn","heiti","name","NAFN","HEITI","NAME","Nafn","Heiti","Name","svaedi","titill","landeign","jord","jörð"];
-  for (const k of keys) if (p[k] && typeof p[k] === "string") return p[k];
-  for (const k in p) if (typeof p[k] === "string" && p[k].length > 2 && p[k].length < 80 && !/^\d/.test(p[k])) return p[k];
-  return "Ónefnt svæði";
+  const ks = Object.keys(p).filter(k => typeof p[k] === "string" && p[k].trim());
+  const pick = re => ks.find(k => re.test(k));
+  const k = pick(/^(nafn|heiti|name|titill)$/i) || pick(/nafn|heiti|name|titill/i) || pick(/svae|svæ|land|jord|jörð|stadur|staður/i);
+  if (k) return p[k].trim();
+  const v = ks.find(k => !/id$|^id|kod|code|dags|date|url|link|tegund|flokk|type|status/i.test(k) && p[k].length > 2 && p[k].length < 80 && !/^[\d\s.,:/-]+$/.test(p[k]));
+  return v ? p[v].trim() : null;
 }
 function inRing(x, y, r){
   let ins = false;
@@ -390,7 +534,7 @@ function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt
 function popupHtml(l, p){
   const rows = Object.entries(p).filter(([k,v]) => v!=null && v!=="" && typeof v !== "object").slice(0,14)
     .map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
-  return `<div class="pop"><b>${esc(nameOf(p))}</b><div style="color:${color(l.cat)};font-weight:600;margin-bottom:4px">${esc(l.name)}</div><table>${rows}</table></div>`;
+  return `<div class="pop"><b>${esc(nameOf(p) || l.name)}</b><div style="color:${color(l.cat)};font-weight:600;margin-bottom:4px">${esc(l.name)}</div><table>${rows}</table></div>`;
 }
 function drawVector(l, gj){
   removeRuntime(l.id);
@@ -401,7 +545,7 @@ function drawVector(l, gj){
     style: () => ({color:c, weight:2, fillColor:c, fillOpacity:l.cat==="info"?0.08:0.18, dashArray:l.cat==="leyfi"?"6 4":null}),
     onEachFeature: (f, ly) => ly.bindPopup(() => popupHtml(l, f.properties||{}))
   });
-  runtime[l.id] = {leaflet:lay, feats:prep(gj)};
+  runtime[l.id] = {leaflet:lay, feats:prep(gj, l.name)};
   if (l.on) lay.addTo(map);
 }
 function drawWms(l, url, name){
@@ -609,10 +753,12 @@ vibIn.onchange = () => LS.set("vib", vibIn.checked);
 
 /* ---------- Spjald ---------- */
 const sheet = document.getElementById("sheet"), scrim = document.getElementById("scrim");
-const openSheet = () => { sheet.hidden = false; scrim.hidden = false; renderList(); };
-const closeSheet = () => { sheet.hidden = true; scrim.hidden = true; };
+const closeSheet = () => { document.querySelectorAll(".sheet,#sos").forEach(x => x.hidden = true); scrim.hidden = true; };
+const openPanel = el => { closeSheet(); document.getElementById("toast").hidden = true; el.hidden = false; if (el.classList.contains("sheet")) scrim.hidden = false; };
+const openSheet = () => { openPanel(sheet); renderList(); };
 document.getElementById("btnLayers").onclick = openSheet;
 document.getElementById("btnClose").onclick = closeSheet;
+document.querySelectorAll("[data-close]").forEach(b => b.onclick = closeSheet);
 scrim.onclick = closeSheet;
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
 
@@ -650,8 +796,9 @@ function onPos(p){
   if (follow) map.panTo(ll, {animate:true});
   document.getElementById("cLatLon").textContent = `${ddm(pos.lat,"N","S")}  ${ddm(pos.lon,"A","V")}`;
   document.getElementById("cMeta").textContent =
-    `±${Math.round(pos.acc)} m` + (pos.alt!=null ? ` · ${Math.round(pos.alt)} m y.s.` : "") + ` · ${new Date(pos.t).toLocaleTimeString("is-IS",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
+    `±${Math.round(pos.acc)} m` + (pos.alt!=null ? ` · ${Math.round(pos.alt)} m y.s.` : "") + ` · ${new Date(pos.t).toLocaleTimeString("is-IS",{hourCycle:"h23",hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
   evaluate();
+  if (window.__onPosExtra) window.__onPosExtra();
 }
 function onErr(e){
   if (e.code === 1) { stopGps(); showState("none", "Aðgangi hafnað", "Leyfðu staðsetningu fyrir þessa síðu í stillingum vafrans"); }
@@ -669,14 +816,6 @@ btnGps.onclick = () => {
 };
 map.on("dragstart", () => { if (follow){ follow = false; btnGps.classList.remove("follow"); } });
 
-document.getElementById("btnCopy").onclick = async (ev) => {
-  if (!pos) return;
-  const t = `${pos.lat.toFixed(6)}, ${pos.lon.toFixed(6)}  (${ddm(pos.lat,"N","S")} ${ddm(pos.lon,"A","V")}, ±${Math.round(pos.acc)} m)`;
-  const b = ev.currentTarget;
-  try{ await navigator.clipboard.writeText(t); b.textContent = "Afritað"; }
-  catch(e){ const s = window.getSelection(), r = document.createRange(); r.selectNodeContents(document.getElementById("cLatLon")); s.removeAllRanges(); s.addRange(r); b.textContent = "Valið"; }
-  setTimeout(() => b.textContent = "Afrita", 1800);
-};
 
 /* ---------- Mat á stöðu ---------- */
 const stEl = document.getElementById("status"), stTitle = document.getElementById("stTitle"), stSub = document.getElementById("stSub");
@@ -720,6 +859,438 @@ function evaluate(){
   }
   lastLevel = level;
 }
+
+/* ---------- Kort án nets ---------- */
+const offMsg = document.getElementById("offMsg"), offStat = document.getElementById("offStat");
+const offGo = document.getElementById("offGo"), offStop = document.getElementById("offStop"), offCalc = document.getElementById("offCalc");
+const offBarWrap = document.getElementById("offBarWrap"), offBar = document.getElementById("offBar");
+const TILE_TPL = "https://a.tile.opentopomap.org/{z}/{x}/{y}.png";
+const MAX_TILES = 4000;
+let plan = null, stopFlag = false;
+const tx = (lon, z) => Math.floor((lon + 180) / 360 * 2 ** z);
+const ty = (lat, z) => { const r = lat * Math.PI / 180; return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 2 ** z); };
+function planTiles(){
+  const b = map.getBounds(), zMax = +document.getElementById("offZoom").value;
+  const zMin = Math.max(6, Math.min(Math.floor(map.getZoom()), zMax) - 2);
+  const list = [];
+  for (let z = zMin; z <= zMax; z++){
+    const x0 = tx(b.getWest(), z), x1 = tx(b.getEast(), z), y0 = ty(b.getNorth(), z), y1 = ty(b.getSouth(), z);
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++){
+      list.push(TILE_TPL.replace("{z}", z).replace("{x}", x).replace("{y}", y));
+      if (list.length > MAX_TILES) return {list, too:true, zMin, zMax};
+    }
+  }
+  return {list, too:false, zMin, zMax};
+}
+async function refreshStat(){
+  if (!("caches" in window)) { offStat.textContent = "Vafrinn styður ekki vistun"; return; }
+  try{
+    const n = (await (await caches.open("rk-tiles")).keys()).length;
+    let mb = "";
+    try{ const e = await navigator.storage.estimate(); mb = ` · ${Math.round(e.usage / 1048576)} MB notað`; }catch(e){}
+    offStat.textContent = `Vistað: ${n} kortaflísar${mb}`;
+  }catch(e){ offStat.textContent = "Vistað: —"; }
+}
+offCalc.onclick = () => {
+  if (!("caches" in window)) return msg(offMsg, "Vafrinn leyfir ekki vistun hér. Opnaðu kortið af https-slóðinni.", true);
+  plan = planTiles();
+  if (plan.too) { offGo.hidden = true; return msg(offMsg, `Of stórt svæði (yfir ${MAX_TILES} flísar). Þysjaðu nær eða veldu minni nákvæmni.`, true); }
+  const mb = Math.max(1, Math.round(plan.list.length * 22 / 1024));
+  msg(offMsg, `${plan.list.length} flísar, um ${mb} MB (aðdráttur ${plan.zMin}–${plan.zMax}). Gerðu þetta helst á WiFi.`);
+  offGo.hidden = false;
+};
+offGo.onclick = async () => {
+  if (!plan) return;
+  stopFlag = false; offGo.hidden = true; offCalc.hidden = true; offStop.hidden = false; offBarWrap.hidden = false;
+  try{ navigator.storage && navigator.storage.persist && await navigator.storage.persist(); }catch(e){}
+  const cache = await caches.open("rk-tiles");
+  const todo = plan.list.slice(); const total = todo.length;
+  let done = 0, failed = 0;
+  async function worker(){
+    while (todo.length && !stopFlag){
+      const u = todo.shift();
+      try{
+        if (!(await cache.match(u))){
+          let r;
+          try{ r = await fetch(u, {mode:"cors"}); } catch(e){ r = await fetch(u, {mode:"no-cors"}); }
+          if (r.ok || r.type === "opaque") await cache.put(u, r); else failed++;
+        }
+      }catch(e){ failed++; }
+      done++;
+      offBar.style.width = (done / total * 100).toFixed(1) + "%";
+      if (done % 10 === 0 || done === total) offMsg.textContent = `Vista… ${done} / ${total}`;
+    }
+  }
+  await Promise.all([worker(), worker(), worker()]);
+  offStop.hidden = true; offCalc.hidden = false; plan = null;
+  msg(offMsg, stopFlag ? `Stöðvað eftir ${done} flísar.` : failed ? `Lokið, en ${failed} flísar náðust ekki. Reyndu aftur á betra neti.` : `Lokið. ${total} flísar vistaðar — landslagskortið virkar nú án nets á þessu svæði.`, !!failed);
+  refreshStat();
+};
+offStop.onclick = () => { stopFlag = true; };
+const offClear = document.getElementById("offClear");
+let clearArmed = false;
+offClear.onclick = async () => {
+  if (!clearArmed){ clearArmed = true; offClear.textContent = "Ýttu aftur"; setTimeout(() => { clearArmed = false; offClear.textContent = "Eyða vistuðu"; }, 3000); return; }
+  clearArmed = false; offClear.textContent = "Eyða vistuðu";
+  try{ await caches.delete("rk-tiles"); msg(offMsg, "Vistuðum kortum eytt."); }catch(e){}
+  refreshStat();
+};
+document.getElementById("btnLayers").addEventListener("click", refreshStat);
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+
+/* ---------- Punktar ---------- */
+const SVG = {
+  bill:  '<path d="M4 15v-3l2-5h12l2 5v3z"/><circle cx="8" cy="16.5" r="1.6"/><circle cx="16" cy="16.5" r="1.6"/>',
+  skali: '<path d="M3 12 12 4l9 8"/><path d="M6 10v9h12v-9"/>',
+  haetta:'<path d="M12 5v9"/><circle cx="12" cy="18.5" r=".8"/>',
+  rjupa: '<path d="M5 14c2-5 6-7 11-6l3-2-1 4c0 4-3 7-8 7H5z"/><circle cx="15" cy="10" r=".6"/>',
+  annad: '<circle cx="12" cy="12" r="3.5"/>',
+  ping:  '<circle cx="12" cy="7.5" r="3"/><path d="M6 20c0-4 2.7-6.5 6-6.5s6 2.5 6 6.5"/>'
+};
+const TYPES = {
+  bill:   {label:"Bíll",   color:"#2577c4"},
+  skali:  {label:"Skáli",  color:"#8a5a2b"},
+  haetta: {label:"Hætta",  color:"#d62f25"},
+  rjupa:  {label:"Rjúpa",  color:"#5f7d2e"},
+  annad:  {label:"Annað",  color:"#55606a"},
+  ping:   {label:"Ping",   color:"#9b4fc4"}
+};
+let pts = LS.get("pts", []);
+if (!Array.isArray(pts)) pts = [];
+const savePts = () => LS.set("pts", pts);
+const ptLayer = L.layerGroup().addTo(map);
+const markers = {};
+let carLine = null;
+
+const toastEl = document.getElementById("toast");
+let toastT = null;
+function toast(t, ms){ toastEl.textContent = t; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => toastEl.hidden = true, ms || 4000); }
+
+function distM(a, b, c, d){
+  const R = 6371000, r = Math.PI/180, dLat = (c-a)*r, dLon = (d-b)*r;
+  const h = Math.sin(dLat/2)**2 + Math.cos(a*r)*Math.cos(c*r)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function bearing(a, b, c, d){
+  const r = Math.PI/180, y = Math.sin((d-b)*r)*Math.cos(c*r),
+        x = Math.cos(a*r)*Math.sin(c*r) - Math.sin(a*r)*Math.cos(c*r)*Math.cos((d-b)*r);
+  return (Math.atan2(y, x)/r + 360) % 360;
+}
+const CARD = ["N","NA","A","SA","S","SV","V","NV"];
+const card = deg => CARD[Math.round(deg/45) % 8];
+const fmtM = v => v < 1000 ? `${Math.round(v)} m` : `${(v/1000).toFixed(v < 10000 ? 1 : 0).replace(".",",")} km`;
+const hhmm = t => new Date(t).toLocaleTimeString("is-IS", {hourCycle:"h23", hour:"2-digit", minute:"2-digit"});
+function ago(t){
+  const m = Math.round((Date.now()-t)/60000);
+  if (m < 1) return "rétt í þessu";
+  if (m < 60) return `fyrir ${m} mín`;
+  if (m < 60*24) return `fyrir ${Math.floor(m/60)} klst ${m%60} mín`;
+  return `${fmtDate(t)} kl ${hhmm(t)}`;
+}
+function relFromMe(p){
+  if (!pos) return null;
+  const d = distM(pos.lat, pos.lon, p.lat, p.lon), b = bearing(pos.lat, pos.lon, p.lat, p.lon);
+  return {d, b, text:`${fmtM(d)} · ${card(b)} ${Math.round(b)}°`};
+}
+function ptTitle(p){ return p.name || (p.type === "ping" && p.from) || TYPES[p.type].label; }
+function pinIcon(type){
+  const t = TYPES[type] || TYPES.annad;
+  return L.divIcon({className:"", iconSize:[30,30], iconAnchor:[15,30], popupAnchor:[0,-28],
+    html:`<div class="pin" style="background:${t.color}"><svg viewBox="0 0 24 24">${SVG[type]||SVG.annad}</svg></div>`});
+}
+function popupFor(p){
+  const t = TYPES[p.type] || TYPES.annad, rel = relFromMe(p);
+  const who = p.type === "ping" ? `Ping frá ${esc(p.from || "óþekktum")}` : esc(t.label) + (p.from ? ` · frá ${esc(p.from)}` : "");
+  return `<div class="pop"><b>${esc(ptTitle(p))}</b>
+    <div style="color:${t.color};font-weight:600">${who}</div>
+    <div style="font-size:12px;color:#667">${ago(p.ts)}${p.acc ? ` · ±${Math.round(p.acc)} m` : ""}</div>
+    <div class="dist">${rel ? rel.text + " frá þér" : "Kveiktu á GPS til að sjá fjarlægð"}</div>
+    <div style="font:500 12px var(--f-mono)">${ddm(p.lat,"N","S")} ${ddm(p.lon,"A","V")}</div>
+    <div class="pb"><button type="button" data-share="${p.id}">Senda punkt</button>
+    ${p.type !== "bill" ? `<button type="button" data-car="${p.id}">Gera að bíl</button>` : ""}
+    <button type="button" data-del="${p.id}">Eyða</button></div></div>`;
+}
+function renderPts(){
+  for (const id in markers){ if (!pts.find(p => p.id === id)) { ptLayer.removeLayer(markers[id]); delete markers[id]; } }
+  for (const p of pts){
+    if (!markers[p.id]){
+      markers[p.id] = L.marker([p.lat, p.lon], {icon:pinIcon(p.type), title:ptTitle(p)})
+        .bindPopup(() => popupFor(p), {minWidth:200}).addTo(ptLayer);
+    } else markers[p.id].setIcon(pinIcon(p.type));
+  }
+  renderPtList(); updateCar();
+}
+map.on("popupopen", e => {
+  const el = e.popup.getElement(); if (!el) return;
+  el.querySelectorAll("[data-share]").forEach(b => b.onclick = () => { const p = pts.find(x => x.id === b.dataset.share); if (p) openPing(p); });
+  el.querySelectorAll("[data-car]").forEach(b => b.onclick = () => {
+    const p = pts.find(x => x.id === b.dataset.car); if (!p) return;
+    pts = pts.filter(x => x.type !== "bill" || x === p); p.type = "bill"; savePts(); map.closePopup(); renderPts(); toast("Merkt sem bíll");
+  });
+  el.querySelectorAll("[data-del]").forEach(b => {
+    let armed = false;
+    b.onclick = () => {
+      if (!armed){ armed = true; b.textContent = "Ýttu aftur"; b.style.color = "#d62f25"; return; }
+      pts = pts.filter(x => x.id !== b.dataset.del); savePts(); map.closePopup(); renderPts();
+    };
+  });
+});
+const ptList = document.getElementById("ptList");
+function renderPtList(){
+  ptList.innerHTML = "";
+  if (!pts.length){ ptList.innerHTML = '<p class="note">Engir punktar enn.</p>'; return; }
+  const sorted = pts.slice().sort((a, b) => (a.type === "bill" ? -1 : 0) - (b.type === "bill" ? -1 : 0) || b.ts - a.ts);
+  for (const p of sorted){
+    const rel = relFromMe(p), t = TYPES[p.type] || TYPES.annad;
+    const row = document.createElement("div"); row.className = "ptrow";
+    row.innerHTML = `<span class="dotp" style="background:${t.color}"></span>
+      <div class="t"><b>${esc(ptTitle(p))}</b><span>${esc(t.label)} · ${ago(p.ts)}${rel ? " · " + rel.text : ""}</span></div>`;
+    const go = document.createElement("button"); go.className = "go"; go.type = "button"; go.textContent = "Sýna";
+    go.onclick = () => { closeSheet(); map.setView([p.lat, p.lon], Math.max(map.getZoom(), 14)); markers[p.id] && markers[p.id].openPopup(); };
+    row.appendChild(go); ptList.appendChild(row);
+  }
+}
+document.getElementById("clrPings").onclick = (ev) => {
+  const b = ev.currentTarget;
+  if (!pts.some(p => p.type === "ping")) return;
+  if (b.dataset.armed !== "1"){ b.dataset.armed = "1"; b.textContent = "Ýttu aftur til að eyða"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "Eyða öllum pingum"; }, 3000); return; }
+  b.dataset.armed = ""; b.textContent = "Eyða öllum pingum";
+  pts = pts.filter(p => p.type !== "ping"); savePts(); renderPts();
+};
+
+/* Bíll */
+const carChip = document.getElementById("carChip"), carTx = document.getElementById("carTx"), carArrow = document.getElementById("carArrow");
+function updateCar(){
+  const car = pts.find(p => p.type === "bill");
+  carChip.hidden = !car;
+  if (!car){ if (carLine){ map.removeLayer(carLine); carLine = null; } return; }
+  const rel = relFromMe(car);
+  if (rel){
+    carTx.innerHTML = `Bíll ${fmtM(rel.d)} <small>${card(rel.b)} ${Math.round(rel.b)}°</small>`;
+    carArrow.style.transform = `rotate(${rel.b}deg)`;
+    const ll = [[pos.lat, pos.lon], [car.lat, car.lon]];
+    if (!carLine) carLine = L.polyline(ll, {color:"#2577c4", weight:2.5, dashArray:"6 8", opacity:.85, interactive:false}).addTo(map);
+    else carLine.setLatLngs(ll);
+  } else {
+    carTx.innerHTML = `Bíll merktur <small>kveiktu á GPS</small>`;
+    carArrow.style.transform = "";
+  }
+}
+carChip.onclick = () => {
+  const car = pts.find(p => p.type === "bill"); if (!car) return;
+  if (typeof follow !== "undefined" && follow){ follow = false; btnGps.classList.remove("follow"); }
+  if (pos) map.fitBounds([[pos.lat, pos.lon], [car.lat, car.lon]], {padding:[70,70], maxZoom:16});
+  else map.setView([car.lat, car.lon], Math.max(map.getZoom(), 14));
+};
+
+/* Nýr punktur */
+const ptSheet = document.getElementById("ptSheet"), ptTypes = document.getElementById("ptTypes");
+let draft = null, draftType = "annad";
+for (const k of ["bill","skali","rjupa","haetta","annad"]){
+  const b = document.createElement("button"); b.type = "button"; b.dataset.k = k; b.textContent = TYPES[k].label;
+  b.onclick = () => { draftType = k; ptTypes.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
+  ptTypes.appendChild(b);
+}
+function openMark(lat, lon, acc, where){
+  draft = {lat, lon, acc};
+  draftType = pts.some(p => p.type === "bill") ? "annad" : "bill";
+  ptTypes.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x.dataset.k === draftType));
+  document.getElementById("ptName").value = "";
+  document.getElementById("ptWhere").textContent = where + ` · ${ddm(lat,"N","S")} ${ddm(lon,"A","V")}`;
+  openPanel(ptSheet);
+}
+document.getElementById("ptSave").onclick = () => {
+  if (!draft) return;
+  if (draftType === "bill") pts = pts.filter(p => p.type !== "bill");
+  const p = {id:"p" + Date.now().toString(36), lat:draft.lat, lon:draft.lon, acc:draft.acc || 0, type:draftType,
+             name:document.getElementById("ptName").value.trim(), ts:Date.now()};
+  pts.push(p); savePts(); renderPts(); closeSheet(); draft = null;
+  toast(p.type === "bill" ? "Bíllinn merktur. Fjarlægðin sést efst til vinstri." : "Punktur vistaður");
+};
+document.getElementById("btnMark").onclick = () => {
+  if (pos) return openMark(pos.lat, pos.lon, pos.acc, `Á GPS-staðsetningu þinni ±${Math.round(pos.acc)} m`);
+  const c = map.getCenter();
+  openMark(c.lat, c.lng, 0, "Ekkert GPS — merki miðju kortsins");
+};
+/* Halda fingri á kortinu */
+(() => {
+  const mc = map.getContainer(); let tm = null, st = null, fired = 0;
+  const clear = () => { clearTimeout(tm); tm = null; };
+  mc.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) return clear();
+    const t = e.touches[0]; st = [t.clientX, t.clientY]; clear();
+    tm = setTimeout(() => {
+      fired = Date.now(); tm = null;
+      const r = mc.getBoundingClientRect(), ll = map.containerPointToLatLng([st[0]-r.left, st[1]-r.top]);
+      try{ navigator.vibrate && navigator.vibrate(30); }catch(e){}
+      openMark(ll.lat, ll.lng, 0, "Þar sem þú hélst fingri");
+    }, 650);
+  }, {passive:true});
+  mc.addEventListener("touchmove", e => { if (tm && st){ const t = e.touches[0]; if (Math.hypot(t.clientX-st[0], t.clientY-st[1]) > 10) clear(); } }, {passive:true});
+  mc.addEventListener("touchend", clear); mc.addEventListener("touchcancel", clear);
+  mc.addEventListener("contextmenu", e => e.preventDefault());
+  map.on("contextmenu", e => { if (Date.now()-fired < 1500) return; openMark(e.latlng.lat, e.latlng.lng, 0, "Þar sem þú smelltir"); });
+})();
+
+/* ---------- Ping ---------- */
+const pingSheet = document.getElementById("pingSheet"), myName = document.getElementById("myName");
+const pingPrev = document.getElementById("pingPrev"), pingSms = document.getElementById("pingSms"), pingMsg = document.getElementById("pingMsg");
+myName.value = LS.get("me", "");
+myName.oninput = () => { LS.set("me", myName.value.trim()); buildPing(); };
+let pingPoint = null, pingText = "";
+function shareUrl(o){
+  const q = new URLSearchParams();
+  q.set("p", `${o.lat.toFixed(5)},${o.lon.toFixed(5)}`);
+  if (o.acc) q.set("a", Math.round(o.acc));
+  q.set("t", Math.round(o.ts/1000));
+  q.set("k", o.type);
+  if (o.name) q.set("n", o.name);
+  if (o.from) q.set("f", o.from);
+  return location.origin + location.pathname + "#" + q.toString();
+}
+function buildPing(){
+  const me = myName.value.trim();
+  let o;
+  if (pingPoint){
+    o = {lat:pingPoint.lat, lon:pingPoint.lon, acc:pingPoint.acc, ts:pingPoint.ts, type:pingPoint.type, name:pingPoint.name, from:me};
+  } else {
+    if (!pos){ pingText = ""; pingPrev.textContent = watchId == null ? "Kveiki á GPS…" : "Bíð eftir GPS…"; pingSms.href = "#"; return; }
+    o = {lat:pos.lat, lon:pos.lon, acc:pos.acc, ts:pos.t, type:"ping", from:me};
+  }
+  const what = o.type === "ping" ? "Ping" : `${TYPES[o.type].label}${o.name ? " (" + o.name + ")" : ""}`;
+  pingText = `${what}${me ? " frá " + me : ""} kl ${hhmm(o.ts)}\n${ddm(o.lat,"N","S")} ${ddm(o.lon,"A","V")}${o.acc ? ` ±${Math.round(o.acc)} m` : ""}\n${shareUrl(o)}`;
+  pingPrev.textContent = pingText;
+  pingSms.href = "sms:?&body=" + encodeURIComponent(pingText);
+  const age = Date.now() - o.ts;
+  msg(pingMsg, !pingPoint && age > 120000 ? `GPS-staðsetningin er ${Math.round(age/60000)} mín gömul.` : (!me ? "Settu nafnið þitt svo þau viti frá hverjum pingið er." : ""), !pingPoint && age > 120000);
+}
+function openPing(point){
+  pingPoint = point || null;
+  document.getElementById("pingTitle").textContent = point ? "Senda punkt" : "Senda ping";
+  if (!point && watchId == null) startGps();
+  buildPing(); openPanel(pingSheet);
+}
+document.getElementById("btnPing").onclick = () => openPing(null);
+pingSms.onclick = e => { if (!pingText){ e.preventDefault(); } };
+const shareBtn = document.getElementById("pingShare");
+if (!navigator.share) shareBtn.hidden = true;
+shareBtn.onclick = async () => { if (!pingText) return; try{ await navigator.share({text:pingText}); }catch(e){} };
+async function copyText(t, btn, label){
+  try{ await navigator.clipboard.writeText(t); btn.textContent = "Afritað"; }
+  catch(e){ btn.textContent = "Tókst ekki"; }
+  setTimeout(() => btn.textContent = label, 1800);
+}
+document.getElementById("pingCopy").onclick = e => { if (pingText) copyText(pingText, e.currentTarget, "Afrita"); };
+
+/* Taka á móti ping-hlekk */
+function readHash(){
+  if (!location.hash || location.hash.length < 4) return;
+  const q = new URLSearchParams(location.hash.slice(1));
+  if (!q.has("p")) return;
+  const [lat, lon] = q.get("p").split(",").map(Number);
+  if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return;
+  const ts = (+q.get("t") || Math.round(Date.now()/1000)) * 1000;
+  const type = TYPES[q.get("k")] ? q.get("k") : "ping";
+  const from = (q.get("f") || "").slice(0, 24), name = (q.get("n") || "").slice(0, 40);
+  try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
+  let p = pts.find(x => Math.abs(x.lat-lat) < 1e-5 && Math.abs(x.lon-lon) < 1e-5 && x.ts === ts);
+  if (!p){
+    p = {id:"r" + Date.now().toString(36), lat, lon, acc:+q.get("a") || 0, type: type === "bill" ? "annad" : type, name: type === "bill" && !name ? "Bíll" : name, from, ts};
+    pts.push(p); savePts(); renderPts();
+  }
+  if (typeof follow !== "undefined" && follow){ follow = false; btnGps.classList.remove("follow"); }
+  map.setView([lat, lon], Math.max(map.getZoom(), 14));
+  setTimeout(() => markers[p.id] && markers[p.id].openPopup(), 300);
+  const rel = relFromMe(p);
+  toast(`${p.type === "ping" ? "Ping" : "Punktur"}${from ? " frá " + from : ""} · ${ago(ts)}${rel ? " · " + rel.text : ""}`, 6000);
+}
+window.addEventListener("hashchange", readHash);
+
+/* ---------- Tími til myrkurs ---------- */
+function sunTimes(date, lat, lon, h){
+  const rad = Math.PI/180, dayMs = 864e5, J1970 = 2440588, J2000 = 2451545;
+  const d = date.valueOf()/dayMs - 0.5 + J1970 - J2000;
+  const lw = rad * -lon, phi = rad * lat;
+  const n = Math.round(d - 0.0009 - lw/(2*Math.PI));
+  const ds = 0.0009 + lw/(2*Math.PI) + n;
+  const M = rad * (357.5291 + 0.98560028*ds);
+  const C = rad * (1.9148*Math.sin(M) + 0.02*Math.sin(2*M) + 0.0003*Math.sin(3*M));
+  const L = M + C + rad*102.9372 + Math.PI;
+  const dec = Math.asin(Math.sin(L) * Math.sin(rad*23.4397));
+  const Jnoon = J2000 + ds + 0.0053*Math.sin(M) - 0.0069*Math.sin(2*L);
+  const cw = (Math.sin(h*rad) - Math.sin(phi)*Math.sin(dec)) / (Math.cos(phi)*Math.cos(dec));
+  if (cw < -1 || cw > 1) return null;
+  const w = Math.acos(cw);
+  const Jset = J2000 + 0.0009 + (w + lw)/(2*Math.PI) + n + 0.0053*Math.sin(M) - 0.0069*Math.sin(2*L);
+  const fromJ = j => new Date((j + 0.5 - J1970) * dayMs);
+  return {rise:fromJ(Jnoon - (Jset - Jnoon)), set:fromJ(Jset)};
+}
+const sunChip = document.getElementById("sunChip"), sunTx = document.getElementById("sunTx");
+function dur(ms){ const m = Math.max(0, Math.round(ms/60000)); return m < 60 ? `${m} mín` : `${Math.floor(m/60)} klst ${m%60} mín`; }
+function updateSun(){
+  const c = pos ? {lat:pos.lat, lon:pos.lon} : (() => { const x = map.getCenter(); return {lat:x.lat, lon:x.lng}; })();
+  const now = new Date(), noon = new Date(now); noon.setHours(12, 0, 0, 0);
+  const s = sunTimes(noon, c.lat, c.lon, -0.833), cv = sunTimes(noon, c.lat, c.lon, -6);
+  sunChip.hidden = false; sunChip.className = "ichip";
+  if (!s){ sunTx.textContent = "Sól sest ekki / rís ekki í dag"; return; }
+  if (now < s.rise){ sunTx.innerHTML = `Sólarupprás ${hhmm(s.rise)} <small>eftir ${dur(s.rise-now)}</small>`; sunChip.classList.add("dark"); }
+  else if (now < s.set){
+    const left = s.set - now;
+    sunTx.innerHTML = `Sólsetur ${hhmm(s.set)} <small>${dur(left)}</small>`;
+    if (left < 3600000) sunChip.classList.add("warn");
+  } else if (cv && now < cv.set){
+    sunTx.innerHTML = `Myrkur ${hhmm(cv.set)} <small>${dur(cv.set-now)}</small>`; sunChip.classList.add("warn");
+  } else {
+    const t = new Date(noon.valueOf() + 864e5), s2 = sunTimes(t, c.lat, c.lon, -0.833);
+    sunTx.innerHTML = `Myrkur <small>${s2 ? "birtir " + hhmm(s2.rise) : ""}</small>`; sunChip.classList.add("dark");
+  }
+}
+setInterval(updateSun, 30000);
+map.on("moveend", () => { if (!pos) updateSun(); });
+
+/* ---------- Neyðarskjár ---------- */
+const sosEl = document.getElementById("sos");
+let sosText = "";
+function updateSos(){
+  if (sosEl.hidden) return;
+  if (!pos){
+    document.getElementById("sosBig").textContent = watchId == null ? "GPS slökkt" : "Leita að GPS…";
+    document.getElementById("sosDec").textContent = ""; sosText = "";
+    document.getElementById("sosMeta").textContent = "Farðu út undir bert loft ef þú getur. Skjárinn uppfærist sjálfkrafa.";
+  } else {
+    document.getElementById("sosBig").innerHTML = `${ddm(pos.lat,"N","S")}<br>${ddm(pos.lon,"A","V")}`;
+    document.getElementById("sosDec").textContent = `${pos.lat.toFixed(5)}, ${pos.lon.toFixed(5)}`;
+    const age = Date.now() - pos.t;
+    document.getElementById("sosMeta").innerHTML =
+      `Nákvæmni ±${Math.round(pos.acc)} m` + (pos.alt != null ? ` · Hæð ${Math.round(pos.alt)} m` : "") +
+      ` · kl ${new Date(pos.t).toLocaleTimeString("is-IS",{hourCycle:"h23",hour:"2-digit",minute:"2-digit",second:"2-digit"})}` +
+      (age > 60000 ? `<br><span class="warn">Staðsetningin er ${Math.round(age/60000)} mín gömul</span>` : "");
+    sosText = `Staðsetning${myName.value.trim() ? " " + myName.value.trim() : ""} kl ${hhmm(pos.t)}: ${ddm(pos.lat,"N","S")} ${ddm(pos.lon,"A","V")} (${pos.lat.toFixed(5)}, ${pos.lon.toFixed(5)}) ±${Math.round(pos.acc)} m` + (pos.alt != null ? `, hæð ${Math.round(pos.alt)} m` : "");
+  }
+  document.getElementById("sosSms").href = sosText ? "sms:?&body=" + encodeURIComponent(sosText) : "#";
+  const car = pts.find(p => p.type === "bill"), rel = car && relFromMe(car);
+  document.getElementById("sosCarL").hidden = document.getElementById("sosCar").hidden = !rel;
+  if (rel) document.getElementById("sosCar").textContent = `${fmtM(rel.d)} í ${card(rel.b)} (${Math.round(rel.b)}°) — ${ddm(car.lat,"N","S")} ${ddm(car.lon,"A","V")}`;
+}
+function openSos(){ if (watchId == null) startGps(); openPanel(sosEl); updateSos(); }
+document.getElementById("btnSos").onclick = openSos;
+const coordsEl = document.getElementById("coords");
+coordsEl.onclick = openSos;
+coordsEl.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); openSos(); } };
+document.getElementById("sosSms").onclick = e => { if (!sosText) e.preventDefault(); };
+document.getElementById("sosCopy").onclick = e => { if (sosText) copyText(sosText, e.currentTarget, "Afrita hnit"); };
+
+/* Uppfæra við hverja GPS staðsetningu */
+let lastListUpd = 0;
+window.__onPosExtra = () => {
+  updateCar(); updateSos();
+  if (!pingSheet.hidden && !pingPoint) buildPing();
+  if (Date.now() - lastListUpd > 15000){ lastListUpd = Date.now(); updateSun(); if (!sheet.hidden) renderPtList(); }
+};
+renderPts();
+updateSun();
+readHash();
 
 /* ---------- Ræsing ---------- */
 renderList();
