@@ -15,6 +15,8 @@ const rep = (a, b) => { if (!html.includes(a)) throw new Error("Fann ekki: " + a
 rep("https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css", "lib/leaflet.css");
 rep('<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>',
     '<script src="lib/capacitor.js"></script>\n<script src="app.js"></script>\n<script src="lib/leaflet.js"></script>');
+const ver = "0.1." + (process.env.RK_VERSION_CODE || "0");
+html = html.replace("<head>", `<head>\n<script>window.RK_VERSION = "${ver}";</script>`);
 fs.writeFileSync(path.join(www, "index.html"), html);
 fs.copyFileSync(path.join(root, "sw.js"), path.join(www, "sw.js"));
 fs.copyFileSync(path.resolve(__dirname, "..", "src", "app.js"), path.join(www, "app.js"));

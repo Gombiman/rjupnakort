@@ -343,7 +343,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <a href="https://www.stjornarradid.is/verkefni/rekstur-og-eignir-rikisins/eignir-rikisins/rikisjardir-og-annad-land-i-eigu-rikisins/" target="_blank" rel="noopener">Ríkisjarðir — kortavefsjá FSRE</a>
     <a href="https://mapshaper.org" target="_blank" rel="noopener">mapshaper.org — breyta í GeoJSON / WGS84</a>
   </div>
-  <p class="note" style="margin-top:16px">Línur á kortinu eru til hliðsjónar. Úrskurðir, auglýsingar um friðlýsingu og leyfi landeigenda ráða alltaf.</p>
+  <p class="note" id="verNote" style="margin-top:16px"></p>
+  <p class="note" style="margin-top:6px">Línur á kortinu eru til hliðsjónar. Úrskurðir, auglýsingar um friðlýsingu og leyfi landeigenda ráða alltaf.</p>
 </section>
 
 <section id="ptSheet" class="sheet" hidden aria-label="Nýr punktur">
@@ -1553,6 +1554,7 @@ window.__applyAll = () => { applyPower(); onBatt(); updateSun(); updateCar(); };
 /* Opið viðmót fyrir Android appið */
 window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, getPos: () => pos };
 if (window.RK_APP) document.getElementById("getApp").hidden = true;
+document.getElementById("verNote").textContent = window.RK_APP ? `Android app · útgáfa ${window.RK_VERSION || "?"}` : "Vefútgáfa (í vafra)";
 
 /* ---------- Ræsing ---------- */
 renderList();

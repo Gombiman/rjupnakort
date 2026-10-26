@@ -20,6 +20,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      RK_VERSION_CODE: ${{ github.run_number }}
     defaults:
       run:
         working-directory: app
