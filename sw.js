@@ -1,5 +1,5 @@
 /* Rjúpnakort — service worker: vistar síðuna og kortaflísar svo kortið opnist án nets */
-const SHELL = "rk-shell-v3";
+const SHELL = "rk-shell-v4";
 const TILES = "rk-tiles";
 const SHELL_URLS = [
   "./",

@@ -73,6 +73,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #sunChip .ic{background:#d98a1c} #sunChip.warn .ic{background:var(--leyfi)} #sunChip.warn{color:var(--leyfi)}
 #sunChip.dark .ic{background:#3b4a6b} #sunChip.dark{color:var(--fg)}
 #carChip .ic{background:#2577c4}
+#carArrow{transition:transform .15s linear}
+.chiprow{display:flex;gap:6px;align-items:center;max-width:100%}
+.ichip.x2{padding:6px 10px;color:var(--muted);font-size:15px}
+#battChip .ic{background:var(--leyfi)} #battChip.bad .ic{background:var(--bann)} #battChip.bad{color:var(--bann)}
+.setrow{display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.setrow .t{flex:1;min-width:0}
+.setrow .t b{display:block;font-weight:600}
+.setrow .t span{font-size:12.5px;color:var(--muted)}
 #toast{position:fixed;z-index:1300;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 150px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:var(--shadow);max-width:calc(100% - 40px);text-align:center}
 .pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45);display:grid;place-items:center;box-sizing:border-box}
 .pin svg{transform:rotate(45deg);width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
@@ -177,13 +185,20 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 </header>
 
 <div id="chips">
-  <button class="ichip" id="carChip" type="button" hidden>
-    <span class="ic"><svg viewBox="0 0 24 24" id="carArrow"><path d="M12 3v18M5 10l7-7 7 7"/></svg></span>
-    <span class="tx" id="carTx">Bíll</span>
-  </button>
+  <div class="chiprow">
+    <button class="ichip" id="carChip" type="button" hidden>
+      <span class="ic"><svg viewBox="0 0 24 24" id="carArrow"><path d="M12 3v18M5 10l7-7 7 7"/></svg></span>
+      <span class="tx" id="carTx">Bíll</span>
+    </button>
+    <button class="ichip x2" id="tgtClear" type="button" hidden aria-label="Hætta að vísa á punkt">✕</button>
+  </div>
   <div class="ichip" id="sunChip" hidden>
     <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M4.9 10.9l2 2M19.1 10.9l-2 2"/></svg></span>
     <span class="tx" id="sunTx"></span>
+  </div>
+  <div class="ichip" id="battChip" hidden>
+    <span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4"/></svg></span>
+    <span class="tx" id="battTx"></span>
   </div>
 </div>
 
@@ -218,10 +233,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
   <h3>Grunnkort</h3>
   <div class="seg" id="baseSeg"></div>
+  <p class="msg" id="baseMsg" style="margin-top:8px"></p>
+  <label class="f" id="lmiPick" hidden style="margin-top:8px">Lag frá Landmælingum
+    <select id="lmiSel"></select>
+  </label>
 
   <h3>Kort án nets</h3>
   <div class="card">
-    <p class="note">Þysjaðu kortið þannig að veiðisvæðið fylli skjáinn, lokaðu spjaldinu ekki, og ýttu á „Reikna“. Landslagskortið fyrir það svæði vistast í símanum.</p>
+    <p class="note">Þysjaðu kortið þannig að veiðisvæðið fylli skjáinn og ýttu á „Reikna stærð“. Landslagskortið fyrir það svæði vistast í símanum.</p>
     <label class="f">Nákvæmni
       <select id="offZoom">
         <option value="14">Gott (aðdráttur 14)</option>
@@ -303,13 +322,11 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <p class="msg" id="wmsMsg"></p>
   </div>
 
-  <h3>Viðvörun nálægt mörkum</h3>
+  <h3>Stillingar</h3>
   <div class="card">
     <label class="f" for="nearIn">Vara við þegar ég er nær en <b id="nearOut">300 m</b> frá svæði</label>
     <input type="range" id="nearIn" min="50" max="1000" step="50" value="300">
-    <label class="row" style="align-items:center;gap:10px;font-size:14px">
-      <input type="checkbox" class="tog" id="vibIn" checked style="flex:none;min-width:0"> <span style="min-width:0">Titra þegar staða breytist</span>
-    </label>
+    <div id="setList"></div>
   </div>
 
   <h3>Hvar fæ ég gögnin</h3>
@@ -427,7 +444,10 @@ const BUILTIN = [
   { id:"b_fridlyst", name:"Friðlýst svæði", cat:"athuga", owner:"Umhverfisstofnun",
     wfs:[["https://gis.ust.is/geoserver/wfs","fridlyst_svaedi:fridlyst_svaedi"],
          ["https://gis.natt.is/geoserver/wfs","fridlyst_svaedi:fridlyst_svaedi"]],
-    wms:["https://gis.ust.is/geoserver/wms","fridlyst_svaedi:fridlyst_svaedi"] }
+    wms:["https://gis.ust.is/geoserver/wms","fridlyst_svaedi:fridlyst_svaedi"] },
+  { id:"b_thjodl", name:"Þjóðlendur", cat:"info", owner:"Forsætisráðuneytið", wfs:[], wms:null,
+    discover:{servers:["https://gis.natt.is/geoserver/wfs","https://gis.lmi.is/geoserver/wfs","https://gis.ust.is/geoserver/wfs"],
+              re:/þjóðlend|thjodlend|tjodlend|thjodlnd/i, avoid:/kraf|kröf|krof|krafa|claim/i} }
 ];
 const MAX_AGE = 7*24*3600*1000;
 
@@ -444,9 +464,42 @@ const BASES = {
   sat:  {name:"Loftmynd", layer:L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
           {maxZoom:19, attribution:"Esri, Maxar, Earthstar Geographics"})}
 };
+const LMI_WMS = "https://gis.lmi.is/mapcache/web-mercator/wms";
+const LMI_ATTR = "© Landmælingar Íslands / Náttúrufræðistofnun";
+BASES.lmi = {name:"Íslandskort (LMÍ)", layer:null};
+function makeLmi(name){ return L.tileLayer.wms(LMI_WMS, {layers:name, styles:"", format:"image/png", version:"1.1.1", maxZoom:18, attribution:LMI_ATTR}); }
+if (LS.get("lmiLayer", null)) BASES.lmi.layer = makeLmi(LS.get("lmiLayer"));
 let baseKey = LS.get("base", "topo");
-if (!BASES[baseKey]) baseKey = "topo";
+if (!BASES[baseKey] || !BASES[baseKey].layer) baseKey = "topo";
 BASES[baseKey].layer.addTo(map);
+function probeWms(name){
+  return new Promise(res => {
+    const img = new Image(); let done = false;
+    const fin = v => { if (!done){ done = true; clearTimeout(t); res(v); } };
+    const t = setTimeout(() => fin(false), 10000);
+    img.onload = () => fin(img.naturalWidth > 1);
+    img.onerror = () => fin(false);
+    img.src = `${LMI_WMS}?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=${encodeURIComponent(name)}&STYLES=&SRS=EPSG:3857&BBOX=-2460000,9360000,-2410000,9410000&WIDTH=256&HEIGHT=256&FORMAT=image/png`;
+  });
+}
+async function discoverLmi(){
+  let names = [];
+  try{
+    const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 20000);
+    const r = await fetch(LMI_WMS + "?service=WMS&request=GetCapabilities&version=1.1.1", {signal:ctl.signal});
+    clearTimeout(tm);
+    const x = new DOMParser().parseFromString(await r.text(), "application/xml");
+    names = [...x.getElementsByTagName("Layer")].map(l => { const n = [...l.children].find(c => c.tagName === "Name"); return n ? n.textContent.trim() : null; }).filter(Boolean);
+  }catch(e){}
+  if (names.length) LS.set("lmiNames", names);
+  const pref = [/^lmi_kort$/i, /kort/i, /grunn/i, /lmi/i, /topo/i];
+  let cand = [];
+  for (const re of pref) for (const n of names) if (re.test(n) && !/loft|ortho|mynd|hillshade|skygg/i.test(n) && !cand.includes(n)) cand.push(n);
+  if (!names.length) cand = ["LMI_Kort", "LMI_kort", "lmi_kort", "Grunnkort", "LMI_Island", "IS50V", "is50v"];
+  for (const n of cand.slice(0, 8)) if (await probeWms(n)) return n;
+  for (const n of names.slice(0, 6)) if (!cand.includes(n) && await probeWms(n)) return n;
+  return null;
+}
 
 L.control.zoom({position:"topright"}).addTo(map);
 const renderer = L.canvas({padding:.5});
@@ -578,7 +631,17 @@ async function loadBuiltin(l, force){
   if (!force && cached && !stale) return;
   if (!navigator.onLine && cached) return;
   if (!cached) setStatus(l, "Sæki gögn…", "l");
-  for (const [url, type] of b.wfs){
+  let sources = b.wfs;
+  if (b.discover){
+    let found = LS.get("disc:" + b.id, null);
+    if (!found || force){ setStatus(l, "Leita á opnum kortaþjónum…", "l"); found = await discoverWfs(b.discover); if (found) LS.set("disc:" + b.id, found); }
+    if (!found){
+      if (!cached) setStatus(l, "Fannst ekki á opnum kortaþjónum. Hægt er að flytja inn skrá.", "e");
+      return;
+    }
+    sources = [found];
+  }
+  for (const [url, type] of sources){
     try{
       const gj = await fetchWfs(url, type);
       l.updated = Date.now(); l.kind = "vector"; saveLayers();
@@ -591,8 +654,28 @@ async function loadBuiltin(l, force){
   }
   if (cached) { setStatus(l, `Vistað ${fmtDate(l.updated)} · gat ekki uppfært`, "w"); return; }
   // Varaleið: sýna sem mynd
-  drawWms(l, b.wms[0], b.wms[1]);
+  const wmsSrc = b.wms || (sources[0] ? [sources[0][0].replace(/\/wfs$/, "/wms"), sources[0][1]] : null);
+  if (!wmsSrc) return setStatus(l, "Gögn fengust ekki", "e");
+  drawWms(l, wmsSrc[0], wmsSrc[1]);
   setStatus(l, "Aðeins mynd — engin viðvörun (vektorgögn fengust ekki)", "w");
+}
+async function discoverWfs(d){
+  for (const srv of d.servers){
+    try{
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 30000);
+      const r = await fetch(`${srv}?service=WFS&version=1.1.0&request=GetCapabilities`, {signal:ctl.signal});
+      clearTimeout(tm);
+      if (!r.ok) continue;
+      const x = new DOMParser().parseFromString(await r.text(), "application/xml");
+      const fts = [...x.getElementsByTagNameNS("*", "FeatureType")].map(ft => {
+        const g = tag => { const e = ft.getElementsByTagNameNS("*", tag)[0]; return e ? e.textContent.trim() : ""; };
+        return {name:g("Name"), title:g("Title")};
+      }).filter(f => f.name && (d.re.test(f.name) || d.re.test(f.title)));
+      fts.sort((a, b) => (d.avoid.test(a.name + a.title) ? 1 : 0) - (d.avoid.test(b.name + b.title) ? 1 : 0));
+      if (fts.length) return [srv, fts[0].name];
+    }catch(e){}
+  }
+  return null;
 }
 function fmtDate(t){ if (!t) return "—"; const d = new Date(t); return `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`; }
 
@@ -640,13 +723,40 @@ function renderList(){
 }
 
 /* ---------- Grunnkort hnappar ---------- */
-const seg = document.getElementById("baseSeg");
+const seg = document.getElementById("baseSeg"), baseMsg = document.getElementById("baseMsg");
+const lmiPick = document.getElementById("lmiPick"), lmiSel = document.getElementById("lmiSel");
+function setBase(k){
+  if (BASES[baseKey].layer) map.removeLayer(BASES[baseKey].layer);
+  baseKey = k; BASES[k].layer.addTo(map); LS.set("base", k);
+  seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x.dataset.k === k));
+  renderLmiPick();
+}
+function renderLmiPick(){
+  const names = LS.get("lmiNames", []);
+  lmiPick.hidden = !(baseKey === "lmi" && names.length > 1);
+  if (lmiPick.hidden) return;
+  lmiSel.innerHTML = names.map(n => `<option${n === LS.get("lmiLayer") ? " selected" : ""}>${esc(n)}</option>`).join("");
+}
+lmiSel.onchange = () => {
+  LS.set("lmiLayer", lmiSel.value);
+  const old = BASES.lmi.layer; BASES.lmi.layer = makeLmi(lmiSel.value);
+  if (baseKey === "lmi"){ if (old) map.removeLayer(old); BASES.lmi.layer.addTo(map); }
+};
 for (const [k, b] of Object.entries(BASES)){
-  const btn = document.createElement("button"); btn.type="button"; btn.textContent = b.name; btn.setAttribute("aria-pressed", k===baseKey);
-  btn.onclick = () => { map.removeLayer(BASES[baseKey].layer); baseKey = k; BASES[k].layer.addTo(map); LS.set("base", k);
-    seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x===btn)); };
+  const btn = document.createElement("button"); btn.type="button"; btn.dataset.k = k; btn.textContent = b.name; btn.setAttribute("aria-pressed", k===baseKey);
+  btn.onclick = async () => {
+    if (k === "lmi" && !BASES.lmi.layer){
+      msg(baseMsg, "Leita að korti hjá Landmælingum…");
+      const n = await discoverLmi();
+      if (!n) return msg(baseMsg, "Náði ekki sambandi við kortaþjón Landmælinga. Reyndu aftur á neti.", true);
+      LS.set("lmiLayer", n); BASES.lmi.layer = makeLmi(n);
+      msg(baseMsg, `Notar lagið „${n}“.`);
+    } else msg(baseMsg, k === "lmi" ? `Notar lagið „${LS.get("lmiLayer")}“. Kort án nets vistar aðeins Landslag.` : "");
+    setBase(k);
+  };
   seg.appendChild(btn);
 }
+renderLmiPick();
 
 /* ---------- Innflutningur ---------- */
 const fileIn = document.getElementById("fileIn"), impForm = document.getElementById("impForm"), impMsg = document.getElementById("impMsg");
@@ -745,11 +855,28 @@ document.getElementById("wmsAdd").onclick = () => {
 };
 
 /* ---------- Stillingar ---------- */
-const nearIn = document.getElementById("nearIn"), nearOut = document.getElementById("nearOut"), vibIn = document.getElementById("vibIn");
+const nearIn = document.getElementById("nearIn"), nearOut = document.getElementById("nearOut");
 nearIn.value = LS.get("near", 300); nearOut.textContent = nearIn.value + " m";
-vibIn.checked = LS.get("vib", true);
 nearIn.oninput = () => { nearOut.textContent = nearIn.value + " m"; LS.set("near", +nearIn.value); evaluate(); };
-vibIn.onchange = () => LS.set("vib", vibIn.checked);
+const SETTINGS = [
+  ["wake",      "Halda skjánum vakandi", "Skjárinn slokknar ekki á meðan GPS er í gangi. Notar mest af rafhlöðunni.", true],
+  ["compass",   "Áttaviti", "Örin að bílnum eða punktinum snýst með símanum.", true],
+  ["vib",       "Titra við viðvaranir", "Titrar þegar þú nálgast eða ferð inn á svæði.", true],
+  ["sun",       "Tími til myrkurs", "Niðurtalning í sólsetur efst til vinstri.", true],
+  ["carline",   "Lína að bíl eða punkti", "Brotin lína frá þér að skotmarkinu.", true],
+  ["battery",   "Rafhlöðuvakt", "Varar við þegar rafhlaðan fer undir 30% og 15%.", true],
+  ["autosaver", "Sparnaður sjálfvirkt undir 20%", "Kveikir á sparnaðarham þegar rafhlaðan er lág og síminn ekki í hleðslu.", true],
+  ["saver",     "Sparnaðarhamur", "Skjárinn má slökkva á sér, áttavitinn slökktur og GPS mælir sjaldnar.", false]
+];
+const S = Object.assign(Object.fromEntries(SETTINGS.map(x => [x[0], x[3]])), {vib:LS.get("vib", true)}, LS.get("set", {}));
+const setList = document.getElementById("setList");
+for (const [k, title, desc] of SETTINGS){
+  const row = document.createElement("label"); row.className = "setrow";
+  row.innerHTML = `<div class="t"><b>${esc(title)}</b><span>${esc(desc)}</span></div>`;
+  const t = document.createElement("input"); t.type = "checkbox"; t.className = "tog"; t.id = "set_" + k; t.checked = !!S[k];
+  t.onchange = () => { S[k] = t.checked; LS.set("set", S); if (window.__applyAll) window.__applyAll(); };
+  row.appendChild(t); setList.appendChild(row);
+}
 
 /* ---------- Spjald ---------- */
 const sheet = document.getElementById("sheet"), scrim = document.getElementById("scrim");
@@ -774,14 +901,18 @@ function ddm(v, pos, neg){
 async function keepAwake(){
   try{ if ("wakeLock" in navigator && !wake) { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => wake = null); } }catch(e){}
 }
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && watchId != null) keepAwake(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && watchId != null && wakeAllowed()) keepAwake(); });
+function wakeAllowed(){ return S.wake && !(window.__saverActive && window.__saverActive()); }
+function gpsOpts(){ return (window.__saverActive && window.__saverActive()) ? {enableHighAccuracy:true, maximumAge:20000, timeout:60000} : {enableHighAccuracy:true, maximumAge:3000, timeout:30000}; }
+function releaseWake(){ try{ wake && wake.release(); }catch(e){} wake = null; }
 
 function startGps(){
   if (!("geolocation" in navigator)) return showState("none", "GPS ekki í boði", "Vafrinn styður ekki staðsetningu");
   showState("none", "Leita að GPS…", "Getur tekið nokkrar sekúndur úti");
-  watchId = navigator.geolocation.watchPosition(onPos, onErr, {enableHighAccuracy:true, maximumAge:3000, timeout:30000});
+  watchId = navigator.geolocation.watchPosition(onPos, onErr, gpsOpts());
   btnGps.classList.add("on"); follow = true; btnGps.classList.add("follow");
-  keepAwake();
+  if (wakeAllowed()) keepAwake();
+  if (window.__startCompass) window.__startCompass();
 }
 function onPos(p){
   const c = p.coords; pos = {lat:c.latitude, lon:c.longitude, acc:c.accuracy, alt:c.altitude, hd:c.heading, sp:c.speed, t:p.timestamp};
@@ -792,7 +923,7 @@ function onPos(p){
     map.setView(ll, Math.max(map.getZoom(), 14));
   } else { meMarker.setLatLng(ll); accCircle.setLatLng(ll).setRadius(pos.acc); }
   const hd = meMarker.getElement() && meMarker.getElement().querySelector(".hd");
-  if (hd){ if (pos.hd != null && !isNaN(pos.hd) && (pos.sp||0) > 0.5){ hd.hidden = false; hd.style.transform = `rotate(${pos.hd}deg)`; } else hd.hidden = true; }
+  if (hd && !(window.__headingFresh && window.__headingFresh() != null)){ if (pos.hd != null && !isNaN(pos.hd) && (pos.sp||0) > 0.5){ hd.hidden = false; hd.style.transform = `rotate(${pos.hd}deg)`; } else hd.hidden = true; }
   if (follow) map.panTo(ll, {animate:true});
   document.getElementById("cLatLon").textContent = `${ddm(pos.lat,"N","S")}  ${ddm(pos.lon,"A","V")}`;
   document.getElementById("cMeta").textContent =
@@ -808,6 +939,7 @@ function stopGps(){
   if (watchId != null) navigator.geolocation.clearWatch(watchId);
   watchId = null; btnGps.classList.remove("on","follow"); follow = false;
   try{ wake && wake.release(); }catch(e){}
+  if (window.__applyAll) window.__applyAll();
 }
 btnGps.onclick = () => {
   if (watchId == null) return startGps();
@@ -854,7 +986,7 @@ function evaluate(){
   else { level=0; cls="none"; title="Engin svæðisgögn"; sub="Opnaðu lög og bættu við gögnum — viðvaranir óvirkar"; }
   if (top && top.l.cat !== "info" && inside.find(x => x.l.cat === "info")) sub += " · " + inside.find(x => x.l.cat === "info").f.name;
   showState(cls, title, sub);
-  if (lastLevel != null && level > lastLevel && level >= 2 && vibIn.checked && navigator.vibrate){
+  if (lastLevel != null && level > lastLevel && level >= 2 && S.vib && navigator.vibrate){
     try{ navigator.vibrate(level >= 5 ? [400,150,400,150,400] : [250,120,250]); }catch(e){}
   }
   lastLevel = level;
@@ -1007,7 +1139,7 @@ function popupFor(p){
     <div style="font-size:12px;color:#667">${ago(p.ts)}${p.acc ? ` · ±${Math.round(p.acc)} m` : ""}</div>
     <div class="dist">${rel ? rel.text + " frá þér" : "Kveiktu á GPS til að sjá fjarlægð"}</div>
     <div style="font:500 12px var(--f-mono)">${ddm(p.lat,"N","S")} ${ddm(p.lon,"A","V")}</div>
-    <div class="pb"><button type="button" data-share="${p.id}">Senda punkt</button>
+    <div class="pb"><button type="button" data-tgt="${p.id}">Vísa leið</button><button type="button" data-share="${p.id}">Senda punkt</button>
     ${p.type !== "bill" ? `<button type="button" data-car="${p.id}">Gera að bíl</button>` : ""}
     <button type="button" data-del="${p.id}">Eyða</button></div></div>`;
 }
@@ -1023,6 +1155,7 @@ function renderPts(){
 }
 map.on("popupopen", e => {
   const el = e.popup.getElement(); if (!el) return;
+  el.querySelectorAll("[data-tgt]").forEach(b => b.onclick = () => { setTarget(b.dataset.tgt); map.closePopup(); toast("Örin efst til vinstri vísar nú á punktinn"); });
   el.querySelectorAll("[data-share]").forEach(b => b.onclick = () => { const p = pts.find(x => x.id === b.dataset.share); if (p) openPing(p); });
   el.querySelectorAll("[data-car]").forEach(b => b.onclick = () => {
     const p = pts.find(x => x.id === b.dataset.car); if (!p) return;
@@ -1059,30 +1192,50 @@ document.getElementById("clrPings").onclick = (ev) => {
   pts = pts.filter(p => p.type !== "ping"); savePts(); renderPts();
 };
 
-/* Bíll */
+/* Bíll og skotmark */
 const carChip = document.getElementById("carChip"), carTx = document.getElementById("carTx"), carArrow = document.getElementById("carArrow");
+const tgtClear = document.getElementById("tgtClear");
+function currentTarget(){ const id = LS.get("target", null); return (id && pts.find(p => p.id === id)) || pts.find(p => p.type === "bill") || null; }
+function turnText(r){
+  r = ((r % 360) + 540) % 360 - 180; const a = Math.abs(r);
+  if (a < 15) return "beint áfram";
+  if (a > 160) return "snúðu við";
+  return `${Math.round(a)}° til ${r > 0 ? "hægri" : "vinstri"}`;
+}
+let lastRot = 0;
 function updateCar(){
-  const car = pts.find(p => p.type === "bill");
-  carChip.hidden = !car;
-  if (!car){ if (carLine){ map.removeLayer(carLine); carLine = null; } return; }
-  const rel = relFromMe(car);
+  const tg = currentTarget();
+  carChip.hidden = !tg; tgtClear.hidden = !tg || tg.type === "bill";
+  if ((!tg || !S.carline || !pos) && carLine){ map.removeLayer(carLine); carLine = null; }
+  if (!tg) return;
+  const t = TYPES[tg.type] || TYPES.annad;
+  carChip.querySelector(".ic").style.background = t.color;
+  const label = tg.type === "bill" ? "Bíll" : esc(ptTitle(tg));
+  const rel = relFromMe(tg);
   if (rel){
-    carTx.innerHTML = `Bíll ${fmtM(rel.d)} <small>${card(rel.b)} ${Math.round(rel.b)}°</small>`;
-    carArrow.style.transform = `rotate(${rel.b}deg)`;
-    const ll = [[pos.lat, pos.lon], [car.lat, car.lon]];
-    if (!carLine) carLine = L.polyline(ll, {color:"#2577c4", weight:2.5, dashArray:"6 8", opacity:.85, interactive:false}).addTo(map);
-    else carLine.setLatLngs(ll);
+    const hv = window.__headingFresh ? window.__headingFresh() : null;
+    let rot = hv == null ? rel.b : rel.b - hv;
+    let d = ((rot - lastRot) % 360 + 540) % 360 - 180; rot = lastRot + d; lastRot = rot;
+    carTx.innerHTML = `${label} ${fmtM(rel.d)} <small>${hv == null ? card(rel.b) + " " + Math.round(rel.b) + "°" : turnText(rel.b - hv)}</small>`;
+    carArrow.style.transform = `rotate(${rot}deg)`;
+    if (S.carline){
+      const ll = [[pos.lat, pos.lon], [tg.lat, tg.lon]];
+      if (!carLine) carLine = L.polyline(ll, {color:t.color, weight:2.5, dashArray:"6 8", opacity:.85, interactive:false}).addTo(map);
+      else carLine.setLatLngs(ll).setStyle({color:t.color});
+    }
   } else {
-    carTx.innerHTML = `Bíll merktur <small>kveiktu á GPS</small>`;
+    carTx.innerHTML = `${label} <small>kveiktu á GPS</small>`;
     carArrow.style.transform = "";
   }
 }
 carChip.onclick = () => {
-  const car = pts.find(p => p.type === "bill"); if (!car) return;
-  if (typeof follow !== "undefined" && follow){ follow = false; btnGps.classList.remove("follow"); }
-  if (pos) map.fitBounds([[pos.lat, pos.lon], [car.lat, car.lon]], {padding:[70,70], maxZoom:16});
-  else map.setView([car.lat, car.lon], Math.max(map.getZoom(), 14));
+  const tg = currentTarget(); if (!tg) return;
+  if (follow){ follow = false; btnGps.classList.remove("follow"); }
+  if (pos) map.fitBounds([[pos.lat, pos.lon], [tg.lat, tg.lon]], {padding:[70,70], maxZoom:16});
+  else map.setView([tg.lat, tg.lon], Math.max(map.getZoom(), 14));
 };
+tgtClear.onclick = () => { LS.set("target", null); updateCar(); toast(pts.some(p => p.type === "bill") ? "Vísar aftur á bílinn" : "Hætt að vísa á punkt"); };
+function setTarget(id){ LS.set("target", id); updateCar(); }
 
 /* Nýr punktur */
 const ptSheet = document.getElementById("ptSheet"), ptTypes = document.getElementById("ptTypes");
@@ -1199,6 +1352,7 @@ function readHash(){
     p = {id:"r" + Date.now().toString(36), lat, lon, acc:+q.get("a") || 0, type: type === "bill" ? "annad" : type, name: type === "bill" && !name ? "Bíll" : name, from, ts};
     pts.push(p); savePts(); renderPts();
   }
+  setTarget(p.id);
   if (typeof follow !== "undefined" && follow){ follow = false; btnGps.classList.remove("follow"); }
   map.setView([lat, lon], Math.max(map.getZoom(), 14));
   setTimeout(() => markers[p.id] && markers[p.id].openPopup(), 300);
@@ -1229,6 +1383,7 @@ function sunTimes(date, lat, lon, h){
 const sunChip = document.getElementById("sunChip"), sunTx = document.getElementById("sunTx");
 function dur(ms){ const m = Math.max(0, Math.round(ms/60000)); return m < 60 ? `${m} mín` : `${Math.floor(m/60)} klst ${m%60} mín`; }
 function updateSun(){
+  if (!S.sun){ sunChip.hidden = true; return; }
   const c = pos ? {lat:pos.lat, lon:pos.lon} : (() => { const x = map.getCenter(); return {lat:x.lat, lon:x.lng}; })();
   const now = new Date(), noon = new Date(now); noon.setHours(12, 0, 0, 0);
   const s = sunTimes(noon, c.lat, c.lon, -0.833), cv = sunTimes(noon, c.lat, c.lon, -6);
@@ -1291,6 +1446,93 @@ window.__onPosExtra = () => {
 renderPts();
 updateSun();
 readHash();
+
+/* ---------- Áttaviti ---------- */
+let heading = null, headingT = 0, oriOn = false, oriFrame = 0, oriLast = 0;
+window.__headingFresh = () => (S.compass && heading != null && Date.now() - headingT < 3000) ? heading : null;
+function onOri(e){
+  let h = null;
+  if (typeof e.webkitCompassHeading === "number") h = e.webkitCompassHeading;
+  else if (e.absolute && e.alpha != null) h = (360 - e.alpha) % 360;
+  if (h == null) return;
+  const so = (screen.orientation && screen.orientation.angle) || 0;
+  h = (h + so + 360) % 360;
+  if (heading == null) heading = h;
+  else { const d = ((h - heading + 540) % 360) - 180; heading = (heading + d * 0.2 + 360) % 360; }
+  headingT = Date.now();
+  if (!oriFrame && Date.now() - oriLast > 120){
+    oriFrame = requestAnimationFrame(() => {
+      oriFrame = 0; oriLast = Date.now();
+      updateCar();
+      const hd = meMarker && meMarker.getElement() && meMarker.getElement().querySelector(".hd");
+      if (hd){ hd.hidden = false; hd.style.transform = `rotate(${heading}deg)`; }
+    });
+  }
+}
+function startCompass(){
+  if (oriOn || !S.compass || saverActive()) return;
+  const ev = "ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation";
+  const go = () => { window.addEventListener(ev, onOri); oriOn = ev; };
+  go();
+  try{
+    if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function")
+      DeviceOrientationEvent.requestPermission().catch(() => {});
+  }catch(e){}
+}
+function stopCompass(){
+  if (oriOn){ window.removeEventListener(oriOn, onOri); oriOn = false; }
+  heading = null; updateCar();
+  const hd = meMarker && meMarker.getElement() && meMarker.getElement().querySelector(".hd");
+  if (hd) hd.hidden = true;
+}
+window.__startCompass = startCompass;
+
+/* ---------- Rafhlaða og sparnaður ---------- */
+let batt = null, battWarnedAt = 1;
+const battChip = document.getElementById("battChip"), battTx = document.getElementById("battTx");
+function saverActive(){ return !!(S.saver || (S.autosaver && batt && !batt.charging && batt.level <= 0.2)); }
+window.__saverActive = saverActive;
+function onBatt(){
+  if (!batt){ battChip.hidden = true; return; }
+  const lvl = batt.level, pct = Math.round(lvl * 100);
+  const low = S.battery && !batt.charging && lvl <= 0.3;
+  battChip.hidden = !low;
+  battChip.classList.toggle("bad", lvl <= 0.15);
+  battTx.innerHTML = `Rafhlaða ${pct}%${saverActive() ? " <small>sparnaður</small>" : ""}`;
+  if (S.battery && !batt.charging){
+    const step = lvl <= 0.15 ? 0.15 : lvl <= 0.3 ? 0.3 : 1;
+    if (step < battWarnedAt){
+      battWarnedAt = step;
+      toast(step === 0.15 ? `Rafhlaðan er ${pct}%. Íhugaðu að snúa við eða spara símann fyrir neyð.` : `Rafhlaðan er ${pct}%.`, 7000);
+      try{ S.vib && navigator.vibrate && navigator.vibrate([200, 100, 200]); }catch(e){}
+    }
+  }
+  if (batt.charging) battWarnedAt = 1;
+  applyPower();
+}
+let lastSaver = null;
+function applyPower(){
+  const sv = saverActive();
+  if (sv !== lastSaver){
+    const first = lastSaver === null; lastSaver = sv;
+    if (watchId != null){
+      navigator.geolocation.clearWatch(watchId);
+      watchId = navigator.geolocation.watchPosition(onPos, onErr, gpsOpts());
+    }
+    if (!first) toast(sv ? "Sparnaðarhamur virkur: skjárinn má slökkva á sér og áttavitinn er af." : "Sparnaðarhamur af.");
+  }
+  if (watchId != null && wakeAllowed()) keepAwake(); else releaseWake();
+  if (watchId != null && S.compass && !sv) startCompass(); else stopCompass();
+}
+if (navigator.getBattery){
+  navigator.getBattery().then(b => {
+    batt = b;
+    b.addEventListener("levelchange", onBatt);
+    b.addEventListener("chargingchange", onBatt);
+    onBatt();
+  }).catch(() => {});
+}
+window.__applyAll = () => { applyPower(); onBatt(); updateSun(); updateCar(); };
 
 /* ---------- Ræsing ---------- */
 renderList();
