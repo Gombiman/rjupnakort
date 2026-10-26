@@ -263,7 +263,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
   <h3>Punktar</h3>
   <div class="card">
-    <p class="note">Haltu fingri á kortinu til að merkja punkt þar, eða ýttu á „Merkja hér“. Ping frá öðrum birtast hér þegar þú opnar hlekkinn þeirra.</p>
+    <p class="note">Haltu fingri á kortinu til að merkja punkt þar, eða ýttu á „Merkja hér“. Ping frá öðrum birtast hér þegar þú opnar hlekkinn þeirra. Ýttu á ✕ tvisvar til að eyða punkti.</p>
     <div id="ptList"></div>
     <div class="row">
       <button class="btn sec" id="clrPings" type="button">Eyða öllum pingum</button>
@@ -1190,7 +1190,14 @@ function renderPtList(){
       <div class="t"><b>${esc(ptTitle(p))}</b><span>${esc(t.label)} · ${ago(p.ts)}${rel ? " · " + rel.text : ""}</span></div>`;
     const go = document.createElement("button"); go.className = "go"; go.type = "button"; go.textContent = "Sýna";
     go.onclick = () => { closeSheet(); map.setView([p.lat, p.lon], Math.max(map.getZoom(), 14)); markers[p.id] && markers[p.id].openPopup(); };
-    row.appendChild(go); ptList.appendChild(row);
+    const del = document.createElement("button"); del.className = "del"; del.type = "button"; del.textContent = "✕";
+    del.setAttribute("aria-label", "Eyða " + ptTitle(p));
+    del.onclick = () => {
+      if (del.dataset.armed !== "1"){ del.dataset.armed = "1"; del.textContent = "Eyða?"; del.style.color = color("bann");
+        setTimeout(() => { if (del.isConnected){ del.dataset.armed = ""; del.textContent = "✕"; del.style.color = ""; } }, 3000); return; }
+      pts = pts.filter(x => x.id !== p.id); savePts(); map.closePopup(); renderPts();
+    };
+    row.appendChild(go); row.appendChild(del); ptList.appendChild(row);
   }
 }
 document.getElementById("clrPings").onclick = (ev) => {
