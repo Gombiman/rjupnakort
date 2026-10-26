@@ -989,6 +989,7 @@ function evaluate(){
   if (lastLevel != null && level > lastLevel && level >= 2 && S.vib && navigator.vibrate){
     try{ navigator.vibrate(level >= 5 ? [400,150,400,150,400] : [250,120,250]); }catch(e){}
   }
+  if (window.__onLevel) try{ window.__onLevel(level, lastLevel, title, sub); }catch(e){}
   lastLevel = level;
 }
 
@@ -1533,6 +1534,9 @@ if (navigator.getBattery){
   }).catch(() => {});
 }
 window.__applyAll = () => { applyPower(); onBatt(); updateSun(); updateCar(); };
+
+/* Opið viðmót fyrir Android appið */
+window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, getPos: () => pos };
 
 /* ---------- Ræsing ---------- */
 renderList();

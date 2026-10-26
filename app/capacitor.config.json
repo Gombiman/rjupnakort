@@ -1,0 +1,18 @@
+{
+  "appId": "is.gombiman.rjupnakort",
+  "appName": "Rjúpnakort",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "useLegacyBridge": true
+  },
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_rjupa",
+      "iconColor": "#E8590C"
+    }
+  }
+}
