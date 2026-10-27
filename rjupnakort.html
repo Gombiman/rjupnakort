@@ -403,7 +403,8 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
     <div class="group" id="ptList"></div>
     <div class="row2">
       <button class="lnk" id="tgtClear" type="button" hidden>Vísa aftur á bílinn</button>
-      <button class="lnk" id="clrPings" type="button">Eyða öllum pingum</button>
+      <button class="lnk" id="clrPings" type="button" hidden>Eyða öllum pingum</button>
+      <button class="lnk" id="clrKills" type="button" hidden>Eyða rjúpumerkjum</button>
     </div>
 
     <div class="tiles">
@@ -1711,6 +1712,8 @@ map.on("popupopen", e => {
 const ptList = document.getElementById("ptList");
 function renderPtList(){
   ptList.innerHTML = "";
+  document.getElementById("clrPings").hidden = !pts.some(p => p.type === "ping");
+  document.getElementById("clrKills").hidden = !pts.some(p => p.type === "felld");
   if (!pts.length){ ptList.innerHTML = '<div class="empty">Engir punktar enn. Merktu bílinn með + á kortinu.</div>'; return; }
   const cur = currentTarget();
   const sorted = pts.slice().sort((a, b) => (a.type === "bill" ? -1 : 0) - (b.type === "bill" ? -1 : 0) || b.ts - a.ts);
@@ -1742,6 +1745,16 @@ document.getElementById("clrPings").onclick = (ev) => {
   if (b.dataset.armed !== "1"){ b.dataset.armed = "1"; b.textContent = "Ýttu aftur til að eyða"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "Eyða öllum pingum"; }, 3000); return; }
   b.dataset.armed = ""; b.textContent = "Eyða öllum pingum";
   pts = pts.filter(p => p.type !== "ping"); savePts(); renderPts();
+};
+// Rjúpumerki: eyðir merkjunum og stigunum sem fylgja (t.d. eftir prófanir)
+document.getElementById("clrKills").onclick = (ev) => {
+  const b = ev.currentTarget;
+  if (b.dataset.armed !== "1"){ b.dataset.armed = "1"; b.textContent = "Ýttu aftur: stigin fara líka"; b.style.color = color("bann");
+    setTimeout(() => { b.dataset.armed = ""; b.textContent = "Eyða rjúpumerkjum"; b.style.color = ""; }, 3000); return; }
+  b.dataset.armed = ""; b.textContent = "Eyða rjúpumerkjum"; b.style.color = "";
+  const n = pts.filter(p => p.type === "felld").length;
+  pts = pts.filter(p => p.type !== "felld"); savePts(); renderPts();
+  toast(`${n} rjúpumerkjum eytt`);
 };
 
 /* Bíll og skotmark */
