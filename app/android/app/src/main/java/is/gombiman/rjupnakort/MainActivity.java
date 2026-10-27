@@ -10,4 +10,10 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(FelagarPlugin.class);
         super.onCreate(savedInstanceState);
     }
+
+    @Override
+    public void onResume() { super.onResume(); Hopur.visible = true; }
+
+    @Override
+    public void onPause() { Hopur.visible = false; super.onPause(); }
 }

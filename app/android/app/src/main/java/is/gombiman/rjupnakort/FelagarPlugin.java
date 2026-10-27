@@ -50,6 +50,8 @@ public class FelagarPlugin extends Plugin {
         if (call.hasOption("group")) e.putString("group", call.getString("group", "").trim());
         if (call.hasOption("autoReply")) e.putBoolean("autoReply", Boolean.TRUE.equals(call.getBoolean("autoReply", true)));
         if (call.hasOption("hunt")) e.putBoolean("hunt", Boolean.TRUE.equals(call.getBoolean("hunt", false)));
+        if (call.hasOption("masson")) e.putBoolean("masson", !Boolean.FALSE.equals(call.getBoolean("masson", true)));
+        if (call.hasOption("nicks")) e.putString("nicks", call.getString("nicks", ""));
         if (call.hasOption("friends")) {
             JSArray a = call.getArray("friends", new JSArray());
             e.putString("friends", a.toString());
@@ -76,6 +78,24 @@ public class FelagarPlugin extends Plugin {
         JSObject r = new JSObject();
         try { r.put("items", new JSArray(new JSONArray(s).toString())); } catch (Exception ex) { r.put("items", new JSArray()); }
         call.resolve(r);
+    }
+
+    @PluginMethod
+    public void groupSend(PluginCall call) {
+        final String msg = call.getString("msg", "");
+        Felagar.IO.execute(() -> {
+            JSObject r = new JSObject(); r.put("ok", Hopur.send(getContext(), msg));
+            call.resolve(r);
+        });
+    }
+
+    @PluginMethod
+    public void groupFetch(PluginCall call) {
+        final String since = call.getString("since", "12h");
+        Felagar.IO.execute(() -> {
+            try { call.resolve(Hopur.fetch(getContext(), since)); }
+            catch (Exception ex) { call.reject("Ekkert samband: " + ex.getMessage()); }
+        });
     }
 
     @PluginMethod

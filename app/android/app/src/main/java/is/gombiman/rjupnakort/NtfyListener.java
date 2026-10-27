@@ -66,9 +66,11 @@ final class NtfyListener {
         String since = "2m";
         while (!stopFlag && wanted(ctx)) {
             String topic = Felagar.topic(Felagar.group(ctx), Felagar.myPhone(ctx));
+            // Í veiðiham líka hóprásin (Másson-stig félaganna)
+            String gTopic = Felagar.hunt(ctx) ? Hopur.topic(Felagar.group(ctx)) : null;
             HttpURLConnection con = null;
             try {
-                con = (HttpURLConnection) new URL(Felagar.NTFY + topic + "/json?since=" + since).openConnection();
+                con = (HttpURLConnection) new URL(Felagar.NTFY + topic + (gTopic != null ? "," + gTopic : "") + "/json?since=" + since).openConnection();
                 con.setConnectTimeout(10000);
                 con.setReadTimeout(90000);   // ntfy sendir keepalive á ~45 sek fresti
                 current = con;
@@ -82,7 +84,8 @@ final class NtfyListener {
                         String id = ev.optString("id");
                         since = id.length() > 0 ? id : since;
                         if (!remember(id)) continue;
-                        Felagar.onNtfy(ctx, ev.optString("message"));
+                        if (gTopic != null && gTopic.equals(ev.optString("topic"))) Hopur.onMessage(ctx, ev.optString("message"));
+                        else Felagar.onNtfy(ctx, ev.optString("message"));
                     }
                 }
             } catch (Exception e) {

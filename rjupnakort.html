@@ -110,7 +110,7 @@ body.capture #huntCard,body.capture #mapfabs,body.capture #carChip,body.capture 
 /* Flipaslá */
 #tabbar{position:fixed;z-index:1000;left:0;right:0;bottom:0;height:calc(var(--tabh) + env(safe-area-inset-bottom,0px));box-sizing:border-box;
   padding:0 max(0px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(0px,env(safe-area-inset-left,0px));
-  background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
 #tabbar button{border:none;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:600;color:var(--muted)}
 #tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #tabbar button[aria-current="page"]{color:var(--accent);font-weight:700}
@@ -227,6 +227,25 @@ a.btn{text-decoration:none;text-align:center;display:block}
 .msg{font-size:13px;margin:0}
 .msg.err{color:var(--bann)}
 .links{display:grid;gap:6px;font-size:14px}
+
+/* Másson */
+#btnKill svg{stroke:var(--accent)}
+body.masson #btnKill{background:var(--accent)} body.masson #btnKill svg{stroke:#fff}
+#huntKills{border:none;background:var(--soft);color:var(--fg);border-radius:999px;padding:7px 11px;font:700 16px var(--f-display);font-variant-numeric:tabular-nums;flex:none}
+#undoBar{position:fixed;z-index:1310;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 92px);
+  background:var(--fg);color:var(--bg);border-radius:12px;display:flex;align-items:center;gap:6px;padding:4px 4px 4px 16px;box-shadow:var(--shadow);
+  width:max-content;max-width:calc(100% - 40px);font-size:14px;font-weight:600}
+#undoBar[hidden]{display:none}
+#undoBtn{border:none;background:transparent;color:inherit;font:inherit;text-decoration:underline;padding:10px 12px;flex:none}
+.ptrow .rank{width:24px;flex:none;text-align:center;font:700 18px var(--f-display);color:var(--muted)}
+.ptrow .rank.lead{color:var(--accent)}
+.ptrow .score{flex:none;min-width:34px;text-align:right;font:700 28px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.boardhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 4px 8px}
+.boardhead .sect{margin:0}
+.seg.sm button{padding:5px 12px;font-size:13px}
+.killdot{width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:grid;place-items:center;font-size:15px;line-height:1}
+textarea,input[type=number]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box;min-width:0}
+textarea{resize:vertical;font-size:14px;line-height:1.5}
 .links a{color:var(--info)}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .legend{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:13.5px;align-items:center}
@@ -329,6 +348,9 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 </div>
 
 <div id="mapfabs">
+  <button class="fab" id="btnKill" type="button" aria-label="Rjúpa felld">
+    <svg viewBox="0 0 24 24"><path d="M6 15c2-4.5 5.5-6.5 10-5.5l3-2-1 4c0 3.5-2.8 6.5-7.3 6.5H6z"/><path d="M5 3v6M2 6h6"/></svg>
+  </button>
   <button class="fab" id="btnMark" type="button" aria-label="Merkja punkt">
     <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
   </button>
@@ -343,6 +365,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
     <div class="h" id="huntH">Másson activate</div>
     <div id="huntTx">Ýttu til að hefja ferð</div>
   </label>
+  <button type="button" id="huntKills" hidden aria-label="Opna stigatöflu">🦃 0</button>
   <input type="checkbox" class="tog big" id="huntSw" aria-label="Másson activate">
 </div>
 
@@ -395,9 +418,17 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
   </div>
 </section>
 
-<section id="pgFriends" class="page" hidden aria-label="Félagar">
+<section id="pgFriends" class="page" hidden aria-label="Hópurinn">
   <div class="wrapmax">
-    <h1>Félagar</h1>
+    <h1 id="pgFriendsH">Hópurinn</h1>
+    <div class="boardhead">
+      <div class="sect" id="boardH">Másson-stig</div>
+      <div class="seg sm" id="boardSeg"><button type="button" data-m="day" aria-pressed="true">Í dag</button><button type="button" data-m="season" aria-pressed="false">Tímabilið</button></div>
+    </div>
+    <div class="group" id="board"></div>
+    <p class="note" id="boardQuota" hidden style="margin:8px 4px 0;font-weight:600;color:var(--fg)"></p>
+    <p class="note" id="boardNote" style="margin:8px 4px 0"></p>
+    <div class="sect">Finna félaga</div>
     <div id="friendsApp"></div>
     <div id="friendsWeb">
       <div class="group"><div class="ginner">
@@ -409,12 +440,38 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
   </div>
 </section>
 
+<section id="pgLog" class="page" hidden aria-label="Dagbók">
+  <div class="wrapmax">
+    <h1>Dagbók</h1>
+    <div class="tiles" style="margin-top:0">
+      <div class="tile"><div class="k" id="logKillsK">Rjúpur</div><div class="v" id="logKills">0</div></div>
+      <div class="tile"><div class="k">Veiðidagar</div><div class="v" id="logDays">0</div></div>
+      <div class="tile"><div class="k">Gengið, km</div><div class="v" id="logKm">0</div></div>
+    </div>
+    <div class="sect">Ferðir á tímabilinu</div>
+    <div class="group" id="logTrips"></div>
+    <div style="margin-top:12px"><button class="btn sec wide" id="logCopy" type="button">Afrita fyrir veiðiskýrslu</button></div>
+    <p class="note" style="margin:10px 4px 0">Ýttu á ferð til að sjá slóðina og hvar rjúpurnar féllu. Tímabilið telst frá 1. september.</p>
+  </div>
+</section>
+
 <section id="pgSettings" class="page" hidden aria-label="Stillingar">
   <div class="wrapmax">
     <div class="sethead">
       <button class="back" id="setBack" type="button" aria-label="Til baka"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
       <h1>Stillingar</h1>
     </div>
+
+    <div class="sect">Másson</div>
+    <div class="group"><div class="ginner">
+      <div id="massonSet"></div>
+      <label class="f" id="massonBox">Gælunöfn: nafn = gælunafn, ein lína á mann
+        <textarea id="nickIn" rows="6" autocapitalize="off" spellcheck="false"></textarea>
+      </label>
+      <label class="f">Kvóti á dag (autt = enginn)
+        <input type="number" id="quotaIn" min="0" max="50" inputmode="numeric" placeholder="t.d. 5">
+      </label>
+    </div></div>
 
     <div class="sect">Kort</div>
     <div class="group">
@@ -533,7 +590,10 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>Áttaviti
   </button>
   <button type="button" data-tab="friends">
-    <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c2.8 0 5 1.8 5 4.6"/></svg>Félagar
+    <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c2.8 0 5 1.8 5 4.6"/></svg><span id="tabFriendsLbl">Hópurinn</span>
+  </button>
+  <button type="button" data-tab="log">
+    <svg viewBox="0 0 24 24"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/><path d="M9 7.5h6M9 11h4"/></svg>Dagbók
   </button>
 </nav>
 
@@ -624,6 +684,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 </section>
 
 <div id="toast" hidden role="status"></div>
+<div id="undoBar" hidden role="status"><span id="undoTx"></span><button type="button" id="undoBtn">Afturkalla</button></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
@@ -1260,7 +1321,8 @@ const SETTINGS = [
   ["carline",   "Lína að bíl eða punkti", "Brotin lína frá þér að skotmarkinu.", true],
   ["battery",   "Rafhlöðuvakt", "Varar við þegar rafhlaðan fer undir 30% og 15%.", true],
   ["autosaver", "Sparnaður sjálfvirkt undir 20%", "Kveikir á sparnaðarham þegar rafhlaðan er lág og síminn ekki í hleðslu.", true],
-  ["saver",     "Sparnaðarhamur", "Skjárinn má slökkva á sér, áttavitinn slökktur og GPS mælir sjaldnar.", false]
+  ["saver",     "Sparnaðarhamur", "Skjárinn má slökkva á sér, áttavitinn slökktur og GPS mælir sjaldnar.", false],
+  ["masson",    "Másson-hamur", "Másson-stig, gælunöfn og bjórtími. Slökktu til að fá venjulegt viðmót (Tracking).", true]
 ];
 const S = Object.assign(Object.fromEntries(SETTINGS.map(x => [x[0], x[3]])), {vib:LS.get("vib", true)}, LS.get("set", {}));
 const setList = document.getElementById("setList");
@@ -1269,7 +1331,7 @@ for (const [k, title, desc] of SETTINGS){
   row.innerHTML = `<div class="t"><b>${esc(title)}</b><span>${esc(desc)}</span></div>`;
   const t = document.createElement("input"); t.type = "checkbox"; t.className = "tog"; t.id = "set_" + k; t.checked = !!S[k];
   t.onchange = () => { S[k] = t.checked; LS.set("set", S); if (window.__applyAll) window.__applyAll(); };
-  row.appendChild(t); setList.appendChild(row);
+  row.appendChild(t); (k === "masson" ? document.getElementById("massonSet") : setList).appendChild(row);
 }
 
 /* ---------- Spjald ---------- */
@@ -1549,19 +1611,21 @@ const SVG = {
   haetta:'<path d="M12 5v9"/><circle cx="12" cy="18.5" r=".8"/>',
   rjupa: '<path d="M5 14c2-5 6-7 11-6l3-2-1 4c0 4-3 7-8 7H5z"/><circle cx="15" cy="10" r=".6"/>',
   annad: '<circle cx="12" cy="12" r="3.5"/>',
-  ping:  '<circle cx="12" cy="7.5" r="3"/><path d="M6 20c0-4 2.7-6.5 6-6.5s6 2.5 6 6.5"/>'
+  ping:  '<circle cx="12" cy="7.5" r="3"/><path d="M6 20c0-4 2.7-6.5 6-6.5s6 2.5 6 6.5"/>',
+  felld: '<path d="M5 14c2-5 6-7 11-6l3-2-1 4c0 4-3 7-8 7H5z"/><path d="M4 4l4 4M8 4 4 8"/>'
 };
 const TYPES = {
   bill:   {label:"Bíll",   color:"#2577c4"},
   skali:  {label:"Skáli",  color:"#8a5a2b"},
   haetta: {label:"Hætta",  color:"#d62f25"},
-  rjupa:  {label:"Rjúpa",  color:"#5f7d2e"},
+  rjupa:  {label:"Rjúpa séð", color:"#5f7d2e"},
+  felld:  {label:"Rjúpa felld", color:"#9a3c0b"},
   annad:  {label:"Annað",  color:"#55606a"},
   ping:   {label:"Ping",   color:"#9b4fc4"}
 };
 let pts = LS.get("pts", []);
 if (!Array.isArray(pts)) pts = [];
-const savePts = () => LS.set("pts", pts);
+const savePts = () => { LS.set("pts", pts); if (window.__onPtsSaved) window.__onPtsSaved(); };
 const ptLayer = L.layerGroup().addTo(map);
 const markers = {};
 let carLine = null;
@@ -1596,7 +1660,11 @@ function relFromMe(p){
   const d = distM(pos.lat, pos.lon, p.lat, p.lon), b = bearing(pos.lat, pos.lon, p.lat, p.lon);
   return {d, b, text:`${fmtM(d)} · ${card(b)} ${Math.round(b)}°`};
 }
-function ptTitle(p){ return p.name || (p.type === "ping" && p.from) || TYPES[p.type].label; }
+const dn = n => window.__dispName ? window.__dispName(n) : n;
+function ptTitle(p){ return p.name || (p.type === "ping" && p.from && dn(p.from)) || (p.type === "bill" ? carLabel() : (TYPES[p.type] || TYPES.annad).label); }
+// Bíllinn heitir „Bjórinn“ í Másson-ham eftir kl. 16 (bjórinn bíður alltaf í bílnum)
+function carLabel(){ return S.masson !== false && new Date().getHours() >= 16 ? "Bjórinn 🍺" : "Bíll"; }
+function huntTitle(on){ return S.masson !== false ? (on ? "Másson virkur" : "Másson activate") : (on ? "Tracking virkt" : "Tracking"); }
 function pinIcon(type){
   const t = TYPES[type] || TYPES.annad;
   return L.divIcon({className:"", iconSize:[30,30], iconAnchor:[15,30], popupAnchor:[0,-28],
@@ -1604,7 +1672,7 @@ function pinIcon(type){
 }
 function popupFor(p){
   const t = TYPES[p.type] || TYPES.annad, rel = relFromMe(p);
-  const who = p.type === "ping" ? `Ping frá ${esc(p.from || "óþekktum")}` : esc(t.label) + (p.from ? ` · frá ${esc(p.from)}` : "");
+  const who = p.type === "ping" ? `Ping frá ${esc(dn(p.from) || "óþekktum")}` : esc(t.label) + (p.from ? ` · frá ${esc(dn(p.from))}` : "");
   return `<div class="pop"><b>${esc(ptTitle(p))}</b>
     <div style="color:${t.color};font-weight:600">${who}</div>
     <div style="font-size:12px;color:#667">${ago(p.ts)}${p.acc ? ` · ±${Math.round(p.acc)} m` : ""}</div>
@@ -1707,9 +1775,9 @@ function updateCar(){
   }
   const t = TYPES[tg.type] || TYPES.annad;
   carChip.querySelector("svg path").style.fill = t.color;
-  const label = tg.type === "bill" ? "Bíll" : esc(ptTitle(tg));
+  const label = tg.type === "bill" ? esc(carLabel()) : esc(ptTitle(tg));
   const rel = relFromMe(tg);
-  document.getElementById("bdName").textContent = tg.type === "bill" ? "Bíll" : ptTitle(tg);
+  document.getElementById("bdName").textContent = tg.type === "bill" ? carLabel() : ptTitle(tg);
   document.getElementById("bdName").style.color = t.color;
   bigArrow.querySelectorAll("path").forEach(x => { x.setAttribute("fill", x.getAttribute("fill") === "none" ? "none" : t.color); x.setAttribute("stroke", x.getAttribute("stroke") ? t.color : ""); });
   if (rel){
@@ -1744,7 +1812,7 @@ function setTarget(id){ LS.set("target", id); updateCar(); if (!document.getElem
 /* Nýr punktur */
 const ptSheet = document.getElementById("ptSheet"), ptTypes = document.getElementById("ptTypes");
 let draft = null, draftType = "annad";
-for (const k of ["bill","skali","rjupa","haetta","annad"]){
+for (const k of ["bill","felld","rjupa","skali","haetta","annad"]){
   const b = document.createElement("button"); b.type = "button"; b.dataset.k = k; b.textContent = TYPES[k].label;
   b.onclick = () => { draftType = k; ptTypes.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
   ptTypes.appendChild(b);
@@ -1907,6 +1975,12 @@ function updateSun(){
   sunChip.hidden = false; sunChip.className = "tile";
   if (!s){ K.textContent = "Sól"; sunTx.innerHTML = "—<small>sest ekki í dag</small>"; return; }
   if (now < s.rise){ K.textContent = "Sólarupprás"; sunTx.innerHTML = `${hhmm(s.rise)}<small>eftir ${dur(s.rise-now)}</small>`; }
+  else if (S.masson !== false && cv){
+    // Bjórtími = myrkur (bjórinn bíður í bílnum)
+    K.textContent = "🍺 Bjórtími";
+    if (now < cv.set){ sunTx.innerHTML = `${hhmm(cv.set)}<small>eftir ${dur(cv.set-now)}</small>`; if (cv.set - now < 3600000) sunChip.classList.add("warn"); }
+    else sunTx.innerHTML = `Núna<small>bjórinn bíður í bílnum</small>`;
+  }
   else if (now < s.set){
     const left = s.set - now;
     K.textContent = "Sólsetur"; sunTx.innerHTML = `${hhmm(s.set)}<small>eftir ${dur(left)}</small>`;
@@ -2052,7 +2126,8 @@ window.__applyAll = () => { applyPower(); onBatt(); updateSun(); updateCar(); };
 
 /* ---------- Síður og flipar ---------- */
 const pgCompass = document.getElementById("pgCompass"), pgFriends = document.getElementById("pgFriends"), pgSettings = document.getElementById("pgSettings");
-const TABS = ["map", "compass", "friends"];
+const pgLog = document.getElementById("pgLog");
+const TABS = ["map", "compass", "friends", "log"];
 let tab = "map";
 function setTab(t){
   if (!TABS.includes(t)) return;
@@ -2060,9 +2135,11 @@ function setTab(t){
   closeSheet(); document.getElementById("toast").hidden = true;
   pgCompass.hidden = t !== "compass";
   pgFriends.hidden = t !== "friends";
+  pgLog.hidden = t !== "log";
   document.querySelectorAll("#tabbar button").forEach(b => b.dataset.tab === t ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
   if (t === "compass"){ renderPtList(); updateCar(); updateSun(); onBattSafe(); }
-  if (t === "friends" && window.__onFriendsTab) window.__onFriendsTab();
+  if (t === "friends"){ if (window.__massonRefresh) window.__massonRefresh(); if (window.__onFriendsTab) window.__onFriendsTab(); }
+  if (t === "log" && window.__onLogTab) window.__onLogTab();
 }
 function onBattSafe(){ try{ if (typeof onBatt === "function") onBatt(); }catch(e){} }
 document.querySelectorAll("#tabbar button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
@@ -2078,7 +2155,7 @@ function swipeable(el){
     if (i >= 0 && i < TABS.length) setTab(TABS[i]);
   }, {passive:true});
 }
-[pgCompass, pgFriends, document.getElementById("tabbar")].forEach(swipeable);
+[pgCompass, pgFriends, pgLog, document.getElementById("tabbar")].forEach(swipeable);
 
 /* Stillingar */
 function openSettings(){ closeSheet(); pgSettings.hidden = false; document.getElementById("setBaseName").textContent = BASES[baseKey].name; }
@@ -2108,7 +2185,10 @@ function tripText(tr, end){
 function renderHunt(){
   huntSw.checked = hunt;
   huntDot.classList.toggle("on", hunt);
-  document.getElementById("huntH").textContent = hunt ? "Másson virkur" : "Másson activate";
+  document.getElementById("huntH").textContent = huntTitle(hunt);
+  huntSw.setAttribute("aria-label", huntTitle(false));
+  const nk = window.__killsToday ? window.__killsToday() : 0, hk = document.getElementById("huntKills");
+  hk.hidden = !(hunt || nk); hk.textContent = `🦃 ${nk}`;
   if (hunt && track) huntTx.textContent = tripText(track);
   else if (track && track.end) huntTx.textContent = `Síðasta ferð: ${tripText(track, track.end)}`;
   else huntTx.textContent = "Ýttu til að hefja ferð og skrá slóð";
@@ -2145,16 +2225,19 @@ async function setHunt(on){
     saveTrack(); drawTrack();
     if (watchId == null) startGps();
     else if (pos) addTrackPoint(pos);
-    toast(window.RK_APP ? "Másson virkur. Slóðin skráist líka með slökktan skjá." : "Másson virkur. Slóðin skráist á meðan kortið er opið.", 6000);
+    toast(window.RK_APP ? `${huntTitle(true)}. Slóðin skráist líka með slökktan skjá.` : `${huntTitle(true)}. Slóðin skráist á meðan kortið er opið.`, 6000);
   } else if (track){
     track.end = Date.now(); saveTrack(); drawTrack();
     const trips = LS.get("trips", []);
     trips.push({start:track.start, end:track.end, dist:Math.round(track.dist), gain:Math.round(track.gain), loss:Math.round(track.loss)});
-    while (trips.length > 50) trips.shift();
+    while (trips.length > 200){ const old = trips.shift(); IDB.del("trip:" + old.start); }
     LS.set("trips", trips);
-    toast(`Ferð lokið: ${tripText(track, track.end)}`, 9000);
+    if (track.pts.length) IDB.set("trip:" + track.start, track.pts);
+    const beers = S.masson !== false && typeof beersFor === "function" ? ` · ≈ ${String(beersFor(track.dist, track.gain)).replace(".", ",")} bjórar brenndir 🍺` : "";
+    toast(`Ferð lokið: ${tripText(track, track.end)}${beers}`, 9000);
   }
   renderHunt();
+  if (window.__massonRefresh) window.__massonRefresh();
   if (window.__onHunt) window.__onHunt(on);
 }
 let huntArmed = false;
@@ -2296,6 +2379,293 @@ function showSearchResult(r){
 document.getElementById("btnSearch").onclick = () => { openPanel(srchSheet); srchIn.value = ""; runSearch(); setTimeout(() => srchIn.focus(), 50); };
 srchIn.oninput = () => runSearch(false);
 document.getElementById("srchForm").onsubmit = e => { e.preventDefault(); runSearch(true); srchIn.blur(); };
+
+/* ================= Másson: gælunöfn, bjór, rjúpuhnappur, dagbók, kvóti, stigatafla ================= */
+const isMasson = () => S.masson !== false;
+const DEFAULT_NICKS = "Hans = Svenski\nNiklas = Svenski\nSturla = Dúlla Dalli\nStulli = Dúlla Dalli\nAlmarr = Al mar Ka'holic\nGrétar = Gretzky";
+function nickTable(){
+  return String(LS.get("nicks", DEFAULT_NICKS)).split(/\n/).map(l => l.split("=").map(x => x.trim()))
+    .filter(x => x.length === 2 && x[0] && x[1]);
+}
+function dispName(name){
+  if (!name || !isMasson()) return name || "";
+  const n = norm(name);
+  for (const [k, v] of nickTable()) if (n === norm(k) || n.startsWith(norm(k) + " ")) return v;
+  return name;
+}
+window.__dispName = dispName;
+const dayKey = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const today = () => dayKey(Date.now());
+const seasonStart = () => { const d = new Date(); return new Date(d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1, 8, 1).getTime(); };
+const fmtDay = k => { const [y, m, d] = k.split("-"); return `${+d}.${+m}.${y}`; };
+function beersFor(distM_, gainM){
+  const kcal = (distM_ / 1000) * 60 + gainM * 0.6;     // gróft: 60 kcal á km + klifur
+  return Math.max(0, Math.round(kcal / 150 * 2) / 2);  // 150 kcal í bjór, hálfur bjór nákvæmni
+}
+const fmtBeer = n => String(n).replace(".", ",");
+
+/* ---------- Veiðiskráning ---------- */
+let kills = LS.get("kills", []);
+if (!Array.isArray(kills)) kills = [];
+const saveKills = () => LS.set("kills", kills);
+const myKillsOn = day => kills.filter(k => dayKey(k.ts) === day);
+const mySeason = () => kills.filter(k => k.ts >= seasonStart()).length;
+window.__killsToday = () => myKillsOn(today()).length;
+function todayKm(){
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  let m = 0;
+  for (const tr of LS.get("trips", [])) if (tr.end >= t0.getTime()) m += tr.dist || 0;
+  if (hunt && track) m += track.dist || 0;
+  return m;
+}
+// Fellt-merki eldri en sólarhrings hverfa af kortinu (stigin halda sér í dagbókinni)
+(() => {
+  const cut = Date.now() - 24 * 3600e3;
+  if (pts.some(p => p.type === "felld" && p.ts < cut)){ pts = pts.filter(p => !(p.type === "felld" && p.ts < cut)); LS.set("pts", pts); renderPts(); }
+})();
+// Ef nýlegu fellt-merki er eytt af kortinu fer stigið líka
+window.__onPtsSaved = () => {
+  const ids = new Set(pts.map(p => p.id)), cut = Date.now() - 24 * 3600e3, before = kills.length;
+  kills = kills.filter(k => k.ts < cut || ids.has(k.id));
+  if (kills.length !== before){ saveKills(); groupSend("score"); refreshAll(); }
+};
+const undoBar = document.getElementById("undoBar"), undoTx = document.getElementById("undoTx");
+let undoTimer = null, undoFn = null;
+function showUndo(text, fn){
+  undoTx.textContent = text; undoFn = fn; undoBar.hidden = false;
+  toastEl.hidden = true;
+  clearTimeout(undoTimer); undoTimer = setTimeout(() => { undoBar.hidden = true; undoFn = null; }, 7000);
+}
+document.getElementById("undoBtn").onclick = () => { const f = undoFn; undoBar.hidden = true; undoFn = null; if (f) f(); };
+function registerKill(p){
+  const k = {id:p.id, ts:p.ts, lat:p.lat, lon:p.lon};
+  kills.push(k); saveKills();
+  const n = myKillsOn(today()).length, quota = +LS.get("kvoti", 0);
+  let text = isMasson() ? `+1 Másson-stig! 🦃 ${n} í dag` : `Rjúpa skráð · ${n} í dag`;
+  if (quota && n === quota) text = isMasson() ? `Kvóti náð (${n}). Beint í bjórinn 🍺` : `Kvóta dagsins náð (${n})`;
+  else if (quota && n > quota) text += ` · kvótinn var ${quota}`;
+  showUndo(text, () => {
+    kills = kills.filter(x => x.id !== k.id); saveKills();
+    pts = pts.filter(x => x.id !== p.id); LS.set("pts", pts); renderPts();
+    groupSend("score"); refreshAll();
+    toast("Afturkallað");
+  });
+  try{ S.vib && navigator.vibrate && navigator.vibrate(60); }catch(e){}
+  groupSend("kill"); refreshAll();
+}
+document.getElementById("btnKill").onclick = () => {
+  if (!pos){ if (watchId == null) startGps(); toast("Bíð eftir GPS-staðsetningu…"); return; }
+  const p = {id:"k" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), lat:pos.lat, lon:pos.lon, acc:pos.acc, type:"felld", name:"", ts:Date.now()};
+  pts.push(p); LS.set("pts", pts); renderPts();
+  registerKill(p);
+};
+// „Rjúpa felld“ úr + valmyndinni telst líka
+const _ptSaveOld = document.getElementById("ptSave").onclick;
+document.getElementById("ptSave").onclick = () => {
+  const before = pts.length; _ptSaveOld();
+  const p = pts[pts.length - 1];
+  if (pts.length > before && p && p.type === "felld") registerKill(p);
+};
+document.getElementById("huntKills").onclick = () => setTab("friends");
+
+/* ---------- Dagbók ---------- */
+const logBox = document.getElementById("logTrips");
+const viewLayer = L.layerGroup().addTo(map);
+const killIcon = L.divIcon({className:"", iconSize:[26,26], iconAnchor:[13,13], html:'<div class="killdot">🦃</div>'});
+function renderLog(){
+  const ss = seasonStart(), sk = kills.filter(k => k.ts >= ss);
+  const trips = LS.get("trips", []).filter(t => t.start >= ss);
+  const days = new Set(sk.map(k => dayKey(k.ts)));
+  const km = trips.reduce((a, t) => a + (t.dist || 0), 0) + (hunt && track ? track.dist : 0);
+  document.getElementById("logKills").textContent = sk.length;
+  document.getElementById("logDays").textContent = days.size;
+  document.getElementById("logKm").textContent = (km / 1000).toFixed(1).replace(".", ",");
+  document.getElementById("logKillsK").textContent = isMasson() ? "Másson-stig" : "Rjúpur";
+  logBox.innerHTML = "";
+  const all = trips.slice().reverse();
+  if (hunt && track) all.unshift({start:track.start, end:null, dist:track.dist, gain:track.gain, live:true});
+  if (!all.length){ logBox.innerHTML = `<div class="empty">Engar ferðir enn á tímabilinu. Ýttu á ${esc(huntTitle(false))} þegar þú leggur af stað.</div>`; return; }
+  for (const t of all){
+    const end = t.end || Date.now();
+    const tk = sk.filter(k => k.ts >= t.start && k.ts <= end);
+    const row = document.createElement("div"); row.className = "ptrow"; row.setAttribute("role", "button"); row.tabIndex = 0;
+    row.innerHTML = `<span class="dotp" style="background:${t.live ? "var(--ok)" : "#55606a"}"><svg viewBox="0 0 24 24"><path d="M4 18c3-6 6-2 8-7s5-4 8-6"/></svg></span>
+      <div class="t"><b>${fmtDay(dayKey(t.start))} · ${hhmm(t.start)}–${t.live ? "nú" : hhmm(end)}${tk.length ? ` · 🦃 ${tk.length}` : ""}</b>
+      <span>${dur(end - t.start)} · ${fmtKm(t.dist || 0)} · ${Math.round(t.gain || 0)} m upp${isMasson() ? ` · ≈ ${fmtBeer(beersFor(t.dist || 0, t.gain || 0))} 🍺` : ""}</span></div>`;
+    const show = async () => {
+      const line = t.live ? track.pts : await IDB.get("trip:" + t.start);
+      viewLayer.clearLayers();
+      const ll = (line || []).map(q => [q[0], q[1]]);
+      if (ll.length) L.polyline(ll, {pane:"track", color:"#7b4fc4", weight:4, opacity:.85, interactive:false}).addTo(viewLayer);
+      tk.forEach(k => L.marker([k.lat, k.lon], {icon:killIcon, interactive:false}).addTo(viewLayer));
+      if (!ll.length && !tk.length){ toast("Slóð þessarar ferðar er ekki vistuð."); return; }
+      setTab("map"); if (follow){ follow = false; btnGps.classList.remove("follow"); }
+      const b = L.latLngBounds([...ll, ...tk.map(k => [k.lat, k.lon])]);
+      map.fitBounds(b, {padding:[60, 60], maxZoom:15});
+      toast(`Ferð ${fmtDay(dayKey(t.start))}: ${fmtKm(t.dist || 0)}${tk.length ? ` · 🦃 ${tk.length}` : ""}. Ýttu á kortið til að fela.`, 6000);
+      setTimeout(() => map.once("click", () => viewLayer.clearLayers()), 400);
+    };
+    row.onclick = show; row.onkeydown = e => { if (e.key === "Enter"){ e.preventDefault(); show(); } };
+    logBox.appendChild(row);
+  }
+}
+document.getElementById("logCopy").onclick = e => {
+  const ss = seasonStart(), sk = kills.filter(k => k.ts >= ss), byDay = {};
+  sk.forEach(k => { const d = dayKey(k.ts); byDay[d] = (byDay[d] || 0) + 1; });
+  const lines = Object.keys(byDay).sort().map(d => `${fmtDay(d)}: ${byDay[d]}`);
+  const txt = `Rjúpnaveiði ${new Date(ss).getFullYear()}\nSamtals ${sk.length} rjúpur á ${Object.keys(byDay).length} veiðidögum\n${lines.join("\n")}`;
+  copyText(txt, e.currentTarget, "Afrita fyrir veiðiskýrslu");
+};
+
+/* ---------- Hópurinn: stigatafla ---------- */
+let board = LS.get("board", {});
+if (!board || typeof board !== "object" || Array.isArray(board)) board = {};
+function last7(p){ const d = String(p || "").replace(/[^0-9]/g, ""); return d.length <= 7 ? d : d.slice(-7); }
+function mySnapshot(){
+  const td = myKillsOn(today());
+  return {id:last7(LS.get("myPhone", "")) || "me", name:LS.get("me", "") || "Ég", day:today(), today:td.length, season:mySeason(),
+          first:td.length ? Math.min(...td.map(k => k.ts)) : 0, km:Math.round(todayKm()), ts:Date.now()};
+}
+let boardMode = "day";
+function boardRows(mode){
+  const mine = mySnapshot(), d = today();
+  return [mine, ...Object.values(board).filter(r => r && r.id && r.id !== mine.id)].map(r => ({...r, me:r.id === mine.id,
+    pts: mode === "day" ? (r.day === d ? r.today || 0 : 0) : (r.season || 0),
+    firstToday: r.day === d ? r.first || 0 : 0, kmToday: r.day === d ? r.km || 0 : 0}));
+}
+function renderBoard(){
+  const box = document.getElementById("board");
+  const m = isMasson();
+  document.getElementById("boardH").textContent = m ? "Másson-stig" : "Veiði";
+  document.getElementById("pgFriendsH").textContent = m ? "Hópurinn" : "Félagar";
+  document.getElementById("tabFriendsLbl").textContent = m ? "Hópurinn" : "Félagar";
+  const rows = boardRows(boardMode).sort((a, b) => b.pts - a.pts || (a.firstToday || 9e15) - (b.firstToday || 9e15) || a.me - b.me);
+  const firstBlood = rows.filter(r => r.firstToday).sort((a, b) => a.firstToday - b.firstToday)[0];
+  const walker = rows.filter(r => r.kmToday > 500).sort((a, b) => b.kmToday - a.kmToday)[0];
+  const top = rows[0] && rows[0].pts > 0 ? rows[0] : null;
+  box.innerHTML = "";
+  rows.forEach((r, i) => {
+    const tags = [];
+    if (m && boardMode === "day"){
+      if (top && r === top) tags.push("👑");
+      if (firstBlood && r === firstBlood) tags.push(`🩸 ${hhmm(r.firstToday)}`);
+      if (walker && r === walker) tags.push(`🥾 ${fmtKm(r.kmToday)}`);
+    }
+    const sub = [tags.join(" · "), r.me ? "þú" : r.ts ? "uppfært " + ago(r.ts) : ""].filter(Boolean).join(" · ");
+    const row = document.createElement("div"); row.className = "ptrow"; row.style.cursor = "default";
+    row.innerHTML = `<span class="rank${i === 0 && r.pts > 0 ? " lead" : ""}">${i + 1}</span>
+      <div class="t"><b>${esc(dispName(r.name))}</b><span>${esc(sub)}</span></div>
+      <span class="score">${r.pts}</span>`;
+    box.appendChild(row);
+  });
+  const quota = +LS.get("kvoti", 0), q = document.getElementById("boardQuota");
+  if (quota && boardMode === "day"){
+    const mine = rows.find(r => r.me);
+    q.hidden = false;
+    q.textContent = mine.pts >= quota ? (m ? `Kvóti náður (${mine.pts}/${quota}). Beint í bjórinn 🍺` : `Kvóta dagsins náð (${mine.pts}/${quota})`)
+                                      : `Kvóti dagsins: ${mine.pts} af ${quota}`;
+  } else q.hidden = true;
+  const ready = LS.get("group", "") && LS.get("myPhone", "");
+  document.getElementById("boardNote").textContent = !window.RK_APP ? "Sameiginlega stigataflan virkar í Android appinu."
+    : ready ? "Stigin berast á milli símanna þegar netsamband er." : "Settu inn símanúmerið þitt og hópkóða í Stillingum til að sjá stig hinna.";
+}
+document.querySelectorAll("#boardSeg button").forEach(b => b.onclick = () => {
+  boardMode = b.dataset.m;
+  document.querySelectorAll("#boardSeg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  renderBoard();
+});
+function refreshAll(){ renderBoard(); renderLog(); renderHunt(); }
+window.__massonRefresh = refreshAll;
+window.__onLogTab = renderLog;
+
+/* ---------- Hóprás (dulkóðuð í appinu, um ntfy.sh) ---------- */
+let lastSent = 0;
+function groupSend(kind){
+  if (!window.__groupSend || !LS.get("myPhone", "") || String(LS.get("group", "")).trim().length < 4) return;
+  lastSent = Date.now();
+  window.__groupSend(Object.assign({t:kind}, mySnapshot()));
+}
+const announced = new Set();
+let lastPollAt = Date.now();
+function onGroupMsg(msg, live){
+  if (!msg || !msg.id || msg.id === mySnapshot().id) return;
+  const prev = board[msg.id];
+  if (!prev || (msg.ts || 0) >= (prev.ts || 0)){
+    board[msg.id] = {id:msg.id, name:msg.name, day:msg.day, today:msg.today, season:msg.season, first:msg.first, km:msg.km, ts:msg.ts};
+    LS.set("board", board);
+  }
+  const key = `${msg.id}|${msg.day}|${msg.today}`;
+  const fresh = msg.t === "kill" && msg.day === today() && Date.now() - msg.ts < 20 * 60000 && (live || msg.ts > lastPollAt - 90000);
+  if (fresh && !announced.has(key) && document.visibilityState === "visible")
+    toast(isMasson() ? `${dispName(msg.name)} fékk Másson-stig! (${msg.today} í dag)` : `${msg.name} skráði rjúpu (${msg.today} í dag)`, 6000);
+  announced.add(key);
+  if (live) renderBoard();
+}
+window.__onGroupMsg = onGroupMsg;
+let polling = false;
+async function groupPoll(){
+  const code = String(LS.get("group", "")).trim();
+  if (polling || !window.__groupFetch || code.length < 4) return;
+  polling = true;
+  try{
+    const sk = "gSince:" + code.slice(0, 40);
+    const r = await window.__groupFetch(LS.get(sk, "12h"));
+    (r.items || []).forEach(m => onGroupMsg(m, false));
+    if (r.last) LS.set(sk, r.last);
+    lastPollAt = Date.now();
+    renderBoard();
+  }catch(e){ /* ekkert net */ }
+  polling = false;
+}
+// 👑 Másson dagsins þegar bjórtíminn rennur upp
+function crownCheck(){
+  if (!isMasson() || LS.get("crownDay", "") === today()) return;
+  const c = pos || (() => { const x = map.getCenter(); return {lat:x.lat, lon:x.lng}; })();
+  const noon = new Date(); noon.setHours(12, 0, 0, 0);
+  const cv = sunTimes(noon, c.lat, c.lon, -6);
+  if (!cv || Date.now() < cv.set.getTime()) return;
+  const rows = boardRows("day").filter(r => r.pts > 0).sort((a, b) => b.pts - a.pts || (a.firstToday || 9e15) - (b.firstToday || 9e15));
+  if (!rows.length) return;
+  LS.set("crownDay", today());
+  const title = `👑 Másson dagsins: ${dispName(rows[0].name)}`, body = `${rows[0].pts} stig. Bjórtími 🍺`;
+  if (document.visibilityState !== "visible" && window.__notify) window.__notify(title, body);
+  else toast(`${title} · ${body}`, 9000);
+}
+setInterval(() => { if (document.visibilityState === "visible") groupPoll(); crownCheck(); }, 60000);
+// Í ferð: senda stöðu (km o.fl.) á um 10 mín fresti, líka með slökktan skjá (GPS vekur kóðann)
+const prevPosExtra2 = window.__onPosExtra;
+window.__onPosExtra = () => {
+  if (prevPosExtra2) prevPosExtra2();
+  if (hunt && Date.now() - lastSent > 10 * 60000) groupSend("score");
+  if (hunt) crownCheck();
+};
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible"){ groupPoll(); renderBoard(); } });
+
+/* ---------- Stillingar: gælunöfn og kvóti ---------- */
+const nickIn = document.getElementById("nickIn"), quotaIn = document.getElementById("quotaIn");
+nickIn.value = LS.get("nicks", DEFAULT_NICKS);
+nickIn.oninput = () => { LS.set("nicks", nickIn.value); renderBoard(); renderPtList(); if (window.__onMasson) window.__onMasson(isMasson()); };
+quotaIn.value = LS.get("kvoti", 0) || "";
+quotaIn.oninput = () => { LS.set("kvoti", Math.max(0, parseInt(quotaIn.value, 10) || 0)); renderBoard(); };
+window.__massonCfg = () => ({masson:isMasson(), nicks:LS.get("nicks", DEFAULT_NICKS)});
+
+/* ---------- Beita hamnum á viðmótið ---------- */
+let lastMode = null;
+function massonApply(){
+  const m = isMasson();
+  document.body.classList.toggle("masson", m);
+  const kb = document.getElementById("btnKill");
+  kb.setAttribute("aria-label", m ? "Rjúpa felld: +1 Másson-stig" : "Skrá veiði");
+  kb.title = m ? "Rjúpa felld" : "Skrá veiði";
+  document.getElementById("massonBox").hidden = !m;
+  refreshAll(); updateSun(); updateCar(); renderPtList();
+  if (lastMode !== m){ lastMode = m; if (window.__onMasson) window.__onMasson(m); }
+}
+const _prevApply = window.__applyAll;
+window.__applyAll = () => { if (_prevApply) _prevApply(); massonApply(); };
+setInterval(() => { if (isMasson() && !document.hidden) updateCar(); }, 60000);   // Bíll → Bjórinn kl. 16
+massonApply();
+setTimeout(() => { groupPoll().then(() => { if (Date.now() - LS.get("gLastSent", 0) > 3600e3){ LS.set("gLastSent", Date.now()); groupSend("score"); } }); }, 1500);
 
 /* Opið viðmót fyrir Android appið */
 window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, setHunt, setTab, isHunting: () => hunt, getPos: () => pos, addRemotePoint, showRemote, openPanel, closeSheet, relFromMe, esc, fmtM, card, hhmm, ago, openPing: () => openPing(null), lastFrom: n => pts.filter(p => p.type === "ping" && p.from === n).sort((a, b) => b.ts - a.ts)[0] || null };

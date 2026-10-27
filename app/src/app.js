@@ -33,6 +33,8 @@
   const toast = (t, ms) => { if (window.RK) window.RK.toast(t, ms); };
 
   let hunt = get("hunt", false), huntStart = get("huntStart", 0);
+  const masson = () => (get("set", {}) || {}).masson !== false;
+  const disp = n => (window.__dispName ? window.__dispName(n) : n);
 
   /* ---------- Staðsetning: navigator.geolocation keyrir á GPS-þjónustu símans ---------- */
   const subs = new Map();
@@ -61,7 +63,7 @@
     bgBusy = bgBusy.then(async () => {
       if (bgId || !subs.size) return;
       const opts = hunt
-        ? { backgroundTitle: "Másson er virkur", backgroundMessage: "Fylgist með bannsvæðum. Ýttu til að opna kortið.",
+        ? { backgroundTitle: masson() ? "Másson er virkur" : "Tracking virkt", backgroundMessage: "Fylgist með bannsvæðum. Ýttu til að opna kortið.",
             requestPermissions: true, stale: false, distanceFilter: 15 }
         : { requestPermissions: true, stale: false, distanceFilter: 5 };
       try { bgId = await BG.addWatcher(opts, onLoc); } catch (e) { bgId = null; }
@@ -86,7 +88,7 @@
         subs.delete(id);
         if (!subs.size) {
           stop();
-          if (hunt && window.RK) { window.RK.setHunt(false); toast("Másson lokið því slökkt var á GPS."); }
+          if (hunt && window.RK) { window.RK.setHunt(false); toast((masson() ? "Másson" : "Tracking") + " lokið því slökkt var á GPS."); }
         }
       },
       getCurrentPosition(s, e) {
@@ -115,6 +117,7 @@
         smallIcon: "ic_stat_rjupa", iconColor: "#E8590C", schedule: { at: new Date(Date.now() + 250), allowWhileIdle: true } }] });
     } catch (e) {}
   }
+  window.__notify = (title, body) => notify(title, body, "almennt");
   // Kallað úr kortinu þegar staða breytist (0 öruggt … 5 innan bannsvæðis)
   window.__onLevel = (level, prev, title, sub) => {
     if (!hunt || prev == null) return;
@@ -132,20 +135,27 @@
     restart();
     syncFriends();
   };
+  // Másson-hamur kveiktur eða slökktur: tilkynningin í bakgrunni og gælunöfnin í Java
+  window.__onMasson = () => { syncFriends(); renderFriends(); if (hunt && bgId) restart(); };
   function injectUI() {
     initFriends();
   }
 
   /* ---------- Finna félaga ---------- */
   const F = C.registerPlugin("Felagar");
+  // Sameiginleg stigatafla: dulkóðað á hóprás (Java sér um dulkóðun og tilkynningar í bakgrunni)
+  window.__groupSend = msg => F.groupSend({ msg: JSON.stringify(msg) }).catch(() => {});
+  window.__groupFetch = since => F.groupFetch({ since });
+  F.addListener("group", m => { if (window.__onGroupMsg) window.__onGroupMsg(m, true); }).catch(() => {});
   const fstate = {};   // síðustu 7 tölustafir -> {state, t}
   const last7 = p => { const d = String(p || "").replace(/[^0-9]/g, ""); return d.length <= 7 ? d : d.slice(-7); };
   const escH = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   function friends() { const a = get("friends", []); return Array.isArray(a) ? a : []; }
   function syncFriends() {
     try {
+      const mc = window.__massonCfg ? window.__massonCfg() : { masson: masson(), nicks: "" };
       F.configure({ myPhone: get("myPhone", ""), myName: get("me", ""), group: get("group", ""),
-                    autoReply: get("autoReply", true), hunt, friends: friends() }).catch(() => {});
+                    autoReply: get("autoReply", true), hunt, friends: friends(), masson: mc.masson, nicks: mc.nicks }).catch(() => {});
     } catch (e) {}
   }
   function takeLocation(it, focus) {
@@ -195,8 +205,8 @@
     $("fMe").value = get("me", ""); $("fPhone").value = get("myPhone", ""); $("fGroup").value = get("group", "");
     $("fAuto").checked = get("autoReply", true);
     $("fMe").oninput = () => { set("me", $("fMe").value.trim()); syncFriends(); const pm = document.getElementById("myName"); if (pm) pm.value = $("fMe").value; };
-    $("fPhone").oninput = () => { set("myPhone", $("fPhone").value.trim()); syncFriends(); renderFriends(); };
-    $("fGroup").oninput = () => { set("group", $("fGroup").value.trim()); syncFriends(); renderFriends(); };
+    $("fPhone").oninput = () => { set("myPhone", $("fPhone").value.trim()); syncFriends(); renderFriends(); if (window.__massonRefresh) window.__massonRefresh(); };
+    $("fGroup").oninput = () => { set("group", $("fGroup").value.trim()); syncFriends(); renderFriends(); if (window.__massonRefresh) window.__massonRefresh(); };
     $("fAuto").onchange = () => { set("autoReply", $("fAuto").checked); syncFriends(); };
     $("fGen").onclick = () => {
       const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let c = "rjupa-";
@@ -241,7 +251,7 @@
       const st = fstate[last7(f.phone)];
       const busy = st && ((st.state === "ntfy" && Date.now() - st.t < 30000) || (st.state === "sms" && Date.now() - st.t < 180000));
       const row = document.createElement("div"); row.className = "ptrow"; row.style.cursor = "default";
-      row.innerHTML = `<span class="dotp" style="width:40px;height:40px;background:${bg};color:${fg};font-weight:700;font-size:16px">${escH((f.name || "?").charAt(0).toUpperCase())}</span><div class="t"><b>${escH(f.name)}</b><span>${escH(stateText(f))}</span></div>`;
+      row.innerHTML = `<span class="dotp" style="width:40px;height:40px;background:${bg};color:${fg};font-weight:700;font-size:16px">${escH((disp(f.name) || "?").charAt(0).toUpperCase())}</span><div class="t"><b>${escH(disp(f.name))}</b><span>${escH(stateText(f))}</span></div>`;
       const go = document.createElement("button"); go.type = "button"; go.textContent = busy ? "Bíð" : "Finna";
       go.className = busy ? "btn sec" : "btn"; go.disabled = !!busy;
       go.style.cssText = "padding:9px 18px;border-radius:20px;flex:none";
@@ -281,7 +291,7 @@
     try {
       const r = await F.find({ phone: f.phone, name: f.name });
       fstate[k] = { state: r.via, t: Date.now() };
-      toast(r.via === "ntfy" ? `Spyr ${f.name} um netið. SMS fer ef ekkert svar kemur.` : `SMS sent til ${f.name}.`, 5000);
+      toast(r.via === "ntfy" ? `Spyr ${disp(f.name)} um netið. SMS fer ef ekkert svar kemur.` : `SMS sent til ${disp(f.name)}.`, 5000);
     } catch (e) { toast("Tókst ekki: " + (e.message || e), 6000); }
     renderFriends();
   }
