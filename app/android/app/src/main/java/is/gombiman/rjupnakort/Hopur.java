@@ -89,6 +89,24 @@ final class Hopur {
                 String title = masson ? nick(c, name) + " fékk Másson-stig! 🦃" : name + " skráði rjúpu";
                 Felagar.notify(c, 3000 + Math.abs(m.optString("id").hashCode() % 500), title, n + " í dag");
             }
+            boolean masson = Felagar.prefs(c).getBoolean("masson", true);
+            String who = masson ? nick(c, m.optString("name", "Félagi")) : m.optString("name", "Félagi");
+            boolean fresh = System.currentTimeMillis() - ts < 30 * 60 * 1000L;
+            // Montveggurinn
+            if (!visible && fresh && "brag".equals(m.optString("t")) && m.optString("txt").length() > 0)
+                Felagar.notify(c, 3600 + Math.abs(m.optString("id").hashCode() % 300), who + " 📣", m.optString("txt"));
+            // Áskorun í einvígi
+            if (!visible && fresh && "duel".equals(m.optString("t"))) {
+                String me = Felagar.last7(Felagar.myPhone(c));
+                org.json.JSONArray du = m.optJSONArray("du");
+                if (du != null) for (int i = 0; i < du.length(); i++) {
+                    org.json.JSONObject d = du.optJSONObject(i);
+                    if (d != null && me.equals(d.optString("b")) && "ask".equals(d.optString("st")) && System.currentTimeMillis() - d.optLong("ts", 0) < 30 * 60 * 1000L) {
+                        Felagar.notify(c, 3900, "⚔️ " + who + " skorar á þig í einvígi!", "Sá sem fær fleiri rjúpur í dag tekur 1 stig af hinum. Opnaðu Hópinn til að svara.");
+                        break;
+                    }
+                }
+            }
         } catch (Exception e) { Log.i(Felagar.TAG, "hópur: gat ekki lesið"); }
     }
 

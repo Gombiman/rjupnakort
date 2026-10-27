@@ -292,6 +292,7 @@
   }
   async function findFriend(f) {
     const k = last7(f.phone);
+    if (window.__onFind) try { window.__onFind(f.phone); } catch (e) {}
     if (!(permState && permState.sms)) { try { permState = await F.requestSms(); } catch (e) {} }
     try {
       const r = await F.find({ phone: f.phone, name: f.name });
