@@ -71,7 +71,7 @@
         subs.delete(id);
         if (!subs.size) {
           stop();
-          if (hunt) { setHunt(false); toast("Veiðiham lokið því slökkt var á GPS."); }
+          if (hunt && window.RK) { window.RK.setHunt(false); toast("Veiðiham lokið því slökkt var á GPS."); }
         }
       },
       getCurrentPosition(s, e) {
@@ -106,64 +106,18 @@
     if (level > prev && level >= 2 && document.visibilityState !== "visible") notify(title, sub, "vidvaranir");
   };
 
-  /* ---------- Veiðihamur ---------- */
-  function setHunt(on) {
-    hunt = on; set("hunt", on);
-    if (on) { huntStart = Date.now(); set("huntStart", huntStart); }
-    render();
+  /* ---------- Veiðihamur (kortið á rofann og slóðina; hér er GPS í bakgrunni) ---------- */
+  window.__beforeHunt = async () => {
+    try { await LN.requestPermissions(); } catch (e) {}
+    await ensureChannels();
+  };
+  window.__onHunt = (on) => {
+    hunt = on;
+    if (on) huntStart = Date.now();
+    restart();
     syncFriends();
-  }
-  let armed = false;
-  async function toggle() {
-    const R = window.RK;
-    if (!hunt) {
-      try { await LN.requestPermissions(); } catch (e) {}
-      await ensureChannels();
-      setHunt(true);
-      if (R && !R.isGpsOn()) R.startGps(); else await restart();
-      toast("Veiðihamur virkur. Viðvaranir virka líka með slökktan skjá.", 6000);
-    } else {
-      const b = document.getElementById("huntBtn");
-      if (!armed) {
-        armed = true; b.innerHTML = '<span class="d"></span>Ýttu aftur til að ljúka veiðiham';
-        setTimeout(() => { armed = false; render(); }, 3000);
-        return;
-      }
-      armed = false;
-      const t = Date.now() - huntStart;
-      setHunt(false);
-      await restart();
-      toast(`Veiðiham lokið eftir ${dur(t)}.`);
-    }
-  }
-  function render() {
-    const b = document.getElementById("huntBtn"); if (!b || armed) return;
-    b.classList.toggle("on", hunt);
-    b.innerHTML = hunt
-      ? `<span class="d"></span><span class="tx">Veiðihamur · ${dur(Date.now() - huntStart)}</span><small>Ljúka</small>`
-      : '<span class="d"></span><span class="tx">Hefja veiðiham</span>';
-  }
+  };
   function injectUI() {
-    const css = document.createElement("style");
-    css.textContent = `
-#huntBtn{pointer-events:auto;border:none;border-radius:999px;padding:10px 16px;background:var(--panel);color:var(--fg);
-  box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;font:600 15px var(--f-body);text-align:left}
-#huntBtn .d{width:11px;height:11px;border-radius:50%;background:var(--muted);flex:none}
-#huntBtn .tx{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#huntBtn small{font-weight:600;opacity:.85;border:1px solid currentColor;border-radius:999px;padding:2px 10px}
-#huntBtn.on{background:var(--ok);color:#fff}
-#huntBtn.on .d{background:#fff;animation:pulse 1.6s infinite}
-@media (prefers-reduced-motion:reduce){#huntBtn.on .d{animation:none}}
-.leaflet-bottom.leaflet-right{bottom:calc(env(safe-area-inset-bottom,0px) + 178px)}`;
-    document.head.appendChild(css);
-    const left = document.querySelector("#bottom .left");
-    if (!left) return;
-    const b = document.createElement("button");
-    b.id = "huntBtn"; b.type = "button"; b.onclick = toggle;
-    left.insertBefore(b, left.firstChild);
-    render(); setInterval(render, 30000);
-    // Í appinu er sparnaður sjálfvirkur: skjárinn slokknar og GPS heldur áfram í veiðiham
-    if (hunt && window.RK && !window.RK.isGpsOn()) window.RK.startGps();
     initFriends();
   }
 
@@ -185,7 +139,7 @@
     const k = last7(it.phone);
     const waited = fstate[k] && fstate[k].state !== "done";
     fstate[k] = { state: "done", t: Date.now(), via: it.via };
-    if (focus || waited) { R.closeSheet(); R.showRemote(p, false); }
+    if (focus || waited) { R.closeSheet(); R.setTab("map"); R.showRemote(p, false); }
     renderFriends();
   }
   async function pullPending(focus) {
@@ -194,41 +148,35 @@
 
   let fsheet = null, permState = null;
   function buildSheet() {
-    fsheet = document.createElement("section");
-    fsheet.className = "sheet"; fsheet.id = "friendSheet"; fsheet.hidden = true;
-    fsheet.setAttribute("aria-label", "Félagar");
+    // Listinn fer á Félaga-síðuna, uppsetningin í Stillingar
+    const top = document.getElementById("friendsApp");
+    top.innerHTML = `
+  <p class="note" id="fIntro" style="margin:0 4px 10px"></p>
+  <div class="group" id="fList"></div>`;
+    fsheet = document.getElementById("setFriendsApp");
     fsheet.innerHTML = `
-  <div class="grab"></div>
-  <div class="sh-head"><h2>Félagar</h2><button class="x" type="button" data-fclose aria-label="Loka">×</button></div>
-  <p class="note" id="fIntro" style="margin-top:8px"></p>
-  <div id="fList" style="margin-top:8px"></div>
-  <div class="row" style="margin-top:12px"><button class="btn sec" id="fLink" type="button">Senda ping-hlekk</button></div>
-
-  <h3>Mínar upplýsingar</h3>
-  <div class="card">
+  <div class="group"><div class="ginner">
     <label class="f">Nafnið þitt<input type="text" id="fMe" maxlength="24" placeholder="t.d. Grétar"></label>
     <label class="f">Símanúmerið þitt<input type="text" id="fPhone" inputmode="tel" maxlength="16" placeholder="t.d. 8201234"></label>
     <label class="f">Hópkóði (sami hjá öllum í hópnum)<input type="text" id="fGroup" maxlength="40" autocapitalize="off" autocomplete="off" placeholder="t.d. rjupa-K7Q2M"></label>
     <div class="row"><button class="btn sec" id="fGen" type="button">Búa til kóða</button><button class="btn sec" id="fCopy" type="button">Afrita kóða</button></div>
-    <label class="setrow" style="border-top:none"><div class="t"><b>Svara félögum sjálfkrafa</b><span>Síminn sendir staðsetninguna þegar félagi á listanum biður um hana.</span></div><input type="checkbox" class="tog" id="fAuto"></label>
-  </div>
+    <label class="setrow"><div class="t"><b>Svara félögum sjálfkrafa</b><span>Síminn sendir staðsetninguna þegar félagi á listanum biður um hana.</span></div><input type="checkbox" class="tog" id="fAuto"></label>
+  </div></div>
 
-  <h3>Bæta við félaga</h3>
-  <div class="card">
+  <div class="group" style="margin-top:8px"><div class="ginner">
+    <b>Bæta við félaga</b>
     <div class="row">
       <input type="text" id="fNewName" maxlength="24" placeholder="Nafn">
       <input type="text" id="fNewPhone" inputmode="tel" maxlength="16" placeholder="Símanúmer">
     </div>
     <button class="btn" id="fAdd" type="button">Bæta við</button>
     <p class="msg" id="fMsg"></p>
-  </div>
+    <div id="fManage"></div>
+  </div></div>
 
-  <h3>Leyfi</h3>
-  <div class="card" id="fPerm"></div>
-  <p class="note" style="margin-top:12px">Á netinu fara beiðnir og staðsetningar dulkóðaðar með hópkóðanum um ntfy.sh. Ef ekkert svar kemur innan 25 sekúndna er sent SMS. SMS-in sjást líka í skilaboðaforriti símans.</p>`;
-    document.body.appendChild(fsheet);
-    fsheet.querySelector("[data-fclose]").onclick = () => window.RK.closeSheet();
-    const $ = id => fsheet.querySelector("#" + id);
+  <div class="group" style="margin-top:8px"><div class="ginner" id="fPerm"></div></div>
+  <p class="note" style="margin:10px 4px 0">Á netinu fara beiðnir og staðsetningar dulkóðaðar með hópkóðanum um ntfy.sh. Ef ekkert svar kemur innan 25 sekúndna er sent SMS. SMS-in sjást líka í skilaboðaforriti símans.</p>`;
+    const $ = id => document.getElementById(id);
     $("fMe").value = get("me", ""); $("fPhone").value = get("myPhone", ""); $("fGroup").value = get("group", "");
     $("fAuto").checked = get("autoReply", true);
     $("fMe").oninput = () => { set("me", $("fMe").value.trim()); syncFriends(); const pm = document.getElementById("myName"); if (pm) pm.value = $("fMe").value; };
@@ -253,7 +201,6 @@
       $("fNewName").value = ""; $("fNewPhone").value = ""; $("fMsg").textContent = `${n} bætt við.`; $("fMsg").className = "msg";
       renderFriends();
     };
-    $("fLink").onclick = () => window.RK.openPing();
   }
 
   function stateText(f) {
@@ -264,36 +211,51 @@
     if (lp) { const rel = R.relFromMe(lp); return `Síðast ${R.ago(lp.ts)}${rel ? " · " + rel.text : ""}`; }
     return f.phone;
   }
+  const AV = [["#EFE8FA", "#6A3FB5"], ["#E4EEF8", "#1F5F9E"], ["#E7F0E1", "#3E5A1E"], ["#FBEAE0", "#9A3C0B"]];
   function renderFriends() {
     if (!fsheet) return;
-    const list = friends(), box = fsheet.querySelector("#fList"), intro = fsheet.querySelector("#fIntro");
+    const list = friends(), box = document.getElementById("fList"), intro = document.getElementById("fIntro");
     const ready = get("myPhone", "") && get("group", "");
-    intro.textContent = !list.length ? "Bættu við félögum hér fyrir neðan. Þeir þurfa líka appið og sama hópkóða."
-      : ready ? "Ýttu á Finna. Félaginn þarf ekki að snerta símann sinn."
-      : "Settu inn símanúmerið þitt og hópkóða hér fyrir neðan. Án þeirra er bara notað SMS.";
+    intro.textContent = !list.length ? "Engir félagar enn. Bættu þeim við í Stillingum → Félagar og hópkóði."
+      : ready ? "Ýttu á Finna. Félaginn þarf ekki að snerta símann, hann svarar sjálfkrafa."
+      : "Settu inn símanúmerið þitt og hópkóða í Stillingum. Án þeirra er bara notað SMS.";
+    box.hidden = !list.length;
     box.innerHTML = "";
-    for (const f of list) {
-      const row = document.createElement("div"); row.className = "ptrow";
-      row.innerHTML = `<span class="dotp" style="background:#9b4fc4"></span><div class="t"><b>${escH(f.name)}</b><span>${escH(stateText(f))}</span></div>`;
-      const go = document.createElement("button"); go.className = "btn"; go.type = "button"; go.textContent = "Finna";
-      go.style.padding = "8px 14px";
+    list.forEach((f, i) => {
+      const [bg, fg] = AV[i % AV.length];
+      const st = fstate[last7(f.phone)];
+      const busy = st && ((st.state === "ntfy" && Date.now() - st.t < 30000) || (st.state === "sms" && Date.now() - st.t < 180000));
+      const row = document.createElement("div"); row.className = "ptrow"; row.style.cursor = "default";
+      row.innerHTML = `<span class="dotp" style="width:40px;height:40px;background:${bg};color:${fg};font-weight:700;font-size:16px">${escH((f.name || "?").charAt(0).toUpperCase())}</span><div class="t"><b>${escH(f.name)}</b><span>${escH(stateText(f))}</span></div>`;
+      const go = document.createElement("button"); go.type = "button"; go.textContent = busy ? "Bíð" : "Finna";
+      go.className = busy ? "btn sec" : "btn"; go.disabled = !!busy;
+      go.style.cssText = "padding:9px 18px;border-radius:20px;flex:none";
       go.onclick = () => findFriend(f);
-      const del = document.createElement("button"); del.className = "del"; del.type = "button"; del.textContent = "✕";
-      del.setAttribute("aria-label", "Fjarlægja " + f.name);
-      del.onclick = () => {
-        if (del.dataset.armed !== "1") { del.dataset.armed = "1"; del.textContent = "Eyða?"; setTimeout(() => { if (del.isConnected) { del.dataset.armed = ""; del.textContent = "✕"; } }, 3000); return; }
-        set("friends", friends().filter(x => last7(x.phone) !== last7(f.phone))); syncFriends(); renderFriends();
-      };
-      row.appendChild(go); row.appendChild(del); box.appendChild(row);
+      row.appendChild(go); box.appendChild(row);
+    });
+    const man = document.getElementById("fManage");
+    if (man) {
+      man.innerHTML = "";
+      for (const f of list) {
+        const r = document.createElement("div"); r.className = "setrow";
+        r.innerHTML = `<div class="t"><b>${escH(f.name)}</b><span>${escH(f.phone)}</span></div>`;
+        const del = document.createElement("button"); del.className = "del"; del.type = "button"; del.textContent = "✕";
+        del.setAttribute("aria-label", "Fjarlægja " + f.name);
+        del.onclick = () => {
+          if (del.dataset.armed !== "1") { del.dataset.armed = "1"; del.textContent = "Eyða?"; setTimeout(() => { if (del.isConnected) { del.dataset.armed = ""; del.textContent = "✕"; } }, 3000); return; }
+          set("friends", friends().filter(x => last7(x.phone) !== last7(f.phone))); syncFriends(); renderFriends();
+        };
+        r.appendChild(del); man.appendChild(r);
+      }
     }
   }
   async function renderPerm() {
     if (!fsheet) return;
-    const box = fsheet.querySelector("#fPerm");
+    const box = document.getElementById("fPerm");
     try { permState = await F.status(); } catch (e) { permState = null; }
     const st = permState || {};
     box.innerHTML = `
-      <div class="setrow" style="border-top:none"><div class="t"><b>SMS ${st.sms ? "✓" : "✗"}</b><span>${st.sms ? "Leyft" : "Þarf til að biðja og svara með SMS"}</span></div>${st.sms ? "" : '<button class="btn sec" id="fSms" type="button">Leyfa</button>'}</div>
+      <div class="setrow"><div class="t"><b>SMS ${st.sms ? "✓" : "✗"}</b><span>${st.sms ? "Leyft" : "Þarf til að biðja og svara með SMS"}</span></div>${st.sms ? "" : '<button class="btn sec" id="fSms" type="button">Leyfa</button>'}</div>
       <div class="setrow"><div class="t"><b>Staðsetning alltaf ${st.backgroundLocation ? "✓" : "✗"}</b><span>${st.backgroundLocation ? "Leyft: getur svarað þó appið sé lokað" : "Án þess svarar síminn bara þegar veiðihamur er virkur. Veldu Heimildir → Staðsetning → Leyfa alltaf."}</span></div>${st.backgroundLocation ? "" : '<button class="btn sec" id="fBg" type="button">Opna stillingar</button>'}</div>`;
     const b1 = box.querySelector("#fSms"); if (b1) b1.onclick = async () => { try { await F.requestSms(); } catch (e) {} renderPerm(); };
     const b2 = box.querySelector("#fBg"); if (b2) b2.onclick = () => F.openSettings().catch(() => {});
@@ -308,20 +270,15 @@
     } catch (e) { toast("Tókst ekki: " + (e.message || e), 6000); }
     renderFriends();
   }
-  function openFriends() {
-    if (!fsheet) buildSheet();
-    renderFriends(); renderPerm();
-    window.RK.openPanel(fsheet);
-  }
   function initFriends() {
-    const b = document.getElementById("btnPing");
-    if (b) { b.textContent = "Félagar"; b.onclick = openFriends; }
+    buildSheet(); renderFriends(); renderPerm();
+    window.__onFriendsTab = () => { renderFriends(); renderPerm(); };
     F.addListener("location", it => takeLocation(it, false)).catch(() => {});
     F.addListener("status", s => { if (fstate[s.phone]) { fstate[s.phone] = { state: s.state, t: Date.now() }; renderFriends(); } }).catch(() => {});
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { pullPending(true); renderPerm(); } });
     syncFriends();
     pullPending(true);
-    setInterval(() => { if (fsheet && !fsheet.hidden) renderFriends(); }, 5000);
+    setInterval(() => { const pg = document.getElementById("pgFriends"); if (pg && !pg.hidden) renderFriends(); }, 5000);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(injectUI, 0));

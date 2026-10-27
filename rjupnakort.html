@@ -9,93 +9,198 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-/* Layout: full-screen map, status band pinned top, coordinate strip + round buttons at bottom, layer sheet slides up */
+/* Layout: kort undir flipaslá; efst stillingar · staða · NEYÐ; síður (Áttaviti, Félagar) og Stillingar leggjast yfir kortið */
 :root{
-  --bg:#f3f4f2; --panel:#ffffff; --fg:#1b1f20; --muted:#5f6a6c; --line:#d9dddb;
+  --bg:#f3f4f2; --panel:#ffffff; --fg:#16191a; --muted:#5c6668; --line:#e1e5e3; --soft:#eef0ee;
   --accent:#e8590c;            /* veiðiappelsínugulur */
-  --bann:#d62f25; --leyfi:#e39400; --athuga:#9b4fc4; --info:#2577c4; --ok:#2b8a4b;
-  --shadow:0 4px 18px rgba(0,0,0,.18);
+  --bann:#d62f25; --leyfi:#e39400; --athuga:#7b4fc4; --info:#2577c4; --ok:#2b8a4b; --sos:#c62a20;
+  --shadow:0 2px 12px rgba(22,25,26,.14); --shadow-s:0 1px 3px rgba(22,25,26,.07);
+  --tabh:64px;
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#121516; --panel:#1c2122; --fg:#e9ecea; --muted:#9aa5a6; --line:#2e3638;
-  --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#c27ef0; --info:#5aa8f0; --ok:#4cc47a;
-  --shadow:0 4px 18px rgba(0,0,0,.5); color-scheme:dark}}
+  --bg:#111415; --panel:#1b2021; --fg:#e9ecea; --muted:#9aa5a6; --line:#2c3436; --soft:#232a2b;
+  --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#b58cf0; --info:#5aa8f0; --ok:#4cc47a; --sos:#e0352b;
+  --shadow:0 2px 14px rgba(0,0,0,.5); --shadow-s:0 1px 3px rgba(0,0,0,.4); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#121516; --panel:#1c2122; --fg:#e9ecea; --muted:#9aa5a6; --line:#2e3638;
-  --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#c27ef0; --info:#5aa8f0; --ok:#4cc47a;
-  --shadow:0 4px 18px rgba(0,0,0,.5); color-scheme:dark}
+  --bg:#111415; --panel:#1b2021; --fg:#e9ecea; --muted:#9aa5a6; --line:#2c3436; --soft:#232a2b;
+  --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#b58cf0; --info:#5aa8f0; --ok:#4cc47a; --sos:#e0352b;
+  --shadow:0 2px 14px rgba(0,0,0,.5); --shadow-s:0 1px 3px rgba(0,0,0,.4); color-scheme:dark}
 [hidden]{display:none!important}
 html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--fg);font:15px/1.4 var(--f-body);overflow:hidden}
-#map{position:fixed;inset:0;background:var(--bg)}
+body{background:var(--bg);color:var(--fg);font:15px/1.4 var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#map{position:fixed;left:0;right:0;top:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px));background:var(--bg)}
 
-/* Status band */
-#status{position:fixed;left:0;right:0;top:0;z-index:1000;
-  padding:calc(env(safe-area-inset-top,0px) + 10px) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
-  display:flex;gap:12px;align-items:center;color:#fff;background:#4a5254;box-shadow:var(--shadow);transition:background .25s}
-#status .dot{width:14px;height:14px;border-radius:50%;background:#fff;flex:none;opacity:.9}
-#status .txt{min-width:0;flex:1}
-#stTitle{font:700 22px/1.05 var(--f-display);letter-spacing:.02em;text-transform:uppercase}
-#stSub{font-size:13.5px;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#status.s-ok{background:var(--ok)} #status.s-info{background:var(--info)}
-#status.s-near{background:var(--leyfi);color:#1b1300} #status.s-near .dot{background:#1b1300}
-#status.s-leyfi{background:var(--leyfi);color:#1b1300} #status.s-leyfi .dot{background:#1b1300}
-#status.s-athuga{background:var(--athuga)}
-#status.s-bann{background:var(--bann)} #status.s-bann .dot{animation:pulse 1s infinite}
+/* Efsta lína: stillingar · staða · NEYÐ (á öllum síðum) */
+#topbar{position:fixed;z-index:1000;left:0;right:0;top:0;display:flex;align-items:center;gap:8px;pointer-events:none;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px))}
+#topbar > *{pointer-events:auto}
+.rbtn{width:44px;height:44px;flex:none;border:none;border-radius:50%;background:var(--panel);box-shadow:var(--shadow);display:grid;place-items:center}
+.rbtn svg{width:22px;height:22px;fill:none;stroke:var(--fg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#status{flex:1;min-width:0;min-height:44px;box-sizing:border-box;border-radius:22px;padding:5px 14px;display:flex;align-items:center;gap:10px;
+  background:var(--panel);color:var(--fg);box-shadow:var(--shadow);border:1px solid transparent;transition:background .25s,color .25s}
+#status .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+#status .txt{min-width:0;flex:1;line-height:1.15}
+#stTitle{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#stSub{font-size:11.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#status.s-ok .dot{background:var(--ok)}
+#status.s-info .dot{background:var(--info)}
+#status.s-near,#status.s-leyfi{background:#fff4da;border-color:#e8b44a;color:#3b2c06} #status.s-near .dot,#status.s-leyfi .dot{background:#d98a00}
+#status.s-athuga{background:#f1ebfb;border-color:#b79be4;color:#2d1a52} #status.s-athuga .dot{background:var(--athuga)}
+#status.s-bann{background:var(--bann);color:#fff} #status.s-bann .dot{background:#fff;animation:pulse 1s infinite}
 @keyframes pulse{50%{opacity:.25}}
-@media (prefers-reduced-motion:reduce){#status.s-bann .dot{animation:none}}
+@media (prefers-reduced-motion:reduce){#status.s-bann .dot,.hdot.on{animation:none}}
+.sosbtn{height:44px;flex:none;border:none;border-radius:22px;padding:0 14px;background:var(--sos);color:#fff;font-weight:700;font-size:13px;letter-spacing:.06em;box-shadow:var(--shadow)}
 
-/* Bottom strip */
-#bottom{position:fixed;left:0;right:0;bottom:0;z-index:1000;pointer-events:none;
-  padding:0 max(12px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(12px,env(safe-area-inset-left,0px));
-  display:flex;align-items:flex-end;gap:10px}
-#coords{pointer-events:auto;flex:1;min-width:0;background:var(--panel);border-radius:12px;box-shadow:var(--shadow);
-  padding:8px 12px;display:flex;align-items:center;gap:10px}
-#coords .c{min-width:0;flex:1}
-#cLatLon{font:500 14px/1.3 var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#cMeta{font-size:12px;color:var(--muted)}
-#coords{cursor:pointer}
-.left{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
-.acts{display:flex;gap:8px;pointer-events:auto}
-.act{flex:1;min-width:0;border:none;border-radius:999px;padding:9px 6px;background:var(--panel);box-shadow:var(--shadow);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.act.sos{flex:0 0 auto;padding:9px 16px;background:var(--bann);color:#fff;letter-spacing:.04em}
-#chips{position:fixed;z-index:999;left:max(12px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 82px);display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-width:calc(100% - 90px)}
-.ichip{display:flex;align-items:center;gap:8px;border:none;background:var(--panel);box-shadow:var(--shadow);border-radius:999px;padding:6px 12px 6px 8px;font-size:13.5px;font-weight:600;max-width:100%;text-align:left}
-.ichip .ic{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;flex:none;color:#fff}
-.ichip .ic svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.ichip .tx{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
-.ichip .tx small{font-weight:500;color:var(--muted);margin-left:4px}
-#sunChip .ic{background:#d98a1c} #sunChip.warn .ic{background:var(--leyfi)} #sunChip.warn{color:var(--leyfi)}
-#sunChip.dark .ic{background:#3b4a6b} #sunChip.dark{color:var(--fg)}
-#carChip .ic{background:#2577c4}
-#carArrow{transition:transform .15s linear}
-.chiprow{display:flex;gap:6px;align-items:center;max-width:100%}
-.ichip.x2{padding:6px 10px;color:var(--muted);font-size:15px}
-#battChip .ic{background:var(--leyfi)} #battChip.bad .ic{background:var(--bann)} #battChip.bad{color:var(--bann)}
-.setrow{display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+/* Hægri dálkur á kortinu: lög og lítill áttaviti */
+#mapside{position:fixed;z-index:900;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 68px);
+  display:flex;flex-direction:column;align-items:center;gap:12px}
+.mini{border:none;background:transparent;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.mini .dial{width:56px;height:56px;border-radius:50%;background:var(--panel);box-shadow:var(--shadow);display:grid;place-items:center;position:relative}
+.mini .dial .n{position:absolute;top:3px;font-size:9px;font-weight:700;color:var(--muted)}
+.mini svg{width:26px;height:26px;transition:transform .15s linear}
+.mini svg path{fill:var(--info)}
+.mini .tx{background:var(--panel);border-radius:8px;padding:2px 7px;font-size:11.5px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow-s);font-variant-numeric:tabular-nums}
+.mini .tx small{display:none}
+
+/* Takkar og veiðihamsspjald neðst á kortinu */
+#mapfabs{position:fixed;z-index:900;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 92px);display:flex;flex-direction:column;gap:12px}
+.fab{width:52px;height:52px;border-radius:50%;border:none;background:var(--panel);box-shadow:var(--shadow);display:grid;place-items:center}
+.fab svg{width:24px;height:24px;fill:none;stroke:var(--fg);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#btnGps.on{background:var(--accent)} #btnGps.on svg{stroke:#fff}
+#btnGps.follow svg circle.c{fill:#fff}
+#huntCard{position:fixed;z-index:900;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));
+  bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 12px);min-height:66px;box-sizing:border-box;border-radius:20px;background:var(--panel);
+  box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;padding:8px 14px 8px 16px}
+.hdot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.hdot.on{background:var(--ok);box-shadow:0 0 0 4px rgba(43,138,75,.2);animation:pulse 1.8s infinite}
+#huntCard .t{flex:1;min-width:0;line-height:1.2}
+#huntCard .h{font:700 17px var(--f-display);letter-spacing:.03em;text-transform:uppercase}
+#huntTx{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tog{appearance:none;width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;margin:0;cursor:pointer;transition:background .2s}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tog:checked{background:var(--accent)} .tog:checked::after{transform:translateX(18px)}
+.tog.big{width:54px;height:32px;border-radius:16px} .tog.big::after{width:26px;height:26px}
+.tog.big:checked{background:var(--ok)} .tog.big:checked::after{transform:translateX(22px)}
+
+/* Flipaslá */
+#tabbar{position:fixed;z-index:1000;left:0;right:0;bottom:0;height:calc(var(--tabh) + env(safe-area-inset-bottom,0px));box-sizing:border-box;
+  padding:0 max(0px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(0px,env(safe-area-inset-left,0px));
+  background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+#tabbar button{border:none;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:600;color:var(--muted)}
+#tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#tabbar button[aria-current="page"]{color:var(--accent);font-weight:700}
+
+/* Síður */
+.page{position:fixed;z-index:950;left:0;right:0;top:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px));overflow-y:auto;background:var(--bg);
+  padding:calc(env(safe-area-inset-top,0px) + 72px) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));box-sizing:border-box;
+  overscroll-behavior:contain}
+.page h1{font:700 26px/1 var(--f-display);letter-spacing:.03em;text-transform:uppercase;margin:6px 4px 14px}
+.sect{font:700 12.5px var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:18px 4px 8px}
+.group{background:var(--panel);border-radius:16px;box-shadow:var(--shadow-s);overflow:hidden}
+.wrapmax{max-width:560px;margin:0 auto}
+
+/* Áttaviti */
+.dialwrap{position:relative;width:min(300px,78vw);aspect-ratio:1;max-width:100%;margin:0 auto}
+.dialwrap svg{position:absolute;inset:0;width:100%;height:100%}
+#roseG,#bigArrow{transition:transform .15s linear;transform-origin:150px 150px;transform-box:view-box}
+.dcenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;pointer-events:none}
+#bdName{font-size:14px;font-weight:600;color:var(--info);max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bdDist{font:700 46px/1 var(--f-display);font-variant-numeric:tabular-nums}
+#bdTurn{font-size:15px;font-weight:600}
+#bdEta{font-size:12px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
+.tile{background:var(--panel);border:none;border-radius:14px;padding:10px 12px;box-shadow:var(--shadow-s);text-align:left;min-width:0}
+.tile .k{font-size:11.5px;color:var(--muted);font-weight:600}
+.tile .v{font:700 19px var(--f-display);font-variant-numeric:tabular-nums}
+.tile .v small,.tile .s{display:block;font:400 11.5px var(--f-body);color:var(--muted)}
+#sunChip.warn .v{color:var(--leyfi)}
+#battChip.bad .v{color:var(--bann)}
+#cLatLon{font:500 11.5px/1.35 var(--f-mono);margin-top:3px;white-space:pre-line}
+.lnk{border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;padding:8px 4px;text-decoration:underline}
+.row2{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+
+/* Listar (skotmörk, félagar) */
+.ptrow{display:flex;align-items:center;gap:12px;padding:11px 14px;border-top:1px solid var(--soft);cursor:pointer}
+.ptrow:first-child{border-top:none}
+.ptrow .dotp{width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center}
+.ptrow .dotp svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.ptrow .t{flex:1;min-width:0}
+.ptrow .t b{display:block;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptrow .t span{font-size:12.5px;color:var(--muted)}
+.ptrow .chk{width:20px;height:20px;flex:none;fill:none;stroke:var(--info);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.ptrow button.go{border:1px solid var(--line);background:transparent;border-radius:8px;padding:5px 10px;font-size:13px}
+.ptrow.sel{background:color-mix(in srgb,var(--info) 7%,transparent)}
+.empty{padding:16px;color:var(--muted);font-size:14px}
+
+/* Stillingar (sér síða) */
+#pgSettings{z-index:1200;bottom:0;padding-top:calc(env(safe-area-inset-top,0px) + 8px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 32px)}
+.sethead{display:flex;align-items:center;gap:6px;margin:4px 0 4px -6px}
+.sethead h1{margin:0;flex:1}
+.back{width:44px;height:44px;border:none;background:transparent;border-radius:50%;display:grid;place-items:center}
+.back svg{width:24px;height:24px;fill:none;stroke:var(--fg);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.navrow{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 14px;border:none;border-top:1px solid var(--soft);background:transparent;text-align:left;box-sizing:border-box}
+.navrow:first-child{border-top:none}
+.navrow b{flex:1;font-weight:600}
+.navrow span{color:var(--muted);font-size:14px}
+.navrow svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:2.2;stroke-linecap:round}
+.ginner{padding:12px 14px;display:grid;gap:10px}
+details.group > summary{list-style:none;display:flex;align-items:center;gap:10px;min-height:48px;padding:0 14px;font-weight:600;cursor:pointer}
+details.group > summary::-webkit-details-marker{display:none}
+details.group > summary::after{content:"›";margin-left:auto;color:var(--muted);font-size:20px;transition:transform .2s}
+details.group[open] > summary::after{transform:rotate(90deg)}
+.setrow{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--soft)}
+.setrow:first-child{border-top:none}
 .setrow .t{flex:1;min-width:0}
 .setrow .t b{display:block;font-weight:600}
 .setrow .t span{font-size:12.5px;color:var(--muted)}
-#toast{position:fixed;z-index:1300;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 150px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:var(--shadow);max-width:calc(100% - 40px);text-align:center}
-.pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45);display:grid;place-items:center;box-sizing:border-box}
-.pin svg{transform:rotate(45deg);width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
-.pop .pb{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.pop .pb button{border:1px solid #c9cfcf;background:#fff;color:#1b1f20;border-radius:8px;padding:6px 10px;font:600 13px var(--f-body)}
-.pop .dist{font:500 13px var(--f-mono);margin:4px 0}
-.ptrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
-.ptrow:first-child{border-top:none}
-.ptrow .dotp{width:12px;height:12px;border-radius:50%;flex:none}
-.ptrow .t{flex:1;min-width:0}
-.ptrow .t b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ptrow .t span{font-size:12.5px;color:var(--muted)}
-.ptrow button.go{border:1px solid var(--line);background:transparent;border-radius:8px;padding:5px 10px;font-size:13px}
-pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(--f-mono);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin:0}
+
+/* Spjöld (lög, nýr punktur, ping) */
+#toast{position:fixed;z-index:1300;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 92px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:var(--shadow);max-width:calc(100% - 40px);text-align:center}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:1100;max-height:82%;overflow:auto;background:var(--panel);
+  border-radius:18px 18px 0 0;box-shadow:0 -6px 30px rgba(0,0,0,.25);
+  padding:6px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 20px) max(16px,env(safe-area-inset-left,0px))}
+#scrim{position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,.35)}
+.grab{width:42px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 10px}
+.sh-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sh-head h2{font:700 24px/1 var(--f-display);margin:0;text-transform:uppercase;letter-spacing:.02em}
+.x{border:none;background:transparent;font-size:28px;line-height:1;padding:4px 8px;color:var(--muted)}
+h3{font:700 13px/1.2 var(--f-display);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:20px 0 8px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 14px}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--panel);border-color:var(--fg)}
+.layer{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--soft)}
+.layer:first-child{border-top:none}
+.sw{width:14px;height:14px;border-radius:4px;flex:none;border:2px solid currentColor}
+.layer .t{min-width:0;flex:1}
+.layer .n{font-weight:600}
+.layer .m{font-size:12.5px;color:var(--muted)}
+.chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1px solid currentColor;margin-right:6px}
+.chip.v{color:var(--ok)} .chip.w{color:var(--leyfi)} .chip.e{color:var(--bann)} .chip.l{color:var(--muted)}
+.del{border:none;background:transparent;color:var(--muted);font-size:18px;padding:4px 6px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+input[type=text],input[type=url],select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box;min-width:0}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1;min-width:140px}
+.btn{border:none;border-radius:12px;padding:11px 14px;background:var(--accent);color:#fff;font-weight:600}
+.btn.sec{background:var(--panel);color:var(--fg);border:1px solid var(--line)}
+.btn.wide{width:100%}
 a.btn{text-decoration:none;text-align:center;display:block}
+.note{font-size:13px;color:var(--muted);margin:0;line-height:1.45}
+.msg{font-size:13px;margin:0}
+.msg.err{color:var(--bann)}
+.links{display:grid;gap:6px;font-size:14px}
+.links a{color:var(--info)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:13.5px;align-items:center}
+.legend i{width:14px;height:14px;border-radius:3px;display:block}
+pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(--f-mono);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin:0}
+
 /* Neyðarskjár: ein föst ásýnd, óháð þema */
 #sos{position:fixed;inset:0;z-index:1400;background:#141414;color:#fff;overflow:auto;
   padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) max(16px,env(safe-area-inset-left,0px))}
@@ -111,59 +216,17 @@ a.btn{text-decoration:none;text-align:center;display:block}
 #sos .acts2 a,#sos .acts2 button{display:block;text-align:center;text-decoration:none;border:none;border-radius:12px;padding:15px;font:700 18px var(--f-body);color:#fff;background:#2c2c2c}
 #sos .acts2 .call{background:#d62f25;font-size:22px}
 #sos p.tip{font-size:14px;color:#bbb;line-height:1.5;margin:20px 0 0;max-width:60ch}
-.fabs{display:flex;flex-direction:column;gap:10px;pointer-events:auto}
-.fab{width:54px;height:54px;border-radius:50%;border:none;background:var(--panel);box-shadow:var(--shadow);display:grid;place-items:center}
-.fab svg{width:26px;height:26px;fill:none;stroke:var(--fg);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#btnGps.on{background:var(--accent)} #btnGps.on svg{stroke:#fff}
-#btnGps.follow svg circle.c{fill:#fff}
 
-/* Sheet */
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:1100;max-height:82%;overflow:auto;background:var(--panel);
-  border-radius:16px 16px 0 0;box-shadow:0 -6px 30px rgba(0,0,0,.3);
-  padding:6px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 20px) max(16px,env(safe-area-inset-left,0px))}
-#scrim{position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,.35)}
-.grab{width:42px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 10px}
-.sh-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.sh-head h2{font:700 24px/1 var(--f-display);margin:0;text-transform:uppercase;letter-spacing:.02em}
-.x{border:none;background:transparent;font-size:28px;line-height:1;padding:4px 8px;color:var(--muted)}
-h3{font:700 15px/1.2 var(--f-display);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 8px}
-.seg{display:flex;gap:6px;flex-wrap:wrap}
-.seg button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 14px}
-.seg button[aria-pressed="true"]{background:var(--fg);color:var(--panel);border-color:var(--fg)}
-.layer{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
-.layer:first-child{border-top:none}
-.sw{width:16px;height:16px;border-radius:4px;flex:none;border:2px solid currentColor}
-.layer .t{min-width:0;flex:1}
-.layer .n{font-weight:600}
-.layer .m{font-size:12.5px;color:var(--muted)}
-.chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1px solid currentColor;margin-right:6px}
-.chip.v{color:var(--ok)} .chip.w{color:var(--leyfi)} .chip.e{color:var(--bann)} .chip.l{color:var(--muted)}
-.tog{appearance:none;width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;margin:0;cursor:pointer;transition:background .2s}
-.tog::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.tog:checked{background:var(--accent)} .tog:checked::after{transform:translateX(18px)}
-.del{border:none;background:transparent;color:var(--muted);font-size:20px;padding:4px}
-.card{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px}
-label.f{display:grid;gap:4px;font-size:13px;color:var(--muted)}
-input[type=text],input[type=url],select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;box-sizing:border-box;min-width:0}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.row>*{flex:1;min-width:140px}
-.btn{border:none;border-radius:10px;padding:10px 14px;background:var(--accent);color:#fff;font-weight:600}
-.btn.sec{background:transparent;color:var(--fg);border:1px solid var(--line)}
-.note{font-size:13px;color:var(--muted);margin:0}
-.msg{font-size:13px;margin:0}
-.msg.err{color:var(--bann)}
-.links{display:grid;gap:6px;font-size:14px}
-.links a{color:var(--info)}
-input[type=range]{width:100%;accent-color:var(--accent)}
-.legend{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:13.5px;align-items:center}
-.legend i{width:14px;height:14px;border-radius:3px;display:block}
-
-/* Map bits */
+/* Kortið */
 .leaflet-container{font:inherit}
-.leaflet-top{top:calc(env(safe-area-inset-top,0px) + 74px)}
 .leaflet-bottom.leaflet-left{display:none}
 .leaflet-control-attribution{font-size:10px}
-.leaflet-bottom.leaflet-right{bottom:calc(env(safe-area-inset-bottom,0px) + 128px)}
+.leaflet-bottom.leaflet-right{bottom:84px}
+.pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45);display:grid;place-items:center;box-sizing:border-box}
+.pin svg{transform:rotate(45deg);width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.pop .pb{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.pop .pb button{border:1px solid #c9cfcf;background:#fff;color:#1b1f20;border-radius:8px;padding:6px 10px;font:600 13px var(--f-body)}
+.pop .dist{font:500 13px var(--f-mono);margin:4px 0}
 .me{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 0 0 2px var(--accent),0 2px 8px rgba(0,0,0,.4);box-sizing:border-box;position:relative}
 .me .hd{position:absolute;left:50%;top:-15px;width:0;height:0;margin-left:-6px;border:6px solid transparent;border-bottom:10px solid var(--accent);transform-origin:6px 26px}
 .pop b{display:block;font-size:15px;margin-bottom:4px}
@@ -176,58 +239,238 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 <body>
 <div id="map" role="application" aria-label="Kort"></div>
 
-<header id="status" aria-live="polite">
-  <span class="dot"></span>
-  <div class="txt">
-    <div id="stTitle">Kveiktu á GPS</div>
-    <div id="stSub">Ýttu á staðsetningarhnappinn neðst til hægri</div>
-  </div>
-</header>
-
-<div id="chips">
-  <div class="chiprow">
-    <button class="ichip" id="carChip" type="button" hidden>
-      <span class="ic"><svg viewBox="0 0 24 24" id="carArrow"><path d="M12 3v18M5 10l7-7 7 7"/></svg></span>
-      <span class="tx" id="carTx">Bíll</span>
-    </button>
-    <button class="ichip x2" id="tgtClear" type="button" hidden aria-label="Hætta að vísa á punkt">✕</button>
-  </div>
-  <div class="ichip" id="sunChip" hidden>
-    <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M4.9 10.9l2 2M19.1 10.9l-2 2"/></svg></span>
-    <span class="tx" id="sunTx"></span>
-  </div>
-  <div class="ichip" id="battChip" hidden>
-    <span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4"/></svg></span>
-    <span class="tx" id="battTx"></span>
-  </div>
+<div id="topbar">
+  <button class="rbtn" id="btnSettings" type="button" aria-label="Stillingar">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>
+  </button>
+  <header id="status" aria-live="polite">
+    <span class="dot"></span>
+    <div class="txt">
+      <div id="stTitle">Kveiktu á GPS</div>
+      <div id="stSub">Ýttu á staðsetningarhnappinn</div>
+    </div>
+  </header>
+  <button class="sosbtn" id="btnSos" type="button">NEYÐ</button>
 </div>
 
-<div id="bottom">
-  <div class="left">
-    <div class="acts">
-      <button class="act" id="btnMark" type="button">Merkja hér</button>
-      <button class="act" id="btnPing" type="button">Senda ping</button>
-      <button class="act sos" id="btnSos" type="button">NEYÐ</button>
-    </div>
-    <div id="coords" role="button" tabindex="0" aria-label="Opna hnit í stóru letri">
-      <div class="c">
-        <div id="cLatLon">— ° —′ N &nbsp; — ° —′ V</div>
-        <div id="cMeta">Engin staðsetning enn</div>
+<div id="mapside">
+  <button class="rbtn" id="btnLayers" type="button" aria-label="Lög og grunnkort">
+    <svg viewBox="0 0 24 24"><path d="M12 3 2 8.5 12 14l10-5.5z"/><path d="m2 13 10 5.5L22 13"/></svg>
+  </button>
+  <button class="mini" id="carChip" type="button" hidden aria-label="Opna áttavita">
+    <span class="dial"><span class="n">N</span><svg viewBox="0 0 24 24" id="carArrow"><path d="M12 2 18 20 12 16 6 20Z"/></svg></span>
+    <span class="tx" id="carTx">Bíll</span>
+  </button>
+</div>
+
+<div id="mapfabs">
+  <button class="fab" id="btnMark" type="button" aria-label="Merkja punkt">
+    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+  <button class="fab" id="btnGps" type="button" aria-label="Staðsetning">
+    <svg viewBox="0 0 24 24"><circle class="c" cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7.5"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg>
+  </button>
+</div>
+
+<div id="huntCard">
+  <span class="hdot" id="huntDot"></span>
+  <label class="t" for="huntSw">
+    <div class="h">Veiðihamur</div>
+    <div id="huntTx">Ýttu til að hefja ferð</div>
+  </label>
+  <input type="checkbox" class="tog big" id="huntSw" aria-label="Veiðihamur">
+</div>
+
+<section id="pgCompass" class="page" hidden aria-label="Áttaviti">
+  <div class="wrapmax">
+    <h1>Áttaviti</h1>
+    <div class="dialwrap">
+      <svg viewBox="0 0 300 300" aria-hidden="true">
+        <circle cx="150" cy="150" r="146" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
+        <g id="roseG">
+          <circle cx="150" cy="150" r="118" fill="none" stroke="var(--soft)" stroke-width="1"/>
+          <g stroke="var(--muted)" stroke-width="1.2" opacity=".6">
+            <path d="M150 10v14M150 276v14M10 150h14M276 150h14"/>
+            <path d="M249 51l-7 7M51 249l7-7M249 249l-7-7M51 51l7 7"/>
+          </g>
+          <text x="150" y="44" text-anchor="middle" font-family="Barlow, sans-serif" font-weight="700" font-size="16" fill="var(--sos)">N</text>
+          <text x="262" y="155" text-anchor="middle" font-family="Barlow, sans-serif" font-weight="600" font-size="14" fill="var(--muted)">A</text>
+          <text x="150" y="268" text-anchor="middle" font-family="Barlow, sans-serif" font-weight="600" font-size="14" fill="var(--muted)">S</text>
+          <text x="38" y="155" text-anchor="middle" font-family="Barlow, sans-serif" font-weight="600" font-size="14" fill="var(--muted)">V</text>
+        </g>
+        <g id="bigArrow">
+          <path d="M150 20 L 170 66 L 150 56 L 130 66 Z" fill="var(--info)"/>
+        </g>
+        <path d="M150 2 L 156 14 L 144 14 Z" fill="var(--fg)"/>
+      </svg>
+      <div class="dcenter">
+        <div id="bdName">Ekkert skotmark</div>
+        <div id="bdDist">—</div>
+        <div id="bdTurn"></div>
+        <div id="bdEta"></div>
       </div>
     </div>
+
+    <div class="sect">Vísa á</div>
+    <div class="group" id="ptList"></div>
+    <div class="row2">
+      <button class="lnk" id="tgtClear" type="button" hidden>Vísa aftur á bílinn</button>
+      <button class="lnk" id="clrPings" type="button">Eyða öllum pingum</button>
+    </div>
+
+    <div class="tiles">
+      <div class="tile" id="sunChip"><div class="k" id="sunK">Sólsetur</div><div class="v" id="sunTx">—</div></div>
+      <div class="tile" id="battChip"><div class="k">Rafhlaða</div><div class="v" id="battTx">—</div></div>
+      <button class="tile" id="coords" type="button" aria-label="Opna hnit í stóru letri">
+        <div class="k">Staðsetning</div>
+        <div id="cLatLon">—</div>
+        <div class="s" id="cMeta">Engin staðsetning</div>
+      </button>
+    </div>
   </div>
-  <div class="fabs">
-    <button class="fab" id="btnLayers" type="button" aria-label="Lög og stillingar">
-      <svg viewBox="0 0 24 24"><path d="M12 3 2 8.5 12 14l10-5.5z"/><path d="m2 13 10 5.5L22 13"/><path d="m2 17.5 10 5.5 10-5.5" opacity=".5"/></svg>
-    </button>
-    <button class="fab" id="btnGps" type="button" aria-label="Staðsetning">
-      <svg viewBox="0 0 24 24"><circle class="c" cx="12" cy="12" r="3.5"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg>
-    </button>
+</section>
+
+<section id="pgFriends" class="page" hidden aria-label="Félagar">
+  <div class="wrapmax">
+    <h1>Félagar</h1>
+    <div id="friendsApp"></div>
+    <div id="friendsWeb">
+      <div class="group"><div class="ginner">
+        <p class="note">Í Android appinu ýtir þú bara á <b>Finna</b> og síminn hjá félaganum svarar sjálfkrafa með staðsetningu, líka þó hann sé í vasanum.</p>
+        <a class="btn" href="https://github.com/Gombiman/rjupnakort/releases/download/app/rjupnakort.apk">Sækja appið</a>
+      </div></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn sec wide" id="btnPing" type="button">Senda ping-hlekk með SMS</button></div>
   </div>
-</div>
+</section>
+
+<section id="pgSettings" class="page" hidden aria-label="Stillingar">
+  <div class="wrapmax">
+    <div class="sethead">
+      <button class="back" id="setBack" type="button" aria-label="Til baka"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h1>Stillingar</h1>
+    </div>
+
+    <div class="sect">Kort</div>
+    <div class="group">
+      <button class="navrow" id="setLayers" type="button"><b>Lög og grunnkort</b><span id="setBaseName"></span><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <details class="group" style="margin-top:8px">
+      <summary>Kort án nets</summary>
+      <div class="ginner">
+        <p class="note">Þysjaðu kortið þannig að veiðisvæðið fylli skjáinn og ýttu á „Reikna stærð“. Landslagskortið fyrir það svæði vistast í símanum.</p>
+        <label class="f">Nákvæmni
+          <select id="offZoom">
+            <option value="14">Gott (aðdráttur 14)</option>
+            <option value="15" selected>Mjög gott (aðdráttur 15)</option>
+            <option value="16">Mest (aðdráttur 16, stórt)</option>
+          </select>
+        </label>
+        <div class="row">
+          <button class="btn sec" id="offCalc" type="button">Reikna stærð</button>
+          <button class="btn" id="offGo" type="button" hidden>Vista svæði</button>
+          <button class="btn sec" id="offStop" type="button" hidden>Stöðva</button>
+        </div>
+        <div id="offBarWrap" hidden style="height:8px;border-radius:4px;background:var(--line);overflow:hidden"><div id="offBar" style="height:100%;width:0;background:var(--accent);transition:width .2s"></div></div>
+        <p class="msg" id="offMsg"></p>
+        <div class="row" style="align-items:center">
+          <p class="note" id="offStat" style="flex:2">Vistað: —</p>
+          <button class="btn sec" id="offClear" type="button" style="flex:1">Eyða vistuðu</button>
+        </div>
+      </div>
+    </details>
+
+    <div class="sect">Viðvaranir og rafhlaða</div>
+    <div class="group"><div class="ginner">
+      <label class="f" for="nearIn"><span>Vara við þegar ég er nær en <b id="nearOut">300 m</b> frá svæði</span></label>
+      <input type="range" id="nearIn" min="50" max="1000" step="50" value="300">
+      <div id="setList"></div>
+    </div></div>
+
+    <div class="sect">Félagar og hópkóði</div>
+    <div id="setFriendsApp"></div>
+    <div class="group" id="setFriendsWeb"><div class="ginner"><p class="note">Félagar, hópkóði og sjálfvirk svör eru í Android appinu.</p></div></div>
+
+    <div class="sect">Gögn</div>
+    <details class="group">
+      <summary>Flytja inn svæði úr skrá</summary>
+      <div class="ginner">
+        <p class="note">GeoJSON, KML eða Shapefile í .zip (t.d. þjóðlendur eða ríkisjarðir). Gögnin eru vistuð í símanum og virka án nets.</p>
+        <input type="file" id="fileIn" accept=".geojson,.json,.kml,.zip">
+        <div id="impForm" hidden class="card" style="border-style:dashed">
+          <label class="f">Heiti
+            <input type="text" id="impName">
+          </label>
+          <label class="f">Flokkur
+            <select id="impCat">
+              <option value="info">Upplýsingar (t.d. þjóðlenda)</option>
+              <option value="leyfi">Leyfi þarf (t.d. ríkisjörð)</option>
+              <option value="athuga">Friðlýst — athuga reglur</option>
+              <option value="bann">Veiði bönnuð</option>
+            </select>
+          </label>
+          <button class="btn" id="impAdd" type="button">Bæta við korti</button>
+        </div>
+        <p class="msg" id="impMsg"></p>
+      </div>
+    </details>
+    <details class="group" style="margin-top:8px">
+      <summary>Bæta við WMS lagi</summary>
+      <div class="ginner">
+        <p class="note">Sýnir lag frá kortaþjóni sem mynd. Viðvaranir virka aðeins fyrir gögn úr skrá eða vektorgögn.</p>
+        <label class="f">Slóð á WMS þjón
+          <input type="url" id="wmsUrl" placeholder="https://…/geoserver/wms">
+        </label>
+        <div class="row">
+          <button class="btn sec" id="wmsCaps" type="button">Sækja lagalista</button>
+        </div>
+        <label class="f">Lag
+          <input type="text" id="wmsLayer" list="wmsList" placeholder="vinnusvæði:lag">
+          <datalist id="wmsList"></datalist>
+        </label>
+        <label class="f">Heiti á korti
+          <input type="text" id="wmsName" placeholder="t.d. Þjóðlendur">
+        </label>
+        <button class="btn" id="wmsAdd" type="button">Bæta við</button>
+        <p class="msg" id="wmsMsg"></p>
+      </div>
+    </details>
+    <details class="group" style="margin-top:8px">
+      <summary>Hvar fæ ég gögnin</summary>
+      <div class="ginner links">
+        <a href="https://www.stjornarradid.is/verkefni/rekstur-og-eignir-rikisins/eignir-rikisins/thjodlendur/kort/" target="_blank" rel="noopener">Þjóðlendur — kortasjá og niðurhal (LUK)</a>
+        <a href="https://www.stjornarradid.is/verkefni/rekstur-og-eignir-rikisins/eignir-rikisins/rikisjardir-og-annad-land-i-eigu-rikisins/" target="_blank" rel="noopener">Ríkisjarðir — kortavefsjá FSRE</a>
+        <a href="https://mapshaper.org" target="_blank" rel="noopener">mapshaper.org — breyta í GeoJSON / WGS84</a>
+      </div>
+    </details>
+
+    <div id="getApp">
+      <div class="sect">Android app</div>
+      <div class="group"><div class="ginner">
+        <p class="note">Í appinu virka viðvaranir um bannsvæði og slóðin líka með slökktan skjá.</p>
+        <a class="btn" href="https://github.com/Gombiman/rjupnakort/releases/download/app/rjupnakort.apk">Sækja appið (.apk)</a>
+      </div></div>
+    </div>
+
+    <p class="note" id="verNote" style="margin-top:18px;text-align:center"></p>
+    <p class="note" style="margin-top:6px;text-align:center">Línur á kortinu eru til hliðsjónar. Úrskurðir, auglýsingar um friðlýsingu og leyfi landeigenda ráða alltaf.</p>
+  </div>
+</section>
+
+<nav id="tabbar" aria-label="Síður">
+  <button type="button" data-tab="map" aria-current="page">
+    <svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Kort
+  </button>
+  <button type="button" data-tab="compass">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>Áttaviti
+  </button>
+  <button type="button" data-tab="friends">
+    <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c2.8 0 5 1.8 5 4.6"/></svg>Félagar
+  </button>
+</nav>
 
 <div id="scrim" hidden></div>
-<section id="sheet" class="sheet" hidden aria-label="Lög og stillingar">
+<section id="sheet" class="sheet" hidden aria-label="Lög og grunnkort">
   <div class="grab"></div>
   <div class="sh-head"><h2>Lög</h2><button class="x" id="btnClose" type="button" aria-label="Loka">×</button></div>
 
@@ -238,113 +481,16 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <select id="lmiSel"></select>
   </label>
 
-  <h3>Kort án nets</h3>
-  <div class="card">
-    <p class="note">Þysjaðu kortið þannig að veiðisvæðið fylli skjáinn og ýttu á „Reikna stærð“. Landslagskortið fyrir það svæði vistast í símanum.</p>
-    <label class="f">Nákvæmni
-      <select id="offZoom">
-        <option value="14">Gott (aðdráttur 14)</option>
-        <option value="15" selected>Mjög gott (aðdráttur 15)</option>
-        <option value="16">Mest (aðdráttur 16, stórt)</option>
-      </select>
-    </label>
-    <div class="row">
-      <button class="btn sec" id="offCalc" type="button">Reikna stærð</button>
-      <button class="btn" id="offGo" type="button" hidden>Vista svæði</button>
-      <button class="btn sec" id="offStop" type="button" hidden>Stöðva</button>
-    </div>
-    <div id="offBarWrap" hidden style="height:8px;border-radius:4px;background:var(--line);overflow:hidden"><div id="offBar" style="height:100%;width:0;background:var(--accent);transition:width .2s"></div></div>
-    <p class="msg" id="offMsg"></p>
-    <div class="row" style="align-items:center">
-      <p class="note" id="offStat" style="flex:2">Vistað: —</p>
-      <button class="btn sec" id="offClear" type="button" style="flex:1">Eyða vistuðu</button>
-    </div>
-  </div>
-
-  <h3>Punktar</h3>
-  <div class="card">
-    <p class="note">Haltu fingri á kortinu til að merkja punkt þar, eða ýttu á „Merkja hér“. Ping frá öðrum birtast hér þegar þú opnar hlekkinn þeirra. Ýttu á ✕ tvisvar til að eyða punkti.</p>
-    <div id="ptList"></div>
-    <div class="row">
-      <button class="btn sec" id="clrPings" type="button">Eyða öllum pingum</button>
-    </div>
-  </div>
-
   <h3>Svæði</h3>
   <div id="layerList"></div>
 
   <h3>Litir</h3>
   <div class="legend">
-    <i style="background:var(--bann)"></i><span>Veiði bönnuð — rauð viðvörun</span>
+    <i style="background:var(--bann)"></i><span>Veiði bönnuð</span>
     <i style="background:var(--athuga)"></i><span>Friðlýst — kannaðu reglur svæðisins</span>
-    <i style="background:var(--leyfi)"></i><span>Leyfi landeiganda/umsjónaraðila þarf</span>
+    <i style="background:var(--leyfi)"></i><span>Leyfi landeiganda eða umsjónaraðila þarf</span>
     <i style="background:var(--info)"></i><span>Upplýsingar (t.d. þjóðlenda)</span>
   </div>
-
-  <h3>Bæta við gögnum úr skrá</h3>
-  <div class="card">
-    <p class="note">GeoJSON, KML eða Shapefile í .zip (t.d. þjóðlendur eða ríkisjarðir). Gögnin eru vistuð í símanum og virka án nets.</p>
-    <input type="file" id="fileIn" accept=".geojson,.json,.kml,.zip">
-    <div id="impForm" hidden class="card" style="border-style:dashed">
-      <label class="f">Heiti
-        <input type="text" id="impName">
-      </label>
-      <label class="f">Flokkur
-        <select id="impCat">
-          <option value="info">Upplýsingar (t.d. þjóðlenda)</option>
-          <option value="leyfi">Leyfi þarf (t.d. ríkisjörð)</option>
-          <option value="athuga">Friðlýst — athuga reglur</option>
-          <option value="bann">Veiði bönnuð</option>
-        </select>
-      </label>
-      <button class="btn" id="impAdd" type="button">Bæta við korti</button>
-    </div>
-    <p class="msg" id="impMsg"></p>
-  </div>
-
-  <h3>Bæta við WMS lagi</h3>
-  <div class="card">
-    <p class="note">Sýnir lag frá kortaþjóni sem mynd. Viðvaranir virka aðeins fyrir gögn úr skrá eða vektorgögn.</p>
-    <label class="f">Slóð á WMS þjón
-      <input type="url" id="wmsUrl" placeholder="https://…/geoserver/wms">
-    </label>
-    <div class="row">
-      <button class="btn sec" id="wmsCaps" type="button">Sækja lagalista</button>
-    </div>
-    <label class="f">Lag
-      <input type="text" id="wmsLayer" list="wmsList" placeholder="vinnusvæði:lag">
-      <datalist id="wmsList"></datalist>
-    </label>
-    <label class="f">Heiti á korti
-      <input type="text" id="wmsName" placeholder="t.d. Þjóðlendur">
-    </label>
-    <button class="btn" id="wmsAdd" type="button">Bæta við</button>
-    <p class="msg" id="wmsMsg"></p>
-  </div>
-
-  <h3>Stillingar</h3>
-  <div class="card">
-    <label class="f" for="nearIn">Vara við þegar ég er nær en <b id="nearOut">300 m</b> frá svæði</label>
-    <input type="range" id="nearIn" min="50" max="1000" step="50" value="300">
-    <div id="setList"></div>
-  </div>
-
-  <div id="getApp">
-    <h3>Android app</h3>
-    <div class="card">
-      <p class="note">Í appinu virka viðvaranir um bannsvæði líka með slökktan skjá (veiðihamur).</p>
-      <a class="btn" href="https://github.com/Gombiman/rjupnakort/releases/download/app/rjupnakort.apk">Sækja appið (.apk)</a>
-    </div>
-  </div>
-
-  <h3>Hvar fæ ég gögnin</h3>
-  <div class="links">
-    <a href="https://www.stjornarradid.is/verkefni/rekstur-og-eignir-rikisins/eignir-rikisins/thjodlendur/kort/" target="_blank" rel="noopener">Þjóðlendur — kortasjá og niðurhal (LUK)</a>
-    <a href="https://www.stjornarradid.is/verkefni/rekstur-og-eignir-rikisins/eignir-rikisins/rikisjardir-og-annad-land-i-eigu-rikisins/" target="_blank" rel="noopener">Ríkisjarðir — kortavefsjá FSRE</a>
-    <a href="https://mapshaper.org" target="_blank" rel="noopener">mapshaper.org — breyta í GeoJSON / WGS84</a>
-  </div>
-  <p class="note" id="verNote" style="margin-top:16px"></p>
-  <p class="note" style="margin-top:6px">Línur á kortinu eru til hliðsjónar. Úrskurðir, auglýsingar um friðlýsingu og leyfi landeigenda ráða alltaf.</p>
 </section>
 
 <section id="ptSheet" class="sheet" hidden aria-label="Nýr punktur">
@@ -510,7 +656,6 @@ async function discoverLmi(){
   return null;
 }
 
-L.control.zoom({position:"topright"}).addTo(map);
 const renderer = L.canvas({padding:.5});
 map.createPane("zones"); map.getPane("zones").style.zIndex = 420;
 map.createPane("wms");   map.getPane("wms").style.zIndex = 410;
@@ -934,7 +1079,7 @@ function onPos(p){
   const hd = meMarker.getElement() && meMarker.getElement().querySelector(".hd");
   if (hd && !(window.__headingFresh && window.__headingFresh() != null)){ if (pos.hd != null && !isNaN(pos.hd) && (pos.sp||0) > 0.5){ hd.hidden = false; hd.style.transform = `rotate(${pos.hd}deg)`; } else hd.hidden = true; }
   if (follow) map.panTo(ll, {animate:true});
-  document.getElementById("cLatLon").textContent = `${ddm(pos.lat,"N","S")}  ${ddm(pos.lon,"A","V")}`;
+  document.getElementById("cLatLon").textContent = `${ddm(pos.lat,"N","S")}\n${ddm(pos.lon,"A","V")}`;
   document.getElementById("cMeta").textContent =
     `±${Math.round(pos.acc)} m` + (pos.alt!=null ? ` · ${Math.round(pos.alt)} m y.s.` : "") + ` · ${new Date(pos.t).toLocaleTimeString("is-IS",{hourCycle:"h23",hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
   evaluate();
@@ -953,6 +1098,7 @@ function stopGps(){
 btnGps.onclick = () => {
   if (watchId == null) return startGps();
   if (!follow){ follow = true; btnGps.classList.add("follow"); if (pos) map.setView([pos.lat,pos.lon], Math.max(map.getZoom(),14)); return; }
+  if (window.RK && window.RK.isHunting && window.RK.isHunting()){ toast("GPS er í gangi á meðan veiðihamur er virkur."); return; }
   stopGps(); showState("none", "GPS slökkt", "Ýttu aftur til að kveikja");
 };
 map.on("dragstart", () => { if (follow){ follow = false; btnGps.classList.remove("follow"); } });
@@ -1182,18 +1328,24 @@ map.on("popupopen", e => {
 const ptList = document.getElementById("ptList");
 function renderPtList(){
   ptList.innerHTML = "";
-  if (!pts.length){ ptList.innerHTML = '<p class="note">Engir punktar enn.</p>'; return; }
+  if (!pts.length){ ptList.innerHTML = '<div class="empty">Engir punktar enn. Merktu bílinn með + á kortinu.</div>'; return; }
+  const cur = currentTarget();
   const sorted = pts.slice().sort((a, b) => (a.type === "bill" ? -1 : 0) - (b.type === "bill" ? -1 : 0) || b.ts - a.ts);
   for (const p of sorted){
-    const rel = relFromMe(p), t = TYPES[p.type] || TYPES.annad;
-    const row = document.createElement("div"); row.className = "ptrow";
-    row.innerHTML = `<span class="dotp" style="background:${t.color}"></span>
-      <div class="t"><b>${esc(ptTitle(p))}</b><span>${esc(t.label)} · ${ago(p.ts)}${rel ? " · " + rel.text : ""}</span></div>`;
-    const go = document.createElement("button"); go.className = "go"; go.type = "button"; go.textContent = "Sýna";
-    go.onclick = () => { closeSheet(); map.setView([p.lat, p.lon], Math.max(map.getZoom(), 14)); markers[p.id] && markers[p.id].openPopup(); };
+    const rel = relFromMe(p), t = TYPES[p.type] || TYPES.annad, sel = cur && cur.id === p.id;
+    const row = document.createElement("div"); row.className = "ptrow" + (sel ? " sel" : "");
+    row.setAttribute("role", "button"); row.tabIndex = 0;
+    row.innerHTML = `<span class="dotp" style="background:${t.color}"><svg viewBox="0 0 24 24">${SVG[p.type] || SVG.annad}</svg></span>
+      <div class="t"><b>${esc(ptTitle(p))}</b><span>${rel ? rel.text + " · " : ""}${ago(p.ts)}</span></div>
+      ${sel ? '<svg class="chk" viewBox="0 0 24 24" role="img" aria-label="Valið"><path d="m5 12 5 5 9-10"/></svg>' : ""}`;
+    row.onclick = () => { setTarget(p.id); };
+    row.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); setTarget(p.id); } };
+    const go = document.createElement("button"); go.className = "go"; go.type = "button"; go.textContent = "Kort";
+    go.onclick = e => { e.stopPropagation(); setTab("map"); map.setView([p.lat, p.lon], Math.max(map.getZoom(), 14)); setTimeout(() => markers[p.id] && markers[p.id].openPopup(), 250); };
     const del = document.createElement("button"); del.className = "del"; del.type = "button"; del.textContent = "✕";
     del.setAttribute("aria-label", "Eyða " + ptTitle(p));
-    del.onclick = () => {
+    del.onclick = e => {
+      e.stopPropagation();
       if (del.dataset.armed !== "1"){ del.dataset.armed = "1"; del.textContent = "Eyða?"; del.style.color = color("bann");
         setTimeout(() => { if (del.isConnected){ del.dataset.armed = ""; del.textContent = "✕"; del.style.color = ""; } }, 3000); return; }
       pts = pts.filter(x => x.id !== p.id); savePts(); map.closePopup(); renderPts();
@@ -1220,21 +1372,42 @@ function turnText(r){
   return `${Math.round(a)}° til ${r > 0 ? "hægri" : "vinstri"}`;
 }
 let lastRot = 0;
+const bigArrow = document.getElementById("bigArrow"), roseG = document.getElementById("roseG");
+let lastBig = 0, lastRose = 0;
+const unwrap = (v, last) => last + ((((v - last) % 360) + 540) % 360 - 180);
 function updateCar(){
   const tg = currentTarget();
-  carChip.hidden = !tg; tgtClear.hidden = !tg || tg.type === "bill";
+  carChip.hidden = !tg; tgtClear.hidden = !tg || tg.type === "bill" || !pts.some(p => p.type === "bill");
   if ((!tg || !S.carline || !pos) && carLine){ map.removeLayer(carLine); carLine = null; }
-  if (!tg) return;
+  const hv = window.__headingFresh ? window.__headingFresh() : null;
+  lastRose = unwrap(hv == null ? 0 : -hv, lastRose);
+  roseG.style.transform = `rotate(${lastRose}deg)`;
+  if (!tg){
+    document.getElementById("bdName").textContent = "Ekkert skotmark";
+    document.getElementById("bdDist").textContent = "—";
+    document.getElementById("bdTurn").textContent = "Merktu bílinn með + á kortinu";
+    document.getElementById("bdEta").textContent = "";
+    bigArrow.setAttribute("visibility", "hidden");
+    return;
+  }
   const t = TYPES[tg.type] || TYPES.annad;
-  carChip.querySelector(".ic").style.background = t.color;
+  carChip.querySelector("svg path").style.fill = t.color;
   const label = tg.type === "bill" ? "Bíll" : esc(ptTitle(tg));
   const rel = relFromMe(tg);
+  document.getElementById("bdName").textContent = tg.type === "bill" ? "Bíll" : ptTitle(tg);
+  document.getElementById("bdName").style.color = t.color;
+  bigArrow.querySelectorAll("path").forEach(x => { x.setAttribute("fill", x.getAttribute("fill") === "none" ? "none" : t.color); x.setAttribute("stroke", x.getAttribute("stroke") ? t.color : ""); });
   if (rel){
-    const hv = window.__headingFresh ? window.__headingFresh() : null;
-    let rot = hv == null ? rel.b : rel.b - hv;
-    let d = ((rot - lastRot) % 360 + 540) % 360 - 180; rot = lastRot + d; lastRot = rot;
+    let rot = unwrap(hv == null ? rel.b : rel.b - hv, lastRot); lastRot = rot;
     carTx.innerHTML = `${label} ${fmtM(rel.d)} <small>${hv == null ? card(rel.b) + " " + Math.round(rel.b) + "°" : turnText(rel.b - hv)}</small>`;
     carArrow.style.transform = `rotate(${rot}deg)`;
+    lastBig = unwrap(hv == null ? rel.b : rel.b - hv, lastBig);
+    bigArrow.setAttribute("visibility", "visible");
+    bigArrow.style.transform = `rotate(${lastBig}deg)`;
+    document.getElementById("bdDist").textContent = fmtM(rel.d);
+    document.getElementById("bdTurn").textContent = hv == null ? `${card(rel.b)} · ${Math.round(rel.b)}°` : turnText(rel.b - hv);
+    const mins = Math.round(rel.d / 4000 * 60 * 1.3);
+    document.getElementById("bdEta").textContent = hv == null ? "Haltu símanum flötum fyrir áttavita" : (mins < 1 ? "rétt hjá" : `um ${mins < 60 ? mins + " mín" : Math.floor(mins/60) + " klst " + (mins%60) + " mín"} gangur`);
     if (S.carline){
       const ll = [[pos.lat, pos.lon], [tg.lat, tg.lon]];
       if (!carLine) carLine = L.polyline(ll, {color:t.color, weight:2.5, dashArray:"6 8", opacity:.85, interactive:false}).addTo(map);
@@ -1243,16 +1416,15 @@ function updateCar(){
   } else {
     carTx.innerHTML = `${label} <small>kveiktu á GPS</small>`;
     carArrow.style.transform = "";
+    bigArrow.setAttribute("visibility", "hidden");
+    document.getElementById("bdDist").textContent = "—";
+    document.getElementById("bdTurn").textContent = "Kveiktu á GPS";
+    document.getElementById("bdEta").textContent = "";
   }
 }
-carChip.onclick = () => {
-  const tg = currentTarget(); if (!tg) return;
-  if (follow){ follow = false; btnGps.classList.remove("follow"); }
-  if (pos) map.fitBounds([[pos.lat, pos.lon], [tg.lat, tg.lon]], {padding:[70,70], maxZoom:16});
-  else map.setView([tg.lat, tg.lon], Math.max(map.getZoom(), 14));
-};
-tgtClear.onclick = () => { LS.set("target", null); updateCar(); toast(pts.some(p => p.type === "bill") ? "Vísar aftur á bílinn" : "Hætt að vísa á punkt"); };
-function setTarget(id){ LS.set("target", id); updateCar(); }
+carChip.onclick = () => setTab("compass");
+tgtClear.onclick = () => { LS.set("target", null); updateCar(); renderPtList(); toast("Vísar aftur á bílinn"); };
+function setTarget(id){ LS.set("target", id); updateCar(); if (!document.getElementById("pgCompass").hidden) renderPtList(); }
 
 /* Nýr punktur */
 const ptSheet = document.getElementById("ptSheet"), ptTypes = document.getElementById("ptTypes");
@@ -1416,18 +1588,19 @@ function updateSun(){
   const c = pos ? {lat:pos.lat, lon:pos.lon} : (() => { const x = map.getCenter(); return {lat:x.lat, lon:x.lng}; })();
   const now = new Date(), noon = new Date(now); noon.setHours(12, 0, 0, 0);
   const s = sunTimes(noon, c.lat, c.lon, -0.833), cv = sunTimes(noon, c.lat, c.lon, -6);
-  sunChip.hidden = false; sunChip.className = "ichip";
-  if (!s){ sunTx.textContent = "Sól sest ekki / rís ekki í dag"; return; }
-  if (now < s.rise){ sunTx.innerHTML = `Sólarupprás ${hhmm(s.rise)} <small>eftir ${dur(s.rise-now)}</small>`; sunChip.classList.add("dark"); }
+  const K = document.getElementById("sunK");
+  sunChip.hidden = false; sunChip.className = "tile";
+  if (!s){ K.textContent = "Sól"; sunTx.innerHTML = "—<small>sest ekki í dag</small>"; return; }
+  if (now < s.rise){ K.textContent = "Sólarupprás"; sunTx.innerHTML = `${hhmm(s.rise)}<small>eftir ${dur(s.rise-now)}</small>`; }
   else if (now < s.set){
     const left = s.set - now;
-    sunTx.innerHTML = `Sólsetur ${hhmm(s.set)} <small>${dur(left)}</small>`;
+    K.textContent = "Sólsetur"; sunTx.innerHTML = `${hhmm(s.set)}<small>eftir ${dur(left)}</small>`;
     if (left < 3600000) sunChip.classList.add("warn");
   } else if (cv && now < cv.set){
-    sunTx.innerHTML = `Myrkur ${hhmm(cv.set)} <small>${dur(cv.set-now)}</small>`; sunChip.classList.add("warn");
+    K.textContent = "Myrkur"; sunTx.innerHTML = `${hhmm(cv.set)}<small>eftir ${dur(cv.set-now)}</small>`; sunChip.classList.add("warn");
   } else {
     const t = new Date(noon.valueOf() + 864e5), s2 = sunTimes(t, c.lat, c.lon, -0.833);
-    sunTx.innerHTML = `Myrkur <small>${s2 ? "birtir " + hhmm(s2.rise) : ""}</small>`; sunChip.classList.add("dark");
+    K.textContent = "Sólarupprás"; sunTx.innerHTML = `${s2 ? hhmm(s2.rise) : "—"}<small>á morgun</small>`;
   }
 }
 setInterval(updateSun, 30000);
@@ -1522,12 +1695,11 @@ const battChip = document.getElementById("battChip"), battTx = document.getEleme
 function saverActive(){ return !!(S.saver || (S.autosaver && batt && !batt.charging && batt.level <= 0.2)); }
 window.__saverActive = saverActive;
 function onBatt(){
-  if (!batt){ battChip.hidden = true; return; }
+  if (!batt){ battTx.innerHTML = "—<small>óþekkt</small>"; return; }
   const lvl = batt.level, pct = Math.round(lvl * 100);
-  const low = S.battery && !batt.charging && lvl <= 0.3;
-  battChip.hidden = !low;
-  battChip.classList.toggle("bad", lvl <= 0.15);
-  battTx.innerHTML = `Rafhlaða ${pct}%${saverActive() ? " <small>sparnaður</small>" : ""}`;
+  battChip.hidden = false;
+  battChip.classList.toggle("bad", !batt.charging && lvl <= 0.15);
+  battTx.innerHTML = `${pct}%<small>${batt.charging ? "í hleðslu" : saverActive() ? "sparnaður virkur" : lvl <= 0.3 ? "lág" : "í lagi"}</small>`;
   if (S.battery && !batt.charging){
     const step = lvl <= 0.15 ? 0.15 : lvl <= 0.3 ? 0.3 : 1;
     if (step < battWarnedAt){
@@ -1563,9 +1735,135 @@ if (navigator.getBattery){
 }
 window.__applyAll = () => { applyPower(); onBatt(); updateSun(); updateCar(); };
 
+/* ---------- Síður og flipar ---------- */
+const pgCompass = document.getElementById("pgCompass"), pgFriends = document.getElementById("pgFriends"), pgSettings = document.getElementById("pgSettings");
+const TABS = ["map", "compass", "friends"];
+let tab = "map";
+function setTab(t){
+  if (!TABS.includes(t)) return;
+  tab = t; document.body.dataset.tab = t;
+  closeSheet(); document.getElementById("toast").hidden = true;
+  pgCompass.hidden = t !== "compass";
+  pgFriends.hidden = t !== "friends";
+  document.querySelectorAll("#tabbar button").forEach(b => b.dataset.tab === t ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+  if (t === "compass"){ renderPtList(); updateCar(); updateSun(); onBattSafe(); }
+  if (t === "friends" && window.__onFriendsTab) window.__onFriendsTab();
+}
+function onBattSafe(){ try{ if (typeof onBatt === "function") onBatt(); }catch(e){} }
+document.querySelectorAll("#tabbar button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+// Strok til hliðar á síðunum og flipaslánni (kortið sjálft notar strok til að færa kortið)
+function swipeable(el){
+  let x0 = null, y0 = 0, t0 = 0;
+  el.addEventListener("touchstart", e => { if (e.touches.length !== 1){ x0 = null; return; } x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); }, {passive:true});
+  el.addEventListener("touchend", e => {
+    if (x0 == null) return;
+    const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6 || Date.now() - t0 > 700) return;
+    const i = TABS.indexOf(tab) + (dx < 0 ? 1 : -1);
+    if (i >= 0 && i < TABS.length) setTab(TABS[i]);
+  }, {passive:true});
+}
+[pgCompass, pgFriends, document.getElementById("tabbar")].forEach(swipeable);
+
+/* Stillingar */
+function openSettings(){ closeSheet(); pgSettings.hidden = false; document.getElementById("setBaseName").textContent = BASES[baseKey].name; }
+function closeSettings(){ pgSettings.hidden = true; }
+document.getElementById("btnSettings").onclick = openSettings;
+document.getElementById("setBack").onclick = closeSettings;
+document.getElementById("setLayers").onclick = () => { closeSettings(); setTab("map"); openSheet(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !pgSettings.hidden) closeSettings(); });
+
+/* ---------- Veiðihamur og slóð ---------- */
+const huntSw = document.getElementById("huntSw"), huntTx = document.getElementById("huntTx"), huntDot = document.getElementById("huntDot");
+let hunt = !!LS.get("hunt", false), huntStart = LS.get("huntStart", 0);
+let track = LS.get("track", null);
+if (track && !Array.isArray(track.pts)) track = null;
+let trackLine = null;
+map.createPane("track"); map.getPane("track").style.zIndex = 430;
+const saveTrack = () => LS.set("track", track);
+function drawTrack(){
+  const ll = track ? track.pts.map(q => [q[0], q[1]]) : [];
+  if (!ll.length){ if (trackLine){ map.removeLayer(trackLine); trackLine = null; } return; }
+  if (!trackLine) trackLine = L.polyline(ll, {pane:"track", color:color("accent"), weight:4, opacity:hunt ? .85 : .5, lineCap:"round", lineJoin:"round", interactive:false}).addTo(map);
+  else trackLine.setLatLngs(ll).setStyle({opacity:hunt ? .85 : .5});
+}
+function fmtKm(m){ return m < 1000 ? `${Math.round(m)} m` : `${(m/1000).toFixed(1).replace(".", ",")} km`; }
+function tripText(tr, end){
+  return `${dur((end || Date.now()) - tr.start)} · ${fmtKm(tr.dist)} · ${Math.round(tr.gain)} m hækkun`;
+}
+function renderHunt(){
+  huntSw.checked = hunt;
+  huntDot.classList.toggle("on", hunt);
+  if (hunt && track) huntTx.textContent = tripText(track);
+  else if (track && track.end) huntTx.textContent = `Síðasta ferð: ${tripText(track, track.end)}`;
+  else huntTx.textContent = "Ýttu til að hefja ferð og skrá slóð";
+}
+function addTrackPoint(p){
+  if (!hunt || !track || !p) return;
+  if (p.acc > 40) return;
+  const last = track.pts[track.pts.length - 1];
+  if (last){
+    const d = distM(last[0], last[1], p.lat, p.lon);
+    if (d < Math.max(12, p.acc * 0.8)) return;
+    track.dist += d;
+  }
+  if (p.alt != null && isFinite(p.alt)){
+    if (track.lastAlt == null) track.lastAlt = p.alt;
+    else {
+      const da = p.alt - track.lastAlt;
+      if (da >= 5){ track.gain += da; track.lastAlt = p.alt; }
+      else if (da <= -5){ track.loss += -da; track.lastAlt = p.alt; }
+    }
+  }
+  track.pts.push([+p.lat.toFixed(6), +p.lon.toFixed(6), p.alt != null ? Math.round(p.alt) : null, Date.now()]);
+  if (track.pts.length > 8000) track.pts.splice(1, 1);
+  saveTrack(); drawTrack(); renderHunt();
+}
+async function setHunt(on){
+  on = !!on;
+  if (on === hunt){ renderHunt(); return; }
+  if (on && window.__beforeHunt){ try{ await window.__beforeHunt(); }catch(e){} }
+  hunt = on; LS.set("hunt", on);
+  if (on){
+    huntStart = Date.now(); LS.set("huntStart", huntStart);
+    track = {start:huntStart, pts:[], dist:0, gain:0, loss:0, lastAlt:null};
+    saveTrack(); drawTrack();
+    if (watchId == null) startGps();
+    else if (pos) addTrackPoint(pos);
+    toast(window.RK_APP ? "Veiðihamur virkur. Slóðin skráist líka með slökktan skjá." : "Veiðihamur virkur. Slóðin skráist á meðan kortið er opið.", 6000);
+  } else if (track){
+    track.end = Date.now(); saveTrack(); drawTrack();
+    const trips = LS.get("trips", []);
+    trips.push({start:track.start, end:track.end, dist:Math.round(track.dist), gain:Math.round(track.gain), loss:Math.round(track.loss)});
+    while (trips.length > 50) trips.shift();
+    LS.set("trips", trips);
+    toast(`Ferð lokið: ${tripText(track, track.end)}`, 9000);
+  }
+  renderHunt();
+  if (window.__onHunt) window.__onHunt(on);
+}
+let huntArmed = false;
+huntSw.onchange = () => {
+  if (huntSw.checked) return setHunt(true);
+  // Staðfesta áður en ferð lýkur
+  if (!huntArmed){
+    huntArmed = true; huntSw.checked = true;
+    huntTx.textContent = "Ýttu aftur til að ljúka ferð";
+    setTimeout(() => { huntArmed = false; renderHunt(); }, 3000);
+    return;
+  }
+  huntArmed = false; setHunt(false);
+};
+setInterval(() => { if (hunt) renderHunt(); }, 30000);
+const prevExtra = window.__onPosExtra;
+window.__onPosExtra = () => { if (prevExtra) prevExtra(); addTrackPoint(pos); };
+renderHunt(); drawTrack();
+setTab("map");
+if (hunt && watchId == null) startGps();
+
 /* Opið viðmót fyrir Android appið */
-window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, getPos: () => pos, addRemotePoint, showRemote, openPanel, closeSheet, relFromMe, esc, fmtM, card, hhmm, ago, openPing: () => openPing(null), lastFrom: n => pts.filter(p => p.type === "ping" && p.from === n).sort((a, b) => b.ts - a.ts)[0] || null };
-if (window.RK_APP) document.getElementById("getApp").hidden = true;
+window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, setHunt, setTab, isHunting: () => hunt, getPos: () => pos, addRemotePoint, showRemote, openPanel, closeSheet, relFromMe, esc, fmtM, card, hhmm, ago, openPing: () => openPing(null), lastFrom: n => pts.filter(p => p.type === "ping" && p.from === n).sort((a, b) => b.ts - a.ts)[0] || null };
+if (window.RK_APP){ document.getElementById("getApp").hidden = true; document.getElementById("friendsWeb").hidden = true; document.getElementById("setFriendsWeb").hidden = true; }
 document.getElementById("verNote").textContent = window.RK_APP ? `Android app · útgáfa ${window.RK_VERSION || "?"}` : "Vefútgáfa (í vafra)";
 
 /* ---------- Ræsing ---------- */
