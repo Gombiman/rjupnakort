@@ -19,5 +19,7 @@ const ver = "0.1." + (process.env.RK_VERSION_CODE || "0");
 html = html.replace("<head>", `<head>\n<script>window.RK_VERSION = "${ver}";</script>`);
 fs.writeFileSync(path.join(www, "index.html"), html);
 fs.copyFileSync(path.join(root, "sw.js"), path.join(www, "sw.js"));
+fs.cpSync(path.join(root, "img"), path.join(www, "img"), {recursive: true});
+fs.copyFileSync(path.join(root, "manifest.webmanifest"), path.join(www, "manifest.webmanifest"));
 fs.copyFileSync(path.resolve(__dirname, "..", "src", "app.js"), path.join(www, "app.js"));
 console.log("www tilbúið");

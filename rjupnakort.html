@@ -3,8 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#16191a">
-<title>Rjúpnakort</title>
+<meta name="theme-color" content="#20482E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="img/icon-192.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<title>S. Másson</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
@@ -29,6 +32,14 @@
   --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#b58cf0; --info:#5aa8f0; --ok:#4cc47a; --heimilt:#4cc47a; --sos:#e0352b;
   --shadow:0 2px 14px rgba(0,0,0,.5); --shadow-s:0 1px 3px rgba(0,0,0,.4); color-scheme:dark}
 [hidden]{display:none!important}
+#splash{position:fixed;inset:0;z-index:3000;background:#20482E;display:flex;align-items:flex-end;transition:opacity .45s ease}
+#splash img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%}
+#splash .sp-txt{position:relative;width:100%;padding:90px max(20px,env(safe-area-inset-left,0px)) calc(env(safe-area-inset-bottom,0px) + 44px);
+  background:linear-gradient(to top,rgba(10,20,14,.88),rgba(10,20,14,0));color:#fff;box-sizing:border-box}
+#splash .sp-name{font:700 46px/1 var(--f-display);letter-spacing:.04em;text-transform:uppercase}
+#splash .sp-sub{font-size:14px;opacity:.85;margin-top:6px;letter-spacing:.04em}
+#splash.out{opacity:0}
+@media (prefers-reduced-motion:reduce){#splash{transition:none}}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer}
@@ -87,6 +98,21 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 .tog:checked{background:var(--accent)} .tog:checked::after{transform:translateX(18px)}
 .tog.big{width:54px;height:32px;border-radius:16px} .tog.big::after{width:26px;height:26px}
 .tog.big:checked{background:var(--ok)} .tog.big:checked::after{transform:translateX(22px)}
+
+/* Rammi fyrir kort án nets */
+#capFrame{position:fixed;z-index:880;left:max(28px,env(safe-area-inset-left,0px));right:max(28px,env(safe-area-inset-right,0px));
+  top:calc(env(safe-area-inset-top,0px) + 76px);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 252px);
+  border:2px dashed #fff;border-radius:14px;box-shadow:0 0 0 9999px rgba(10,16,14,.45);pointer-events:none}
+#capPanel{position:fixed;z-index:905;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));
+  bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 12px);background:var(--panel);border-radius:20px;box-shadow:var(--shadow);
+  padding:14px 16px;display:grid;gap:8px}
+#capPanel .cp-h{font:700 17px var(--f-display);letter-spacing:.03em;text-transform:uppercase}
+#capPanel .cp-row{display:flex;gap:8px}
+#capPanel .cp-row .btn{flex:1}
+#capPanel .cp-tx{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+#capBarWrap{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+#capBar{height:100%;width:0;background:var(--accent);transition:width .2s}
+body.capture #huntCard,body.capture #mapfabs,body.capture #carChip,body.capture #mapside{display:none}
 
 /* Flipaslá */
 #tabbar{position:fixed;z-index:1000;left:0;right:0;bottom:0;height:calc(var(--tabh) + env(safe-area-inset-bottom,0px));box-sizing:border-box;
@@ -249,6 +275,10 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true">
+  <img src="img/splash.jpg" alt="">
+  <div class="sp-txt"><div class="sp-name">S. Másson</div><div class="sp-sub">Hunting tours · kort · félagar</div></div>
+</div>
 <div id="map" role="application" aria-label="Kort"></div>
 
 <div id="topbar">
@@ -272,10 +302,34 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
   <button class="rbtn" id="btnLayers" type="button" aria-label="Lög og grunnkort">
     <svg viewBox="0 0 24 24"><path d="M12 3 2 8.5 12 14l10-5.5z"/><path d="m2 13 10 5.5L22 13"/></svg>
   </button>
+  <button class="rbtn" id="btnOffline" type="button" aria-label="Vista kort án nets">
+    <svg viewBox="0 0 24 24"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+  </button>
   <button class="mini" id="carChip" type="button" hidden aria-label="Opna áttavita">
     <span class="dial"><span class="n">N</span><svg viewBox="0 0 24 24" id="carArrow"><path d="M12 2 18 20 12 16 6 20Z"/></svg></span>
     <span class="tx" id="carTx">Bíll</span>
   </button>
+</div>
+
+<div id="capFrame" hidden></div>
+<div id="capPanel" hidden>
+  <div class="cp-h">Kort án nets</div>
+  <p class="note" style="margin:2px 0 0">Færðu og þysjaðu kortið svo ramminn nái yfir svæðið.</p>
+  <div class="cp-row">
+    <label class="f" style="flex:1">Nákvæmni
+      <select id="capZoom">
+        <option value="14">Gott</option>
+        <option value="15" selected>Mjög gott</option>
+        <option value="16">Mest</option>
+      </select>
+    </label>
+  </div>
+  <p class="cp-tx" id="capTx">—</p>
+  <div id="capBarWrap" hidden><div id="capBar"></div></div>
+  <div class="cp-row">
+    <button class="btn sec" id="capCancel" type="button">Hætta</button>
+    <button class="btn" id="capGo" type="button">Sækja</button>
+  </div>
 </div>
 
 <div id="mapfabs">
@@ -290,10 +344,10 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 <div id="huntCard">
   <span class="hdot" id="huntDot"></span>
   <label class="t" for="huntSw">
-    <div class="h">Veiðihamur</div>
+    <div class="h" id="huntH">Másson activate</div>
     <div id="huntTx">Ýttu til að hefja ferð</div>
   </label>
-  <input type="checkbox" class="tog big" id="huntSw" aria-label="Veiðihamur">
+  <input type="checkbox" class="tog big" id="huntSw" aria-label="Másson activate">
 </div>
 
 <section id="pgCompass" class="page" hidden aria-label="Áttaviti">
@@ -373,24 +427,11 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
     <details class="group" style="margin-top:8px">
       <summary>Kort án nets</summary>
       <div class="ginner">
-        <p class="note">Þysjaðu kortið þannig að veiðisvæðið fylli skjáinn og ýttu á „Reikna stærð“. Landslagskortið fyrir það svæði vistast í símanum.</p>
-        <label class="f">Nákvæmni
-          <select id="offZoom">
-            <option value="14">Gott (aðdráttur 14)</option>
-            <option value="15" selected>Mjög gott (aðdráttur 15)</option>
-            <option value="16">Mest (aðdráttur 16, stórt)</option>
-          </select>
-        </label>
-        <div class="row">
-          <button class="btn sec" id="offCalc" type="button">Reikna stærð</button>
-          <button class="btn" id="offGo" type="button" hidden>Vista svæði</button>
-          <button class="btn sec" id="offStop" type="button" hidden>Stöðva</button>
-        </div>
-        <div id="offBarWrap" hidden style="height:8px;border-radius:4px;background:var(--line);overflow:hidden"><div id="offBar" style="height:100%;width:0;background:var(--accent);transition:width .2s"></div></div>
-        <p class="msg" id="offMsg"></p>
+        <p class="note">Veldu svæði með ramma á kortinu og sæktu landslagskortið. Það virkar svo án nets. Svæðin og landamerkin vistast líka sjálfkrafa.</p>
+        <button class="btn" id="offOpen" type="button">Velja svæði á kortinu</button>
         <div class="row" style="align-items:center">
-          <p class="note" id="offStat" style="flex:2">Vistað: —</p>
-          <button class="btn sec" id="offClear" type="button" style="flex:1">Eyða vistuðu</button>
+          <p class="note" id="offStat" style="flex:2">—</p>
+          <button class="btn sec" id="offClear" type="button" style="flex:1">Eyða öllu vistuðu</button>
         </div>
       </div>
     </details>
@@ -463,7 +504,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
     <div id="getApp">
       <div class="sect">Android app</div>
       <div class="group"><div class="ginner">
-        <p class="note">Í appinu virka viðvaranir um bannsvæði og slóðin líka með slökktan skjá.</p>
+        <p class="note">Í appinu virka viðvaranir um bannsvæði og slóðin líka með slökktan skjá (Másson activate).</p>
         <a class="btn" href="https://github.com/Gombiman/rjupnakort/releases/download/app/rjupnakort.apk">Sækja appið (.apk)</a>
       </div></div>
     </div>
@@ -577,6 +618,17 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 <script>
 (() => {
 "use strict";
+
+/* ---------- Opnunarskjár (einu sinni í hverri ræsingu) ---------- */
+(() => {
+  const sp = document.getElementById("splash");
+  let seen = false;
+  try{ seen = sessionStorage.getItem("rk:splash") === "1"; sessionStorage.setItem("rk:splash", "1"); }catch(e){}
+  if (seen){ sp.hidden = true; return; }
+  const hide = () => { if (sp.classList.contains("out")) return; sp.classList.add("out"); setTimeout(() => sp.hidden = true, 500); };
+  sp.addEventListener("click", hide);
+  setTimeout(hide, 1700);
+})();
 
 /* ---------- Geymsla ---------- */
 const LS = {
@@ -1286,7 +1338,7 @@ function stopGps(){
 btnGps.onclick = () => {
   if (watchId == null) return startGps();
   if (!follow){ follow = true; btnGps.classList.add("follow"); if (pos) map.setView([pos.lat,pos.lon], Math.max(map.getZoom(),14)); return; }
-  if (window.RK && window.RK.isHunting && window.RK.isHunting()){ toast("GPS er í gangi á meðan veiðihamur er virkur."); return; }
+  if (window.RK && window.RK.isHunting && window.RK.isHunting()){ toast("GPS er í gangi á meðan Másson er virkur."); return; }
   stopGps(); showState("none", "GPS slökkt", "Ýttu aftur til að kveikja");
 };
 map.on("dragstart", () => { if (follow){ follow = false; btnGps.classList.remove("follow"); } });
@@ -1341,18 +1393,23 @@ function evaluate(){
   lastLevel = level;
 }
 
-/* ---------- Kort án nets ---------- */
-const offMsg = document.getElementById("offMsg"), offStat = document.getElementById("offStat");
-const offGo = document.getElementById("offGo"), offStop = document.getElementById("offStop"), offCalc = document.getElementById("offCalc");
-const offBarWrap = document.getElementById("offBarWrap"), offBar = document.getElementById("offBar");
+/* ---------- Kort án nets: rammi á kortinu, sækja flísar, vistuð svæði ---------- */
+const offStat = document.getElementById("offStat");
 const TILE_TPL = "https://a.tile.opentopomap.org/{z}/{x}/{y}.png";
-const MAX_TILES = 4000;
-let plan = null, stopFlag = false;
+const MAX_TILES = 6000;
 const tx = (lon, z) => Math.floor((lon + 180) / 360 * 2 ** z);
 const ty = (lat, z) => { const r = lat * Math.PI / 180; return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 2 ** z); };
-function planTiles(){
-  const b = map.getBounds(), zMax = +document.getElementById("offZoom").value;
-  const zMin = Math.max(6, Math.min(Math.floor(map.getZoom()), zMax) - 2);
+const tileKey = u => u.replace(/\/\/[abc]\.tile\.opentopomap\.org/, "//a.tile.opentopomap.org");
+let offAreas = LS.get("offAreas", []);
+if (!Array.isArray(offAreas)) offAreas = [];
+const offLayer = L.layerGroup().addTo(map);
+function drawOffAreas(){
+  offLayer.clearLayers();
+  for (const a of offAreas) L.rectangle([[a.s, a.w], [a.n, a.e]], {pane:"track", color:"#5c6668", weight:1.2, dashArray:"2 6", fill:false, interactive:false}).addTo(offLayer);
+}
+drawOffAreas();
+function planTiles(b, zMax){
+  const zMin = Math.max(6, Math.min(Math.floor(map.getZoom()), zMax) - 3);
   const list = [];
   for (let z = zMin; z <= zMax; z++){
     const x0 = tx(b.getWest(), z), x1 = tx(b.getEast(), z), y0 = ty(b.getNorth(), z), y1 = ty(b.getSouth(), z);
@@ -1364,61 +1421,126 @@ function planTiles(){
   return {list, too:false, zMin, zMax};
 }
 async function refreshStat(){
-  if (!("caches" in window)) { offStat.textContent = "Vafrinn styður ekki vistun"; return; }
+  if (!("caches" in window)) { offStat.textContent = "Vistun er ekki í boði hér"; return; }
   try{
     const n = (await (await caches.open("rk-tiles")).keys()).length;
     let mb = "";
-    try{ const e = await navigator.storage.estimate(); mb = ` · ${Math.round(e.usage / 1048576)} MB notað`; }catch(e){}
-    offStat.textContent = `Vistað: ${n} kortaflísar${mb}`;
-  }catch(e){ offStat.textContent = "Vistað: —"; }
+    try{ const e = await navigator.storage.estimate(); mb = ` · ${Math.round(e.usage / 1048576)} MB`; }catch(e){}
+    offStat.textContent = `${offAreas.length} svæði vistuð · ${n} kortaflísar${mb}`;
+  }catch(e){ offStat.textContent = "—"; }
 }
-offCalc.onclick = () => {
-  if (!("caches" in window)) return msg(offMsg, "Vafrinn leyfir ekki vistun hér. Opnaðu kortið af https-slóðinni.", true);
-  plan = planTiles();
-  if (plan.too) { offGo.hidden = true; return msg(offMsg, `Of stórt svæði (yfir ${MAX_TILES} flísar). Þysjaðu nær eða veldu minni nákvæmni.`, true); }
-  const mb = Math.max(1, Math.round(plan.list.length * 22 / 1024));
-  msg(offMsg, `${plan.list.length} flísar, um ${mb} MB (aðdráttur ${plan.zMin}–${plan.zMax}). Gerðu þetta helst á WiFi.`);
-  offGo.hidden = false;
-};
-offGo.onclick = async () => {
-  if (!plan) return;
-  stopFlag = false; offGo.hidden = true; offCalc.hidden = true; offStop.hidden = false; offBarWrap.hidden = false;
+// Ein flís sótt og vistuð (CORS í vafra; í appinu um síma ef þarf)
+async function fetchTileTo(cache, u){
+  try{
+    const r = await fetch(u, {mode:"cors"});
+    if (r.ok){ await cache.put(u, r); return true; }
+  }catch(e){}
+  if (window.__nativeBlob){
+    try{ const blob = await window.__nativeBlob(u); if (blob && blob.size){ await cache.put(u, new Response(blob, {headers:{"Content-Type":"image/png"}})); return true; } }catch(e){}
+  }
+  try{ const r = await fetch(u, {mode:"no-cors"}); await cache.put(u, r); return true; }catch(e){}
+  return false;
+}
+
+/* Landslagskort sem les vistaðar flísar fyrst (virkar án nets, líka þar sem þjónustuskrifta nýtur ekki) */
+const CachedTiles = L.TileLayer.extend({
+  createTile(coords, done){
+    const img = document.createElement("img");
+    img.alt = ""; img.setAttribute("role", "presentation");
+    const url = this.getTileUrl(coords);
+    const net = () => { img.onload = () => done(null, img); img.onerror = e => done(e, img); img.src = url; };
+    if (!("caches" in window) || !offAreas.length){ net(); return img; }
+    caches.open("rk-tiles").then(c => c.match(tileKey(url))).then(r => r ? r.blob() : null).then(b => {
+      if (b && b.size){
+        const ou = URL.createObjectURL(b);
+        img.onload = () => { URL.revokeObjectURL(ou); done(null, img); };
+        img.onerror = () => { URL.revokeObjectURL(ou); net(); };
+        img.src = ou;
+      } else net();
+    }).catch(net);
+    return img;
+  }
+});
+(() => {
+  const old = BASES.topo.layer, on = map.hasLayer(old);
+  BASES.topo.layer = new CachedTiles("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {maxZoom:17, attribution:"© OpenStreetMap, SRTM | © OpenTopoMap (CC-BY-SA)"});
+  if (on){ map.removeLayer(old); BASES.topo.layer.addTo(map); }
+})();
+
+/* Rammi á kortinu */
+const capFrame = document.getElementById("capFrame"), capPanel = document.getElementById("capPanel");
+const capTx = document.getElementById("capTx"), capGo = document.getElementById("capGo"), capCancel = document.getElementById("capCancel");
+const capZoom = document.getElementById("capZoom"), capBar = document.getElementById("capBar"), capBarWrap = document.getElementById("capBarWrap");
+let capOn = false, capPlan = null, capBusy = false, capStop = false;
+function frameBounds(){
+  const mr = map.getContainer().getBoundingClientRect(), fr = capFrame.getBoundingClientRect();
+  const nw = map.containerPointToLatLng([fr.left - mr.left, fr.top - mr.top]);
+  const se = map.containerPointToLatLng([fr.right - mr.left, fr.bottom - mr.top]);
+  return L.latLngBounds(se, nw);
+}
+function capEstimate(){
+  if (!capOn || capBusy) return;
+  capPlan = planTiles(frameBounds(), +capZoom.value);
+  if (capPlan.too){ capTx.textContent = "Of stórt svæði. Þysjaðu nær eða veldu minni nákvæmni."; capGo.disabled = true; return; }
+  const mb = Math.max(1, Math.round(capPlan.list.length * 22 / 1024));
+  capTx.textContent = `Um ${capPlan.list.length.toLocaleString("is-IS")} kortaflísar · ${mb} MB${mb > 40 ? " · helst á WiFi" : ""}`;
+  capGo.disabled = false;
+}
+function openCapture(){
+  closeSheet(); if (typeof closeSettings === "function") closeSettings(); setTab("map");
+  if (!("caches" in window)){ toast("Vistun korta er ekki í boði hér."); return; }
+  if (baseKey !== "topo") setBase("topo");
+  capOn = true; document.body.classList.add("capture"); capFrame.hidden = false; capPanel.hidden = false;
+  capBarWrap.hidden = true; capGo.textContent = "Sækja"; capCancel.textContent = "Hætta";
+  setTimeout(capEstimate, 50);
+}
+function closeCapture(){
+  if (capBusy){ capStop = true; return; }
+  capOn = false; document.body.classList.remove("capture"); capFrame.hidden = true; capPanel.hidden = true;
+}
+document.getElementById("btnOffline").onclick = openCapture;
+document.getElementById("offOpen").onclick = openCapture;
+capCancel.onclick = closeCapture;
+capZoom.onchange = capEstimate;
+map.on("moveend zoomend", capEstimate);
+capGo.onclick = async () => {
+  if (!capPlan || capBusy) return;
+  const b = frameBounds();
+  capBusy = true; capStop = false; capGo.disabled = true; capCancel.textContent = "Stöðva"; capBarWrap.hidden = false; capBar.style.width = "0";
   try{ navigator.storage && navigator.storage.persist && await navigator.storage.persist(); }catch(e){}
   const cache = await caches.open("rk-tiles");
-  const todo = plan.list.slice(); const total = todo.length;
+  const todo = capPlan.list.slice(), total = todo.length;
   let done = 0, failed = 0;
   async function worker(){
-    while (todo.length && !stopFlag){
+    while (todo.length && !capStop){
       const u = todo.shift();
-      try{
-        if (!(await cache.match(u))){
-          let r;
-          try{ r = await fetch(u, {mode:"cors"}); } catch(e){ r = await fetch(u, {mode:"no-cors"}); }
-          if (r.ok || r.type === "opaque") await cache.put(u, r); else failed++;
-        }
-      }catch(e){ failed++; }
+      try{ if (!(await cache.match(u)) && !(await fetchTileTo(cache, u))) failed++; }catch(e){ failed++; }
       done++;
-      offBar.style.width = (done / total * 100).toFixed(1) + "%";
-      if (done % 10 === 0 || done === total) offMsg.textContent = `Vista… ${done} / ${total}`;
+      capBar.style.width = (done / total * 100).toFixed(1) + "%";
+      if (done % 10 === 0 || done === total) capTx.textContent = `Sæki… ${done.toLocaleString("is-IS")} / ${total.toLocaleString("is-IS")}`;
     }
   }
   await Promise.all([worker(), worker(), worker()]);
-  offStop.hidden = true; offCalc.hidden = false; plan = null;
-  msg(offMsg, stopFlag ? `Stöðvað eftir ${done} flísar.` : failed ? `Lokið, en ${failed} flísar náðust ekki. Reyndu aftur á betra neti.` : `Lokið. ${total} flísar vistaðar — landslagskortið virkar nú án nets á þessu svæði.`, !!failed);
-  refreshStat();
+  capBusy = false;
+  if (!capStop && done > 0){
+    offAreas.push({s:+b.getSouth().toFixed(4), w:+b.getWest().toFixed(4), n:+b.getNorth().toFixed(4), e:+b.getEast().toFixed(4), z:+capZoom.value, t:Date.now()});
+    LS.set("offAreas", offAreas); drawOffAreas();
+  }
+  toast(capStop ? `Stöðvað eftir ${done} flísar.` : failed ? `Vistað, en ${failed} flísar náðust ekki. Reyndu aftur á betra neti.` : "Svæðið er vistað. Kortið virkar þar án nets.", 7000);
+  capStop = false; closeCapture(); refreshStat();
 };
-offStop.onclick = () => { stopFlag = true; };
 const offClear = document.getElementById("offClear");
 let clearArmed = false;
 offClear.onclick = async () => {
-  if (!clearArmed){ clearArmed = true; offClear.textContent = "Ýttu aftur"; setTimeout(() => { clearArmed = false; offClear.textContent = "Eyða vistuðu"; }, 3000); return; }
-  clearArmed = false; offClear.textContent = "Eyða vistuðu";
-  try{ await caches.delete("rk-tiles"); msg(offMsg, "Vistuðum kortum eytt."); }catch(e){}
-  refreshStat();
+  if (!clearArmed){ clearArmed = true; offClear.textContent = "Ýttu aftur"; setTimeout(() => { clearArmed = false; offClear.textContent = "Eyða öllu vistuðu"; }, 3000); return; }
+  clearArmed = false; offClear.textContent = "Eyða öllu vistuðu";
+  try{ await caches.delete("rk-tiles"); }catch(e){}
+  offAreas = []; LS.set("offAreas", offAreas); drawOffAreas();
+  toast("Vistuðum kortum eytt."); refreshStat();
 };
-document.getElementById("btnLayers").addEventListener("click", refreshStat);
+document.getElementById("btnSettings").addEventListener("click", refreshStat);
 
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+if ("serviceWorker" in navigator && !window.RK_APP) navigator.serviceWorker.register("./sw.js").catch(() => {});
 
 /* ---------- Punktar ---------- */
 const SVG = {
@@ -1986,6 +2108,7 @@ function tripText(tr, end){
 function renderHunt(){
   huntSw.checked = hunt;
   huntDot.classList.toggle("on", hunt);
+  document.getElementById("huntH").textContent = hunt ? "Másson virkur" : "Másson activate";
   if (hunt && track) huntTx.textContent = tripText(track);
   else if (track && track.end) huntTx.textContent = `Síðasta ferð: ${tripText(track, track.end)}`;
   else huntTx.textContent = "Ýttu til að hefja ferð og skrá slóð";
@@ -2022,7 +2145,7 @@ async function setHunt(on){
     saveTrack(); drawTrack();
     if (watchId == null) startGps();
     else if (pos) addTrackPoint(pos);
-    toast(window.RK_APP ? "Veiðihamur virkur. Slóðin skráist líka með slökktan skjá." : "Veiðihamur virkur. Slóðin skráist á meðan kortið er opið.", 6000);
+    toast(window.RK_APP ? "Másson virkur. Slóðin skráist líka með slökktan skjá." : "Másson virkur. Slóðin skráist á meðan kortið er opið.", 6000);
   } else if (track){
     track.end = Date.now(); saveTrack(); drawTrack();
     const trips = LS.get("trips", []);
@@ -2177,7 +2300,7 @@ document.getElementById("srchForm").onsubmit = e => { e.preventDefault(); runSea
 /* Opið viðmót fyrir Android appið */
 window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, setHunt, setTab, isHunting: () => hunt, getPos: () => pos, addRemotePoint, showRemote, openPanel, closeSheet, relFromMe, esc, fmtM, card, hhmm, ago, openPing: () => openPing(null), lastFrom: n => pts.filter(p => p.type === "ping" && p.from === n).sort((a, b) => b.ts - a.ts)[0] || null };
 if (window.RK_APP){ document.getElementById("getApp").hidden = true; document.getElementById("friendsWeb").hidden = true; document.getElementById("setFriendsWeb").hidden = true; }
-document.getElementById("verNote").textContent = window.RK_APP ? `Android app · útgáfa ${window.RK_VERSION || "?"}` : "Vefútgáfa (í vafra)";
+document.getElementById("verNote").textContent = window.RK_APP ? `S. Másson · Android app · útgáfa ${window.RK_VERSION || "?"}` : "S. Másson · vefútgáfa (í vafra)";
 
 /* ---------- Ræsing ---------- */
 renderList();

@@ -1,9 +1,12 @@
 /* Rjúpnakort — service worker: vistar síðuna og kortaflísar svo kortið opnist án nets */
-const SHELL = "rk-shell-v4";
+const SHELL = "rk-shell-v5";
 const TILES = "rk-tiles";
 const SHELL_URLS = [
   "./",
   "./rjupnakort.html",
+  "./img/splash.jpg",
+  "./img/icon-192.png",
+  "./manifest.webmanifest",
   "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css",
   "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
 ];
@@ -41,7 +44,7 @@ async function networkFirstPage(req) {
     return r;
   } catch (_) {
     return (await c.match("./rjupnakort.html")) || (await c.match("./")) ||
-      new Response("<h1>Rjúpnakort</h1><p>Ekkert net og síðan hefur ekki verið vistuð enn. Opnaðu hana einu sinni á neti.</p>",
+      new Response("<h1>S. Másson</h1><p>Ekkert net og síðan hefur ekki verið vistuð enn. Opnaðu hana einu sinni á neti.</p>",
                    {headers: {"Content-Type": "text/html; charset=utf-8"}});
   }
 }

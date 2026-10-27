@@ -169,7 +169,7 @@ public final class Felagar {
     }
     static void sendRequestSms(Context c, String phone) {
         String n = myName(c).length() > 0 ? myName(c) : "Félagi";
-        sendSms(c, phone, "RJUPA? " + n + " er að leita að þér (Rjúpnakort).");
+        sendSms(c, phone, "RJUPA? " + n + " er að leita að þér (S. Másson).");
     }
 
     /* ---------- Svara beiðni ---------- */
@@ -180,7 +180,7 @@ public final class Felagar {
         final String name = f.optString("name", fromPhone);
         if (!autoReply(ctx)) {
             notify(ctx, 300 + Math.abs(last7(fromPhone).hashCode() % 100), name + " er að leita að þér",
-                   "Sjálfvirk svör eru óvirk. Opnaðu Rjúpnakort til að svara.");
+                   "Sjálfvirk svör eru óvirk. Opnaðu S. Másson til að svara.");
             return;
         }
         String k = last7(fromPhone);
@@ -298,7 +298,7 @@ public final class Felagar {
     }
     static void sendSms(Context c, String phone, String text) {
         if (ContextCompat.checkSelfPermission(c, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            notify(c, 800, "Vantar leyfi til að senda SMS", "Opnaðu Rjúpnakort → Félagar → Leyfa SMS.");
+            notify(c, 800, "Vantar leyfi til að senda SMS", "Opnaðu S. Másson → Stillingar → Félagar → Leyfa SMS.");
             return;
         }
         try {

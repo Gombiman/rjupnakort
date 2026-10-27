@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Rjúpnakort</string>
-    <string name="title_activity_main">Rjúpnakort</string>
+    <string name="app_name">S. Másson</string>
+    <string name="title_activity_main">S. Másson</string>
     <string name="package_name">is.gombiman.rjupnakort</string>
     <string name="custom_url_scheme">is.gombiman.rjupnakort</string>
-    <string name="capacitor_background_geolocation_notification_channel_name">Veiðihamur</string>
+    <string name="capacitor_background_geolocation_notification_channel_name">Másson virkur</string>
     <string name="capacitor_background_geolocation_notification_icon">drawable/ic_stat_rjupa</string>
     <string name="capacitor_background_geolocation_notification_color">#E8590C</string>
 </resources>

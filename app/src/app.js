@@ -1,4 +1,4 @@
-/* Rjúpnakort — brú við Android (Capacitor).
+/* S. Másson — brú við Android (Capacitor).
    Hlaðið á undan kóða kortsins. Gerir ekkert í venjulegum vafra. */
 (function () {
   "use strict";
@@ -6,7 +6,7 @@
   if (!C || typeof C.isNativePlatform !== "function" || !C.isNativePlatform()) return;
   window.RK_APP = true;
   if (typeof C.registerPlugin !== "function") {
-    window.addEventListener("load", () => window.RK && window.RK.toast("Villa í appinu: Capacitor kjarni hlóðst ekki. Veiðihamur óvirkur.", 10000));
+    window.addEventListener("load", () => window.RK && window.RK.toast("Villa í appinu: Capacitor kjarni hlóðst ekki. Másson activate virkar ekki.", 10000));
     return;
   }
 
@@ -17,6 +17,14 @@
     const r = await HTTP.get({ url, responseType: "json", connectTimeout: 30000, readTimeout: 60000 });
     if (r.status < 200 || r.status >= 300) throw new Error("HTTP " + r.status);
     return typeof r.data === "string" ? JSON.parse(r.data) : r.data;
+  };
+  // Kortaflís sótt í gegnum síma (ef vafrahlutinn má það ekki)
+  window.__nativeBlob = async (url) => {
+    const r = await HTTP.get({ url, responseType: "blob", connectTimeout: 20000, readTimeout: 30000 });
+    if (r.status < 200 || r.status >= 300) throw new Error("HTTP " + r.status);
+    const bin = atob(r.data), arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: "image/png" });
   };
   const LN = C.registerPlugin("LocalNotifications");
   const get = (k, d) => { try { const v = localStorage.getItem("rk:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -40,7 +48,7 @@
   function onLoc(loc, err) {
     if (err) {
       if (err.code === "NOT_AUTHORIZED") {
-        toast("Leyfðu staðsetningu: Stillingar → Forrit → Rjúpnakort → Heimildir → Staðsetning.", 9000);
+        toast("Leyfðu staðsetningu: Stillingar → Forrit → S. Másson → Heimildir → Staðsetning.", 9000);
         for (const s of subs.values()) try { s.e && s.e({ code: 1, message: err.message }); } catch (e) {}
       }
       return;
@@ -53,7 +61,7 @@
     bgBusy = bgBusy.then(async () => {
       if (bgId || !subs.size) return;
       const opts = hunt
-        ? { backgroundTitle: "Veiðihamur er virkur", backgroundMessage: "Fylgist með bannsvæðum. Ýttu til að opna kortið.",
+        ? { backgroundTitle: "Másson er virkur", backgroundMessage: "Fylgist með bannsvæðum. Ýttu til að opna kortið.",
             requestPermissions: true, stale: false, distanceFilter: 15 }
         : { requestPermissions: true, stale: false, distanceFilter: 5 };
       try { bgId = await BG.addWatcher(opts, onLoc); } catch (e) { bgId = null; }
@@ -78,7 +86,7 @@
         subs.delete(id);
         if (!subs.size) {
           stop();
-          if (hunt && window.RK) { window.RK.setHunt(false); toast("Veiðiham lokið því slökkt var á GPS."); }
+          if (hunt && window.RK) { window.RK.setHunt(false); toast("Másson lokið því slökkt var á GPS."); }
         }
       },
       getCurrentPosition(s, e) {
@@ -263,7 +271,7 @@
     const st = permState || {};
     box.innerHTML = `
       <div class="setrow"><div class="t"><b>SMS ${st.sms ? "✓" : "✗"}</b><span>${st.sms ? "Leyft" : "Þarf til að biðja og svara með SMS"}</span></div>${st.sms ? "" : '<button class="btn sec" id="fSms" type="button">Leyfa</button>'}</div>
-      <div class="setrow"><div class="t"><b>Staðsetning alltaf ${st.backgroundLocation ? "✓" : "✗"}</b><span>${st.backgroundLocation ? "Leyft: getur svarað þó appið sé lokað" : "Án þess svarar síminn bara þegar veiðihamur er virkur. Veldu Heimildir → Staðsetning → Leyfa alltaf."}</span></div>${st.backgroundLocation ? "" : '<button class="btn sec" id="fBg" type="button">Opna stillingar</button>'}</div>`;
+      <div class="setrow"><div class="t"><b>Staðsetning alltaf ${st.backgroundLocation ? "✓" : "✗"}</b><span>${st.backgroundLocation ? "Leyft: getur svarað þó appið sé lokað" : "Án þess svarar síminn bara þegar Másson er virkur. Veldu Heimildir → Staðsetning → Leyfa alltaf."}</span></div>${st.backgroundLocation ? "" : '<button class="btn sec" id="fBg" type="button">Opna stillingar</button>'}</div>`;
     const b1 = box.querySelector("#fSms"); if (b1) b1.onclick = async () => { try { await F.requestSms(); } catch (e) {} renderPerm(); };
     const b2 = box.querySelector("#fBg"); if (b2) b2.onclick = () => F.openSettings().catch(() => {});
   }
