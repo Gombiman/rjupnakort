@@ -2167,7 +2167,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !pgSetting
 
 /* ---------- Veiðihamur og slóð ---------- */
 const huntSw = document.getElementById("huntSw"), huntTx = document.getElementById("huntTx"), huntDot = document.getElementById("huntDot");
-let hunt = !!LS.get("hunt", false), huntStart = LS.get("huntStart", 0);
+let hunt = !!LS.get("hunt", false), huntStart = LS.get("huntStart", 0), huntBusy = false;
 let track = LS.get("track", null);
 if (track && !Array.isArray(track.pts)) track = null;
 let trackLine = null;
@@ -2183,7 +2183,7 @@ function tripText(tr, end){
   return `${dur((end || Date.now()) - tr.start)} · ${fmtKm(tr.dist)} · ${Math.round(tr.gain)} m hækkun`;
 }
 function renderHunt(){
-  huntSw.checked = hunt;
+  if (!huntBusy) huntSw.checked = hunt;
   huntDot.classList.toggle("on", hunt);
   document.getElementById("huntH").textContent = huntTitle(hunt);
   huntSw.setAttribute("aria-label", huntTitle(false));
@@ -2216,8 +2216,8 @@ function addTrackPoint(p){
 }
 async function setHunt(on){
   on = !!on;
-  if (on === hunt){ renderHunt(); return; }
-  if (on && window.__beforeHunt){ try{ await window.__beforeHunt(); }catch(e){} }
+  if (on === hunt || huntBusy){ renderHunt(); return; }
+  if (on && window.__beforeHunt){ huntBusy = true; try{ await window.__beforeHunt(); }catch(e){} huntBusy = false; }
   hunt = on; LS.set("hunt", on);
   if (on){
     huntStart = Date.now(); LS.set("huntStart", huntStart);
@@ -2229,12 +2229,17 @@ async function setHunt(on){
   } else if (track){
     track.end = Date.now(); saveTrack(); drawTrack();
     const trips = LS.get("trips", []);
-    trips.push({start:track.start, end:track.end, dist:Math.round(track.dist), gain:Math.round(track.gain), loss:Math.round(track.loss)});
-    while (trips.length > 200){ const old = trips.shift(); IDB.del("trip:" + old.start); }
-    LS.set("trips", trips);
-    if (track.pts.length) IDB.set("trip:" + track.start, track.pts);
-    const beers = S.masson !== false && typeof beersFor === "function" ? ` · ≈ ${String(beersFor(track.dist, track.gain)).replace(".", ",")} bjórar brenndir 🍺` : "";
-    toast(`Ferð lokið: ${tripText(track, track.end)}${beers}`, 9000);
+    const nk = window.__killsIn ? window.__killsIn(track.start, track.end) : 0;
+    if (track.dist < 100 && !nk){
+      toast(`Ferð lokið: ${tripText(track, track.end)}. Of stutt til að fara í dagbókina.`, 6000);
+    } else {
+      trips.push({start:track.start, end:track.end, dist:Math.round(track.dist), gain:Math.round(track.gain), loss:Math.round(track.loss)});
+      while (trips.length > 200){ const old = trips.shift(); IDB.del("trip:" + old.start); }
+      LS.set("trips", trips);
+      if (track.pts.length) IDB.set("trip:" + track.start, track.pts);
+      const beers = S.masson !== false && typeof beersFor === "function" ? ` · ≈ ${String(beersFor(track.dist, track.gain)).replace(".", ",")} bjórar brenndir 🍺` : "";
+      toast(`Ferð lokið: ${tripText(track, track.end)}${beers}`, 9000);
+    }
   }
   renderHunt();
   if (window.__massonRefresh) window.__massonRefresh();
@@ -2411,6 +2416,13 @@ const saveKills = () => LS.set("kills", kills);
 const myKillsOn = day => kills.filter(k => dayKey(k.ts) === day);
 const mySeason = () => kills.filter(k => k.ts >= seasonStart()).length;
 window.__killsToday = () => myKillsOn(today()).length;
+window.__killsIn = (a, b) => kills.filter(k => k.ts >= a && k.ts <= b).length;
+// Stuttar ferðir án veiði (prófanir heima) fara ekki í dagbókina
+(() => {
+  const tr = LS.get("trips", []);
+  const keep = Array.isArray(tr) ? tr.filter(t => (t.dist || 0) >= 100 || kills.some(k => k.ts >= t.start && k.ts <= t.end)) : [];
+  if (Array.isArray(tr) && keep.length !== tr.length){ tr.filter(t => !keep.includes(t)).forEach(t => IDB.del("trip:" + t.start)); LS.set("trips", keep); }
+})();
 function todayKm(){
   const t0 = new Date(); t0.setHours(0, 0, 0, 0);
   let m = 0;
@@ -2506,6 +2518,18 @@ function renderLog(){
       setTimeout(() => map.once("click", () => viewLayer.clearLayers()), 400);
     };
     row.onclick = show; row.onkeydown = e => { if (e.key === "Enter"){ e.preventDefault(); show(); } };
+    if (!t.live){
+      const del = document.createElement("button"); del.className = "del"; del.type = "button"; del.textContent = "✕";
+      del.setAttribute("aria-label", "Eyða ferð " + fmtDay(dayKey(t.start)));
+      del.onclick = ev => {
+        ev.stopPropagation();
+        if (del.dataset.armed !== "1"){ del.dataset.armed = "1"; del.textContent = "Eyða?"; del.style.color = color("bann");
+          setTimeout(() => { if (del.isConnected){ del.dataset.armed = ""; del.textContent = "✕"; del.style.color = ""; } }, 3000); return; }
+        LS.set("trips", LS.get("trips", []).filter(x => x.start !== t.start)); IDB.del("trip:" + t.start);
+        viewLayer.clearLayers(); renderLog();
+      };
+      row.appendChild(del);
+    }
     logBox.appendChild(row);
   }
 }

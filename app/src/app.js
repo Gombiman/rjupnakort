@@ -38,7 +38,7 @@
 
   /* ---------- Staðsetning: navigator.geolocation keyrir á GPS-þjónustu símans ---------- */
   const subs = new Map();
-  let nextId = 1, bgId = null, bgBusy = Promise.resolve();
+  let nextId = 1, bgId = null, bgBusy = Promise.resolve(), endT = null;
 
   function toPos(l) {
     return {
@@ -87,8 +87,13 @@
       clearWatch(id) {
         subs.delete(id);
         if (!subs.size) {
-          stop();
-          if (hunt && window.RK) { window.RK.setHunt(false); toast((masson() ? "Másson" : "Tracking") + " lokið því slökkt var á GPS."); }
+          // Bíða aðeins: kortið skiptir stundum um GPS-áskrift (slökkt og kveikt strax aftur)
+          clearTimeout(endT);
+          endT = setTimeout(() => {
+            if (subs.size) return;
+            stop();
+            if (hunt && window.RK) { window.RK.setHunt(false); toast((masson() ? "Másson" : "Tracking") + " lokið því slökkt var á GPS."); }
+          }, 2500);
         }
       },
       getCurrentPosition(s, e) {
