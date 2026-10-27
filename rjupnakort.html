@@ -32,15 +32,7 @@
   --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#b58cf0; --info:#5aa8f0; --ok:#4cc47a; --heimilt:#4cc47a; --sos:#e0352b;
   --shadow:0 2px 14px rgba(0,0,0,.5); --shadow-s:0 1px 3px rgba(0,0,0,.4); color-scheme:dark}
 [hidden]{display:none!important}
-#splash{position:fixed;inset:0;z-index:3000;background:#20482E;display:flex;align-items:flex-end;transition:opacity .45s ease}
-#splash .sp-bg{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);object-fit:cover;filter:blur(22px) brightness(.6) saturate(1.15)}
-#splash .sp-img{position:absolute;left:0;right:0;top:50%;transform:translateY(-58%);width:100%;max-height:70%;object-fit:contain;box-shadow:0 10px 40px rgba(0,0,0,.45)}
-#splash .sp-txt{position:relative;width:100%;padding:90px max(20px,env(safe-area-inset-left,0px)) calc(env(safe-area-inset-bottom,0px) + 44px);
-  background:linear-gradient(to top,rgba(10,20,14,.88),rgba(10,20,14,0));color:#fff;box-sizing:border-box}
-#splash .sp-name{font:700 46px/1 var(--f-display);letter-spacing:.04em;text-transform:uppercase}
-#splash .sp-sub{font-size:14px;opacity:.85;margin-top:6px;letter-spacing:.04em}
-#splash.out{opacity:0}
-@media (prefers-reduced-motion:reduce){#splash{transition:none}}
+
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer}
@@ -187,6 +179,13 @@ details.group[open] > summary::after{transform:rotate(90deg)}
 .setrow .t b{display:block;font-weight:600}
 .setrow .t span{font-size:12.5px;color:var(--muted)}
 
+/* Um appið */
+.about img{display:block;width:100%;height:auto;aspect-ratio:1079/788;object-fit:cover}
+.about-h{font:700 24px/1 var(--f-display);letter-spacing:.04em;text-transform:uppercase;margin:2px 0 0}
+.about-list{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:14px}
+.about-list li{display:flex;align-items:center;gap:10px}
+.sw2{width:12px;height:12px;border-radius:3px;flex:none}
+
 /* Spjöld (lög, nýr punktur, ping) */
 #toast{position:fixed;z-index:1300;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 92px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:var(--shadow);max-width:calc(100% - 40px);text-align:center}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:1100;max-height:82%;overflow:auto;background:var(--panel);
@@ -276,11 +275,6 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 </style>
 </head>
 <body>
-<div id="splash" aria-hidden="true">
-  <img class="sp-bg" src="img/splash.jpg" alt="">
-  <img class="sp-img" src="img/splash.jpg" alt="">
-  <div class="sp-txt"><div class="sp-name">S. Másson</div><div class="sp-sub">Hunting tours · kort · félagar</div></div>
-</div>
 <div id="map" role="application" aria-label="Kort"></div>
 
 <div id="topbar">
@@ -511,8 +505,23 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
       </div></div>
     </div>
 
-    <p class="note" id="verNote" style="margin-top:18px;text-align:center"></p>
-    <p class="note" style="margin-top:6px;text-align:center">Línur á kortinu eru til hliðsjónar. Úrskurðir, auglýsingar um friðlýsingu og leyfi landeigenda ráða alltaf.</p>
+    <div class="sect">Um appið</div>
+    <div class="group about">
+      <img src="img/hopur.jpg" alt="Hópurinn á veiðum við bíl merktan Sæli Másson Hunting Tours" loading="lazy">
+      <div class="ginner">
+        <h2 class="about-h">S. Másson</h2>
+        <p class="note">Veiðikort hópsins. Það sýnir hvar má veiða og hvar ekki, varar við þegar þú nálgast bannsvæði, finnur félagana með einum smelli og skráir ferðina þegar þú ýtir á <b>Másson activate</b>.</p>
+        <ul class="about-list">
+          <li><span class="sw2" style="background:var(--heimilt)"></span>Þjóðlendur: veiði almennt heimil</li>
+          <li><span class="sw2" style="background:var(--leyfi)"></span>Eignarland og jarðir: leyfi landeiganda þarf</li>
+          <li><span class="sw2" style="background:var(--bann)"></span>Bannsvæði rjúpnaveiða</li>
+          <li><span class="sw2" style="background:var(--athuga)"></span>Friðlýst svæði: kannaðu reglurnar</li>
+        </ul>
+        <p class="note">Gögn: Umhverfisstofnun (bannsvæði og friðlýst svæði), óbyggðanefnd í gegnum Náttúrufræðistofnun (þjóðlendur), HMS (landeignaskrá), OpenStreetMap og OpenTopoMap (kort og örnefni).</p>
+        <p class="note">Línur á kortinu eru til hliðsjónar. Úrskurðir, auglýsingar um friðlýsingu og leyfi landeigenda ráða alltaf.</p>
+        <p class="note" id="verNote"></p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -620,17 +629,6 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 <script>
 (() => {
 "use strict";
-
-/* ---------- Opnunarskjár (einu sinni í hverri ræsingu) ---------- */
-(() => {
-  const sp = document.getElementById("splash");
-  let seen = false;
-  try{ seen = sessionStorage.getItem("rk:splash") === "1"; sessionStorage.setItem("rk:splash", "1"); }catch(e){}
-  if (seen){ sp.hidden = true; return; }
-  const hide = () => { if (sp.classList.contains("out")) return; sp.classList.add("out"); setTimeout(() => sp.hidden = true, 500); };
-  sp.addEventListener("click", hide);
-  setTimeout(hide, 1700);
-})();
 
 /* ---------- Geymsla ---------- */
 const LS = {

@@ -1,10 +1,10 @@
 /* Rjúpnakort — service worker: vistar síðuna og kortaflísar svo kortið opnist án nets */
-const SHELL = "rk-shell-v5";
+const SHELL = "rk-shell-v6";
 const TILES = "rk-tiles";
 const SHELL_URLS = [
   "./",
   "./rjupnakort.html",
-  "./img/splash.jpg",
+  "./img/hopur.jpg",
   "./img/icon-192.png",
   "./manifest.webmanifest",
   "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css",
