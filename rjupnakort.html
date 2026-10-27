@@ -2631,7 +2631,8 @@ function registerKill(p){
   let text = isMasson() ? `+1 Másson-stig! 🦃 ${n} í dag` : `Rjúpa skráð · ${n} í dag`;
   if (quota && n === quota) text = isMasson() ? `Kvóti náð (${n}). Beint í bjórinn 🍺` : `Kvóta dagsins náð (${n})`;
   else if (quota && n > quota) text += ` · kvótinn var ${quota}`;
-  if (joined() && comp.cap > 0 && n > comp.cap) text += ` · umfram hámark keppninnar`;
+  if (joined() && today() < comp.from) text += ` · keppnin hefst ${fmtD(comp.from)}`;
+  else if (joined() && comp.cap > 0 && n > comp.cap) text += ` · umfram hámark keppninnar`;
   else if (joined() && comp.onlyTrip && !hunt) text += ` · telst ekki í keppninni (engin ferð)`;
   showUndo(text, () => {
     kills = kills.filter(x => x.id !== k.id); saveKills();
@@ -2924,6 +2925,7 @@ function renderBoard(){
     q.textContent = n >= quota ? (m ? `Kvótinn þinn náður (${n}/${quota}). Beint í bjórinn 🍺` : `Kvóta dagsins náð (${n}/${quota})`) : `Kvótinn þinn í dag: ${n} af ${quota}`;
   } else q.hidden = true;
   document.getElementById("boardNote").textContent = !window.__groupSend ? "Keppnin og stigataflan eru í Android appinu."
+    : show && today() < comp.from ? `Keppnin hefst ${fmtD(comp.from)}. Rjúpur fyrir þann dag gefa ekki stig.`
     : show ? "Stigin berast á milli símanna þegar netsamband er." : "";
   renderHall();
 }
@@ -2973,7 +2975,7 @@ function renderComp(){
   } else {
     const n = competitors().length;
     box.innerHTML = `<div class="group"><div class="ginner">
-      <div class="jrow"><div class="t"><b>🏆 ${esc(comp.name)}</b><span>${fmtD(comp.from)}–${fmtD(comp.to)} · ${n} ${n === 1 ? "keppandi" : "keppendur"}${comp.prize ? " · " + esc(comp.prize) : ""}</span></div></div>
+      <div class="jrow"><div class="t"><b>🏆 ${esc(comp.name)}</b><span>${today() < comp.from ? `Hefst ${fmtD(comp.from)} · ` : ""}${fmtD(comp.from)}–${fmtD(comp.to)} · ${n} ${n === 1 ? "keppandi" : "keppendur"}${comp.prize ? " · " + esc(comp.prize) : ""}</span></div></div>
       <div class="row"><button class="btn sec" type="button" data-c="rules">Reglur og merki</button><button class="btn sec" type="button" data-c="invite">Bjóða</button></div></div></div>`;
   }
   box.querySelectorAll("[data-c]").forEach(b => b.onclick = () => {

@@ -2,6 +2,10 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Lagfæring á keppninni
+- Ef keppnin er ekki byrjuð stendur hvenær hún hefst, svo 0 stig rugli engan
+- Rjúpur sem eru skráðar fyrir upphaf keppninnar segja „keppnin hefst …“
+
 ## Másson-keppnin 🏆
 - Stofnaðu keppni í Hópnum: nafn, tímabil, um hvað er keppt og hvaða merki gefa aukastig
 - Hinir fá boð og ganga inn með keppnisheitinu: Skál 🍺 eða Nauts
