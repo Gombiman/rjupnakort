@@ -33,7 +33,8 @@
   --shadow:0 2px 14px rgba(0,0,0,.5); --shadow-s:0 1px 3px rgba(0,0,0,.4); color-scheme:dark}
 [hidden]{display:none!important}
 #splash{position:fixed;inset:0;z-index:3000;background:#20482E;display:flex;align-items:flex-end;transition:opacity .45s ease}
-#splash img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%}
+#splash .sp-bg{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);object-fit:cover;filter:blur(22px) brightness(.6) saturate(1.15)}
+#splash .sp-img{position:absolute;left:0;right:0;top:50%;transform:translateY(-58%);width:100%;max-height:70%;object-fit:contain;box-shadow:0 10px 40px rgba(0,0,0,.45)}
 #splash .sp-txt{position:relative;width:100%;padding:90px max(20px,env(safe-area-inset-left,0px)) calc(env(safe-area-inset-bottom,0px) + 44px);
   background:linear-gradient(to top,rgba(10,20,14,.88),rgba(10,20,14,0));color:#fff;box-sizing:border-box}
 #splash .sp-name{font:700 46px/1 var(--f-display);letter-spacing:.04em;text-transform:uppercase}
@@ -276,7 +277,8 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 </head>
 <body>
 <div id="splash" aria-hidden="true">
-  <img src="img/splash.jpg" alt="">
+  <img class="sp-bg" src="img/splash.jpg" alt="">
+  <img class="sp-img" src="img/splash.jpg" alt="">
   <div class="sp-txt"><div class="sp-name">S. Másson</div><div class="sp-sub">Hunting tours · kort · félagar</div></div>
 </div>
 <div id="map" role="application" aria-label="Kort"></div>
