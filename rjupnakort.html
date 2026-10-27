@@ -249,6 +249,16 @@ body.masson #btnKill{background:var(--accent)} body.masson #btnKill svg{stroke:#
 .killdot{width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:grid;place-items:center;font-size:15px;line-height:1}
 textarea,input[type=number]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box;min-width:0}
 textarea{resize:vertical;font-size:14px;line-height:1.5}
+#joinCard{margin-bottom:14px}
+.jh{font:700 19px var(--f-display);letter-spacing:.03em;text-transform:uppercase}
+.jrow .t b{display:block;font-weight:700;font-size:16px}
+.jrow .t span{font-size:13px;color:var(--muted)}
+.codebig{font:600 22px var(--f-mono);letter-spacing:.04em;background:var(--bg);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;text-align:center;margin:6px 0}
+.lv{position:relative;width:34px;height:34px}
+.lv span{position:absolute;inset:0;border-radius:50%;background:#7b4fc4;color:#fff;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45);display:grid;place-items:center;font:700 15px var(--f-display);box-sizing:border-box}
+.lv b{position:absolute;top:36px;left:50%;transform:translateX(-50%);white-space:nowrap;background:rgba(255,255,255,.92);color:#16191a;font:600 11.5px var(--f-body);padding:1px 6px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.lv.stale span{background:#8a9096}
+.lv.stale b{color:#55606a}
 .links a{color:var(--info)}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .legend{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:13.5px;align-items:center}
@@ -425,6 +435,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 <section id="pgFriends" class="page" hidden aria-label="Hópurinn">
   <div class="wrapmax">
     <h1 id="pgFriendsH">Hópurinn</h1>
+    <div id="joinCard" hidden></div>
     <div class="boardhead">
       <div class="sect" id="boardH">Másson-stig</div>
       <div class="seg sm" id="boardSeg"><button type="button" data-m="day" aria-pressed="true">Í dag</button><button type="button" data-m="season" aria-pressed="false">Tímabilið</button></div>
@@ -466,7 +477,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
       <h1>Stillingar</h1>
     </div>
 
-    <div class="sect">Másson</div>
+    <div class="sect">Másson og hópurinn</div>
     <div class="group"><div class="ginner">
       <div id="massonSet"></div>
       <label class="f" id="massonBox">Gælunöfn: nafn = gælunafn, ein lína á mann
@@ -652,6 +663,46 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
   <input type="text" id="ptName" placeholder="t.d. Bíllinn við afleggjarann" maxlength="40">
   <div class="row" style="margin-top:16px">
     <button class="btn" id="ptSave" type="button">Vista punkt</button>
+  </div>
+</section>
+
+<section id="joinSheet" class="sheet" hidden aria-label="Ganga í hóp">
+  <div class="grab"></div>
+  <div class="sh-head"><h2 id="joinTitle">Skrá Másson</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
+  <label class="f" style="margin-top:12px">Nafnið þitt
+    <input type="text" id="jName" maxlength="24" placeholder="t.d. Grétar" autocomplete="given-name">
+  </label>
+  <label class="f" style="margin-top:10px">Símanúmerið þitt
+    <input type="text" id="jPhone" inputmode="tel" maxlength="16" placeholder="t.d. 8201234" autocomplete="tel">
+  </label>
+  <h3>Hópur</h3>
+  <div class="seg" id="jMode"><button type="button" data-m="join" aria-pressed="true">Ganga í hóp</button><button type="button" data-m="new" aria-pressed="false">Stofna nýjan hóp</button></div>
+  <div id="jJoin" style="margin-top:12px">
+    <label class="f" for="jCode">Hópkóði frá félaga (má líma öll skilaboðin)</label>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <input type="text" id="jCode" maxlength="400" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="rjupa-…" style="flex:1">
+      <button class="btn sec" id="jPaste" type="button" style="flex:none">Líma</button>
+    </div>
+  </div>
+  <div id="jNew" hidden style="margin-top:12px">
+    <p class="note">Nýi hópkóðinn ykkar:</p>
+    <div class="codebig" id="jNewCode"></div>
+    <p class="note">Þú sendir hann á félagana í næsta skrefi.</p>
+  </div>
+  <p class="msg" id="jMsg" style="margin-top:10px"></p>
+  <button class="btn wide" id="jSave" type="button" style="margin-top:12px">Skrá</button>
+  <p class="note" style="margin-top:12px">Allt sem fer á milli símanna er dulkóðað með hópkóðanum. Nafnið, símanúmerið og staðsetningin sjást bara hjá þeim sem eru í hópnum.</p>
+</section>
+
+<section id="inviteSheet" class="sheet" hidden aria-label="Bjóða félögum">
+  <div class="grab"></div>
+  <div class="sh-head"><h2>Bjóða félögum</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
+  <p class="note" style="margin-top:8px">Sendu þetta á strákana. Þeir sækja appið, ýta á Skrá og líma skilaboðin í hópkóðann.</p>
+  <pre class="preview" id="invPrev"></pre>
+  <div class="row" style="margin-top:12px">
+    <a class="btn" id="invSms" href="#">SMS</a>
+    <button class="btn" id="invShare" type="button">Deila…</button>
+    <button class="btn sec" id="invCopy" type="button">Afrita</button>
   </div>
 </section>
 
@@ -1326,7 +1377,8 @@ const SETTINGS = [
   ["battery",   "Rafhlöðuvakt", "Varar við þegar rafhlaðan fer undir 30% og 15%.", true],
   ["autosaver", "Sparnaður sjálfvirkt undir 20%", "Kveikir á sparnaðarham þegar rafhlaðan er lág og síminn ekki í hleðslu.", true],
   ["saver",     "Sparnaðarhamur", "Skjárinn má slökkva á sér, áttavitinn slökktur og GPS mælir sjaldnar.", false],
-  ["masson",    "Másson-hamur", "Másson-stig, gælunöfn og bjórtími. Slökktu til að fá venjulegt viðmót (Tracking).", true]
+  ["masson",    "Másson-hamur", "Másson-stig, gælunöfn og bjórtími. Slökktu til að fá venjulegt viðmót (Tracking).", true],
+  ["shareloc",  "Sýna mig á korti félaganna", "Á meðan ferð er í gangi sést staðsetningin þín hjá hópnum (á 2 mín fresti, 5 í sparnaðarham).", true]
 ];
 const S = Object.assign(Object.fromEntries(SETTINGS.map(x => [x[0], x[3]])), {vib:LS.get("vib", true)}, LS.get("set", {}));
 const setList = document.getElementById("setList");
@@ -1335,7 +1387,7 @@ for (const [k, title, desc] of SETTINGS){
   row.innerHTML = `<div class="t"><b>${esc(title)}</b><span>${esc(desc)}</span></div>`;
   const t = document.createElement("input"); t.type = "checkbox"; t.className = "tog"; t.id = "set_" + k; t.checked = !!S[k];
   t.onchange = () => { S[k] = t.checked; LS.set("set", S); if (window.__applyAll) window.__applyAll(); };
-  row.appendChild(t); (k === "masson" ? document.getElementById("massonSet") : setList).appendChild(row);
+  row.appendChild(t); (k === "masson" || k === "shareloc" ? document.getElementById("massonSet") : setList).appendChild(row);
 }
 
 /* ---------- Spjald ---------- */
@@ -1964,7 +2016,7 @@ function showRemote(p, quiet){
     setTimeout(() => markers[p.id] && markers[p.id].openPopup(), 300);
   }
   const rel = relFromMe(p);
-  toast(`${p.type === "ping" ? "Ping" : "Punktur"}${p.from ? " frá " + p.from : ""} · ${ago(p.ts)}${rel ? " · " + rel.text : ""}`, 6000);
+  toast(`${p.type === "ping" ? "Ping" : "Punktur"}${p.from ? " frá " + dn(p.from) : ""} · ${ago(p.ts)}${rel ? " · " + rel.text : ""}`, 6000);
 }
 window.addEventListener("hashchange", readHash);
 
@@ -2266,6 +2318,7 @@ async function setHunt(on){
   }
   renderHunt();
   if (window.__massonRefresh) window.__massonRefresh();
+  if (window.__massonHunt) window.__massonHunt(on);
   if (window.__onHunt) window.__onHunt(on);
 }
 let huntArmed = false;
@@ -2570,8 +2623,10 @@ if (!board || typeof board !== "object" || Array.isArray(board)) board = {};
 function last7(p){ const d = String(p || "").replace(/[^0-9]/g, ""); return d.length <= 7 ? d : d.slice(-7); }
 function mySnapshot(){
   const td = myKillsOn(today());
-  return {id:last7(LS.get("myPhone", "")) || "me", name:LS.get("me", "") || "Ég", day:today(), today:td.length, season:mySeason(),
-          first:td.length ? Math.min(...td.map(k => k.ts)) : 0, km:Math.round(todayKm()), ts:Date.now()};
+  const o = {id:last7(LS.get("myPhone", "")) || "me", name:LS.get("me", "") || "Ég", phone:String(LS.get("myPhone", "")), day:today(), today:td.length, season:mySeason(),
+          first:td.length ? Math.min(...td.map(k => k.ts)) : 0, km:Math.round(todayKm()), hunting:!!hunt, ts:Date.now()};
+  if (hunt && S.shareloc !== false && pos && Date.now() - (pos.t || 0) < 5 * 60000){ o.lat = +pos.lat.toFixed(5); o.lon = +pos.lon.toFixed(5); o.acc = Math.round(pos.acc || 0); o.pt = pos.t; }
+  return o;
 }
 let boardMode = "day";
 function boardRows(mode){
@@ -2581,6 +2636,7 @@ function boardRows(mode){
     firstToday: r.day === d ? r.first || 0 : 0, kmToday: r.day === d ? r.km || 0 : 0}));
 }
 function renderBoard(){
+  checkGroup(); renderJoin();
   const box = document.getElementById("board");
   const m = isMasson();
   document.getElementById("boardH").textContent = m ? "Másson-stig" : "Veiði";
@@ -2636,6 +2692,9 @@ const announced = new Set();
 let lastPollAt = Date.now();
 function onGroupMsg(msg, live){
   if (!msg || !msg.id || msg.id === mySnapshot().id) return;
+  checkGroup();
+  if (msg.phone && window.__addGroupFriend) window.__addGroupFriend(msg.name, msg.phone);
+  liveUpdate(msg);
   const prev = board[msg.id];
   if (!prev || (msg.ts || 0) >= (prev.ts || 0)){
     board[msg.id] = {id:msg.id, name:msg.name, day:msg.day, today:msg.today, season:msg.season, first:msg.first, km:msg.km, ts:msg.ts};
@@ -2687,6 +2746,167 @@ window.__onPosExtra = () => {
   if (hunt) crownCheck();
 };
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible"){ groupPoll(); renderBoard(); } });
+
+/* ---------- Hópskráning ---------- */
+function groupCode(){ return String(LS.get("group", "")).trim(); }
+function groupReady(){ return !!(String(LS.get("me", "")).trim() && last7(LS.get("myPhone", "")).length >= 7 && groupCode().length >= 4); }
+// Nýr hópkóði: hreinsa stigatöflu og staðsetningar fyrri hóps
+function checkGroup(){
+  const g = groupCode();
+  if (LS.get("boardFor", null) === g) return;
+  LS.set("boardFor", g);
+  board = {}; LS.set("board", board);
+  for (const id in live) delete live[id];
+  LS.set("live", live); renderLive();
+}
+const joinSheet = document.getElementById("joinSheet"), inviteSheet = document.getElementById("inviteSheet");
+const APK_URL = "https://github.com/Gombiman/rjupnakort/releases/download/app/rjupnakort.apk";
+function newCode(){
+  const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", r = new Uint32Array(8); crypto.getRandomValues(r);
+  let c = "rjupa-"; r.forEach(v => c += abc[v % abc.length]); return c;
+}
+function pickCode(t){
+  t = String(t || "").trim();
+  const m = t.match(/rjupa-[A-Za-z0-9]{4,}/);
+  return m ? m[0] : t.replace(/\s+/g, "");
+}
+function renderJoin(){
+  const box = document.getElementById("joinCard");
+  if (!window.__groupSend){ box.hidden = true; return; }
+  box.hidden = false;
+  const m = isMasson();
+  if (!groupReady()){
+    box.innerHTML = `<div class="group"><div class="ginner">
+      <div class="jh">${m ? "Skráðu þig í Másson-hópinn" : "Ganga í hóp"}</div>
+      <p class="note">Nafn, símanúmer og hópkóði. Þá sérðu stig félaganna og hvar þeir eru á kortinu, og getur fundið þá með einum smelli.</p>
+      <button class="btn wide" type="button" data-j="open">${m ? "Skrá Másson" : "Ganga í hóp"}</button></div></div>`;
+  } else {
+    const n = Object.keys(board).length + 1;
+    box.innerHTML = `<div class="group"><div class="ginner">
+      <div class="jrow"><div class="t"><b>Hópur ${esc(groupCode())}</b><span>${n} í hópnum · þú ert ${esc(dispName(String(LS.get("me", ""))))}</span></div></div>
+      <div class="row"><button class="btn" type="button" data-j="invite">Bjóða félögum</button><button class="btn sec" type="button" data-j="open">Breyta</button></div></div></div>`;
+  }
+  box.querySelectorAll("[data-j]").forEach(b => b.onclick = () => b.dataset.j === "open" ? openJoin() : openInvite());
+}
+let jMode = "join";
+function setJMode(mo){
+  jMode = mo; document.getElementById("jMsg").textContent = "";
+  document.querySelectorAll("#jMode button").forEach(x => x.setAttribute("aria-pressed", x.dataset.m === mo));
+  document.getElementById("jJoin").hidden = mo !== "join";
+  document.getElementById("jNew").hidden = mo !== "new";
+  if (mo === "new" && !document.getElementById("jNewCode").textContent) document.getElementById("jNewCode").textContent = newCode();
+}
+document.querySelectorAll("#jMode button").forEach(b => b.onclick = () => setJMode(b.dataset.m));
+function openJoin(){
+  document.getElementById("joinTitle").textContent = groupReady() ? "Hópurinn" : isMasson() ? "Skrá Másson" : "Ganga í hóp";
+  document.getElementById("jName").value = LS.get("me", "");
+  document.getElementById("jPhone").value = LS.get("myPhone", "");
+  document.getElementById("jCode").value = groupCode();
+  document.getElementById("jNewCode").textContent = "";
+  document.getElementById("jMsg").textContent = "";
+  document.getElementById("jSave").textContent = groupReady() ? "Vista" : "Skrá";
+  setJMode("join");
+  openPanel(joinSheet);
+}
+document.getElementById("jCode").onchange = e => { e.target.value = pickCode(e.target.value); };
+document.getElementById("jPaste").onclick = async () => {
+  try{ const t = await navigator.clipboard.readText(); if (t) document.getElementById("jCode").value = pickCode(t); else throw 0; }
+  catch(e){ toast("Haltu fingri á reitnum og veldu Líma."); document.getElementById("jCode").focus(); }
+};
+document.getElementById("jSave").onclick = () => {
+  const name = document.getElementById("jName").value.trim(), phone = document.getElementById("jPhone").value.trim();
+  const code = jMode === "new" ? document.getElementById("jNewCode").textContent : pickCode(document.getElementById("jCode").value);
+  const msg = document.getElementById("jMsg"); msg.className = "msg err";
+  if (!name){ msg.textContent = "Skrifaðu nafnið þitt."; return; }
+  if (last7(phone).length < 7){ msg.textContent = "Skrifaðu símanúmerið þitt (7 tölustafir eða fleiri)."; return; }
+  if (code.length < 4){ msg.textContent = "Límdu hópkóðann frá félaga eða stofnaðu nýjan hóp."; return; }
+  LS.set("me", name); LS.set("myPhone", phone); LS.set("group", code);
+  const pm = document.getElementById("myName"); if (pm) pm.value = name;
+  if (window.__groupChanged) window.__groupChanged();
+  closeSheet(); checkGroup(); groupSend("hello"); groupPoll(); renderBoard();
+  if (jMode === "new") openInvite();
+  else toast(isMasson() ? `Velkominn í hópinn, ${dispName(name)}! 🦃` : "Þú ert kominn í hópinn.");
+};
+let invText = "";
+function openInvite(){
+  const m = isMasson();
+  invText = `${m ? "Komdu í Másson-hópinn 🦃" : "Komdu í hópinn í S. Másson appinu"}\n1. Sæktu appið: ${APK_URL}\n2. Opnaðu Hópinn og ýttu á ${m ? "Skrá Másson" : "Ganga í hóp"}\n3. Hópkóði: ${groupCode()}`;
+  document.getElementById("invPrev").textContent = invText;
+  document.getElementById("invSms").href = "sms:?body=" + encodeURIComponent(invText);
+  document.getElementById("invShare").hidden = !navigator.share;
+  openPanel(inviteSheet);
+}
+document.getElementById("invShare").onclick = async () => { try{ await navigator.share({text:invText}); }catch(e){} };
+document.getElementById("invCopy").onclick = e => copyText(invText, e.currentTarget, "Afrita");
+
+/* ---------- Félagarnir á kortinu (live) ---------- */
+let live = LS.get("live", {});
+if (!live || typeof live !== "object" || Array.isArray(live)) live = {};
+const liveLayer = L.layerGroup().addTo(map), liveMk = {};
+const shortAgo = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? "núna" : m < 60 ? `${m} mín` : `${Math.floor(m / 60)} klst`; };
+function liveIcon(r){
+  const stale = Date.now() - r.ts > 10 * 60000 || r.hunting === false, nm = dispName(r.name) || "?";
+  return L.divIcon({className:"", iconSize:[34, 34], iconAnchor:[17, 17], popupAnchor:[0, -16],
+    html:`<div class="lv${stale ? " stale" : ""}"><span>${esc(nm.charAt(0).toUpperCase())}</span><b>${esc(nm)} · ${r.hunting === false ? "hætti" : shortAgo(r.ts)}</b></div>`});
+}
+function livePopup(id){
+  const r = live[id]; if (!r) return "";
+  const rel = relFromMe(r);
+  return `<div class="pop"><b>${esc(dispName(r.name))}</b>
+    <div style="color:#7b4fc4;font-weight:600">${r.hunting === false ? "Ferð lokið" : "Í ferð"} · staðsetning ${shortAgo(r.ts) === "núna" ? "núna" : "fyrir " + shortAgo(r.ts)}${r.acc ? ` · ±${r.acc} m` : ""}</div>
+    <div class="dist">${rel ? rel.text + " frá þér" : "Kveiktu á GPS til að sjá fjarlægð"}</div>
+    <div class="pb"><button type="button" data-lvgo="${esc(id)}">Vísa leið</button>${r.phone && window.__findByPhone ? `<button type="button" data-lvfind="${esc(id)}">Finna núna</button>` : ""}</div></div>`;
+}
+function renderLive(){
+  const cut = Date.now() - 12 * 3600e3;
+  for (const id in live) if (!live[id] || live[id].ts < cut){ delete live[id]; }
+  for (const id in liveMk) if (!live[id]){ liveLayer.removeLayer(liveMk[id]); delete liveMk[id]; }
+  for (const id in live){
+    const r = live[id];
+    if (!liveMk[id]) liveMk[id] = L.marker([r.lat, r.lon], {icon:liveIcon(r), zIndexOffset:900, keyboard:false}).bindPopup(() => livePopup(id), {minWidth:200}).addTo(liveLayer);
+    else { liveMk[id].setLatLng([r.lat, r.lon]); liveMk[id].setIcon(liveIcon(r)); }
+  }
+}
+function liveUpdate(msg){
+  const prev = live[msg.id];
+  if (msg.lat != null && msg.lon != null){
+    const t = msg.pt || msg.ts;
+    if (prev && prev.ts > t) return;
+    live[msg.id] = {name:msg.name, phone:msg.phone || "", lat:msg.lat, lon:msg.lon, acc:msg.acc || 0, ts:t, hunting:msg.hunting !== false};
+    // Ef örin vísar á þennan félaga færist skotmarkið með honum
+    const tg = currentTarget();
+    if (tg && tg.type === "ping" && tg.from === msg.name){
+      tg.lat = msg.lat; tg.lon = msg.lon; tg.ts = t; LS.set("pts", pts);
+      if (markers[tg.id]) markers[tg.id].setLatLng([tg.lat, tg.lon]);
+      updateCar();
+    }
+  } else if (prev && msg.hunting === false && (msg.ts || 0) > prev.ts) prev.hunting = false;
+  else return;
+  LS.set("live", live); renderLive();
+}
+map.on("popupopen", e => {
+  const el = e.popup.getElement(); if (!el) return;
+  el.querySelectorAll("[data-lvgo]").forEach(b => b.onclick = () => {
+    const r = live[b.dataset.lvgo]; if (!r) return;
+    const p = addRemotePoint({lat:r.lat, lon:r.lon, acc:r.acc, ts:r.ts, type:"ping", from:r.name});
+    setTarget(p.id); map.closePopup(); toast(`Örin vísar á ${dispName(r.name)} og fylgir honum`);
+  });
+  el.querySelectorAll("[data-lvfind]").forEach(b => b.onclick = () => {
+    const r = live[b.dataset.lvfind]; if (r && window.__findByPhone){ map.closePopup(); window.__findByPhone(r.phone, r.name); }
+  });
+});
+setInterval(renderLive, 60000);
+renderLive();
+// Senda staðsetningu í ferð
+let lastPosSent = 0;
+window.__massonHunt = on => { lastPosSent = 0; groupSend(on ? "start" : "stop"); };
+const prevPosExtra3 = window.__onPosExtra;
+window.__onPosExtra = () => {
+  if (prevPosExtra3) prevPosExtra3();
+  if (!hunt || S.shareloc === false || !pos) return;
+  const every = (typeof saverActive === "function" && saverActive() ? 5 : 2) * 60000;
+  if (Date.now() - lastPosSent > every){ lastPosSent = Date.now(); groupSend("pos"); }
+};
 
 /* ---------- Stillingar: gælunöfn og kvóti ---------- */
 const nickIn = document.getElementById("nickIn"), quotaIn = document.getElementById("quotaIn");

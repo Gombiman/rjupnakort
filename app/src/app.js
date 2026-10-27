@@ -246,7 +246,7 @@
     if (!fsheet) return;
     const list = friends(), box = document.getElementById("fList"), intro = document.getElementById("fIntro");
     const ready = get("myPhone", "") && get("group", "");
-    intro.textContent = !list.length ? "Engir félagar enn. Bættu þeim við í Stillingum → Félagar og hópkóði."
+    intro.textContent = !list.length ? "Engir félagar enn. Þeir sem ganga í hópinn birtast hér sjálfkrafa."
       : ready ? "Ýttu á Finna. Félaginn þarf ekki að snerta símann, hann svarar sjálfkrafa."
       : "Settu inn símanúmerið þitt og hópkóða í Stillingum. Án þeirra er bara notað SMS.";
     box.hidden = !list.length;
@@ -300,6 +300,25 @@
     } catch (e) { toast("Tókst ekki: " + (e.message || e), 6000); }
     renderFriends();
   }
+  // Hópskráning úr Hópnum: uppfæra reitina í Stillingum og Java
+  window.__groupChanged = () => {
+    const $ = id => document.getElementById(id);
+    if ($("fMe")) { $("fMe").value = get("me", ""); $("fPhone").value = get("myPhone", ""); $("fGroup").value = get("group", ""); }
+    syncFriends(); renderFriends();
+  };
+  // Félagar í hópnum bætast sjálfkrafa á listann (nafn og númer koma dulkóðuð á hóprásinni)
+  window.__addGroupFriend = (name, phone) => {
+    const k = last7(phone);
+    if (!name || k.length < 7 || k === last7(get("myPhone", ""))) return;
+    const list = friends(), f = list.find(x => last7(x.phone) === k);
+    if (f && (!f.auto || f.name === name)) return;
+    if (f) f.name = name; else list.push({ name, phone, auto: true });
+    set("friends", list); syncFriends(); renderFriends();
+  };
+  window.__findByPhone = (phone, name) => {
+    const f = friends().find(x => last7(x.phone) === last7(phone)) || { name: name || phone, phone };
+    findFriend(f);
+  };
   function initFriends() {
     buildSheet(); renderFriends(); renderPerm();
     window.__onFriendsTab = () => { renderFriends(); renderPerm(); };
