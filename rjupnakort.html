@@ -13,7 +13,7 @@
 :root{
   --bg:#f3f4f2; --panel:#ffffff; --fg:#16191a; --muted:#5c6668; --line:#e1e5e3; --soft:#eef0ee;
   --accent:#e8590c;            /* veiðiappelsínugulur */
-  --bann:#d62f25; --leyfi:#e39400; --athuga:#7b4fc4; --info:#2577c4; --ok:#2b8a4b; --sos:#c62a20;
+  --bann:#d62f25; --leyfi:#e39400; --athuga:#7b4fc4; --info:#2577c4; --ok:#2b8a4b; --heimilt:#2f9e4f; --sos:#c62a20;
   --shadow:0 2px 12px rgba(22,25,26,.14); --shadow-s:0 1px 3px rgba(22,25,26,.07);
   --tabh:64px;
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
@@ -22,11 +22,11 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#111415; --panel:#1b2021; --fg:#e9ecea; --muted:#9aa5a6; --line:#2c3436; --soft:#232a2b;
-  --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#b58cf0; --info:#5aa8f0; --ok:#4cc47a; --sos:#e0352b;
+  --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#b58cf0; --info:#5aa8f0; --ok:#4cc47a; --heimilt:#4cc47a; --sos:#e0352b;
   --shadow:0 2px 14px rgba(0,0,0,.5); --shadow-s:0 1px 3px rgba(0,0,0,.4); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#111415; --panel:#1b2021; --fg:#e9ecea; --muted:#9aa5a6; --line:#2c3436; --soft:#232a2b;
-  --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#b58cf0; --info:#5aa8f0; --ok:#4cc47a; --sos:#e0352b;
+  --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#b58cf0; --info:#5aa8f0; --ok:#4cc47a; --heimilt:#4cc47a; --sos:#e0352b;
   --shadow:0 2px 14px rgba(0,0,0,.5); --shadow-s:0 1px 3px rgba(0,0,0,.4); color-scheme:dark}
 [hidden]{display:none!important}
 html,body{height:100%;margin:0}
@@ -48,6 +48,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 #stTitle{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #stSub{font-size:11.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #status.s-ok .dot{background:var(--ok)}
+#status.s-heimilt{background:#e6f4ea;border-color:#8cc59d;color:#123b1f} #status.s-heimilt .dot{background:var(--heimilt)}
 #status.s-info .dot{background:var(--info)}
 #status.s-near,#status.s-leyfi{background:#fff4da;border-color:#e8b44a;color:#3b2c06} #status.s-near .dot,#status.s-leyfi .dot{background:#d98a00}
 #status.s-athuga{background:#f1ebfb;border-color:#b79be4;color:#2d1a52} #status.s-athuga .dot{background:var(--athuga)}
@@ -403,7 +404,8 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
           </label>
           <label class="f">Flokkur
             <select id="impCat">
-              <option value="info">Upplýsingar (t.d. þjóðlenda)</option>
+              <option value="heimilt">Veiði heimil (t.d. leyfi frá landeiganda)</option>
+              <option value="info">Upplýsingar</option>
               <option value="leyfi">Leyfi þarf (t.d. ríkisjörð)</option>
               <option value="athuga">Friðlýst — athuga reglur</option>
               <option value="bann">Veiði bönnuð</option>
@@ -486,10 +488,11 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 
   <h3>Litir</h3>
   <div class="legend">
+    <i style="background:var(--heimilt)"></i><span>Veiði heimil (þjóðlenda, eigin leyfissvæði)</span>
+    <i style="background:var(--leyfi)"></i><span>Eignarland: leyfi landeiganda þarf</span>
     <i style="background:var(--bann)"></i><span>Veiði bönnuð</span>
-    <i style="background:var(--athuga)"></i><span>Friðlýst — kannaðu reglur svæðisins</span>
-    <i style="background:var(--leyfi)"></i><span>Leyfi landeiganda eða umsjónaraðila þarf</span>
-    <i style="background:var(--info)"></i><span>Upplýsingar (t.d. þjóðlenda)</span>
+    <i style="background:var(--athuga)"></i><span>Friðlýst: kannaðu reglur svæðisins</span>
+    <i style="background:var(--info)"></i><span>Upplýsingar</span>
   </div>
 </section>
 
@@ -587,7 +590,8 @@ const CAT = {
   bann:   {rank:4, label:"Veiði bönnuð"},
   athuga: {rank:3, label:"Friðlýst svæði"},
   leyfi:  {rank:2, label:"Leyfi þarf"},
-  info:   {rank:1, label:"Upplýsingar"}
+  heimilt:{rank:1, label:"Veiði heimil"},
+  info:   {rank:0, label:"Upplýsingar"}
 };
 
 /* ---------- Innbyggð lög ---------- */
@@ -600,7 +604,7 @@ const BUILTIN = [
     wfs:[["https://gis.ust.is/geoserver/wfs","fridlyst_svaedi:fridlyst_svaedi"],
          ["https://gis.natt.is/geoserver/wfs","fridlyst_svaedi:fridlyst_svaedi"]],
     wms:["https://gis.ust.is/geoserver/wms","fridlyst_svaedi:fridlyst_svaedi"] },
-  { id:"b_thjodl", name:"Þjóðlendur", cat:"info", owner:"Forsætisráðuneytið", wfs:[], wms:null,
+  { id:"b_thjodl", name:"Þjóðlendur", cat:"heimilt", owner:"Forsætisráðuneytið", wfs:[], wms:null,
     discover:{servers:["https://gis.natt.is/geoserver/wfs","https://gis.lmi.is/geoserver/wfs","https://gis.ust.is/geoserver/wfs"],
               re:/þjóðlend|thjodlend|tjodlend|thjodlnd/i, avoid:/kraf|kröf|krof|krafa|claim/i} }
 ];
@@ -665,7 +669,9 @@ map.createPane("wms");   map.getPane("wms").style.zIndex = 410;
 let layers = LS.get("layers", null);
 if (!Array.isArray(layers)) layers = [];
 for (const b of BUILTIN){
-  if (!layers.find(l => l.id === b.id)) layers.push({id:b.id, name:b.name, cat:b.cat, kind:"vector", src:"builtin", on:true});
+  const l = layers.find(x => x.id === b.id);
+  if (!l) layers.push({id:b.id, name:b.name, cat:b.cat, kind:"vector", src:"builtin", on:true});
+  else { l.name = b.name; l.cat = b.cat; }
 }
 const runtime = {}; // id -> {leaflet, feats}
 const saveLayers = () => LS.set("layers", layers.map(({id,name,cat,kind,src,on,updated,wmsUrl,wmsLayer}) => ({id,name,cat,kind,src,on,updated,wmsUrl,wmsLayer})));
@@ -695,11 +701,15 @@ function polysOf(g){
 }
 /* Þjóðlendugögnin innihalda bæði þjóðlendur og dæmd eignarlönd: flokka eftir tegund */
 function featCat(l, p){
-  if (!l || l.id !== "b_thjodl") return l ? l.cat : "info";
+  if (!l) return "info";
+  const typed = p && (p.tegund || p.tegund2);
+  if (l.id !== "b_thjodl" && !(typed && (l.cat === "heimilt" || l.cat === "info"))) return l.cat;
   const t = String((p && (p.tegund || p.tegund2)) || "").toLowerCase();
-  return /eignarland|afréttareign/.test(t) ? "leyfi" : "info";
+  if (/eignarland|afréttareign/.test(t)) return "leyfi";
+  if (/þjóðlend|afrétt/.test(t)) return "heimilt";
+  return "info";
 }
-function featKind(l, p){ return l && l.id === "b_thjodl" && p ? String(p.tegund || p.tegund2 || "") : ""; }
+function featKind(l, p){ return l && p && (l.id === "b_thjodl" || l.cat === "heimilt" || l.cat === "info") ? String(p.tegund || p.tegund2 || "") : ""; }
 function prep(gj, fallback, l){
   const out = [];
   for (const f of gj.features){
@@ -757,7 +767,7 @@ function drawVector(l, gj){
     pane:"zones", renderer,
     filter: f => !!polysOf(f.geometry).length,
     style: f => { const k = featCat(l, f.properties), c = color(k);
-      return {color:c, weight:k === "info" ? 1.5 : 2, fillColor:c, fillOpacity:k === "info" ? 0.12 : k === "leyfi" ? 0.08 : 0.18, dashArray:k === "leyfi" ? "6 4" : null}; },
+      return {color:c, weight:k === "info" || k === "heimilt" ? 1.5 : 2, fillColor:c, fillOpacity:k === "heimilt" ? 0.14 : k === "info" ? 0.12 : k === "leyfi" ? 0.1 : 0.18, dashArray:k === "leyfi" ? "6 4" : null}; },
     onEachFeature: (f, ly) => ly.bindPopup(() => popupHtml(l, f.properties||{}))
   });
   runtime[l.id] = {leaflet:lay, feats:prep(gj, l.name, l)};
@@ -986,7 +996,7 @@ fileIn.onchange = async () => {
     if (!nPoly) throw new Error("Fann engin flatarsvæði (polygon) í skránni.");
     pendingGj = gj;
     document.getElementById("impName").value = f.name.replace(/\.[^.]+$/, "");
-    const lc = n; document.getElementById("impCat").value = /thjodl|þjóðl/.test(lc) ? "info" : /rikis|ríkis|jard|jörð/.test(lc) ? "leyfi" : /frid|frið/.test(lc) ? "athuga" : "info";
+    const lc = n; document.getElementById("impCat").value = /thjodl|þjóðl/.test(lc) ? "heimilt" : /rikis|ríkis|jard|jörð/.test(lc) ? "leyfi" : /frid|frið/.test(lc) ? "athuga" : "info";
     impForm.hidden = false;
     msg(impMsg, `${nPoly} svæði fundust. Veldu flokk og bættu við.`);
   }catch(e){ msg(impMsg, e.message || "Gat ekki lesið skrána.", true); }
@@ -1147,7 +1157,7 @@ function evaluate(){
       const [a,b,c,d] = f.bbox;
       if (pos.lon < a-padLon || pos.lon > c+padLon || pos.lat < b-padLat || pos.lat > d+padLat) continue;
       if (f.polys.some(p => inPoly(pos.lon, pos.lat, p))) inside.push({l, f, d:edgeDist(pos.lon,pos.lat,f.polys)});
-      else if (f.cat !== "info"){ const dd = edgeDist(pos.lon, pos.lat, f.polys); if (dd <= near) close.push({l, f, d:dd}); }
+      else if (f.cat !== "info" && f.cat !== "heimilt"){ const dd = edgeDist(pos.lon, pos.lat, f.polys); if (dd <= near) close.push({l, f, d:dd}); }
     }
   }
   inside.sort((x,y) => CAT[y.f.cat].rank - CAT[x.f.cat].rank);
@@ -1159,10 +1169,12 @@ function evaluate(){
   else if (top && top.f.cat === "athuga"){ level=4; cls="athuga"; title="Innan friðlýsts svæðis"; sub=`${top.f.name} · kannaðu reglur · ${m(top.d)} að mörkum`; }
   else if (top && top.f.cat === "leyfi"){ level=3; cls="leyfi"; title=top.f.kind ? `${top.f.kind}: leyfi þarf` : "Leyfi þarf"; sub=`${top.f.name} (${top.f.kind || top.l.name})`; }
   else if (close.length){ level=2; cls="near"; title=`${m(close[0].d)} að svæði`; sub=`${close[0].f.name} · ${close[0].f.kind || CAT[close[0].f.cat].label}`; }
+  else if (top && top.f.cat === "heimilt"){ level=1; cls="heimilt"; title=`Veiði heimil · ${top.f.name}`; sub=`${top.f.kind || top.l.name} · ekkert bannsvæði innan ${m(near)}`; }
   else if (top){ level=1; cls="info"; title=top.f.name; sub=`${top.f.kind || top.l.name} · ekkert bannsvæði innan ${m(near)}`; }
   else if (anyVector){ level=0; cls="ok"; title="Ekkert svæði nálægt"; sub=`Ekkert merkt svæði innan ${m(near)}`; }
   else { level=0; cls="none"; title="Engin svæðisgögn"; sub="Opnaðu lög og bættu við gögnum — viðvaranir óvirkar"; }
-  if (top && top.f.cat !== "info" && inside.find(x => x.f.cat === "info")) sub += " · " + inside.find(x => x.f.cat === "info").f.name;
+  const under = top && inside.find(x => x !== top && (x.f.cat === "info" || x.f.cat === "heimilt"));
+  if (top && top.f.cat !== "info" && top.f.cat !== "heimilt" && under) sub += " · " + under.f.name;
   showState(cls, title, sub);
   if (lastLevel != null && level > lastLevel && level >= 2 && S.vib && navigator.vibrate){
     try{ navigator.vibrate(level >= 5 ? [400,150,400,150,400] : [250,120,250]); }catch(e){}
