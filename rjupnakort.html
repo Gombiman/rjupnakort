@@ -183,6 +183,11 @@ h3{font:700 13px/1.2 var(--f-display);text-transform:uppercase;letter-spacing:.1
 .chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1px solid currentColor;margin-right:6px}
 .chip.v{color:var(--ok)} .chip.w{color:var(--leyfi)} .chip.e{color:var(--bann)} .chip.l{color:var(--muted)}
 .del{border:none;background:transparent;color:var(--muted);font-size:18px;padding:4px 6px}
+.srchform{display:flex;align-items:center;gap:8px;margin-top:12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:0 12px}
+.srchform svg{width:20px;height:20px;flex:none;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round}
+.srchform input{border:none!important;background:transparent!important;padding:12px 0!important;font-size:16px}
+.srchform input:focus-visible{outline:none}
+.srchform:focus-within{border-color:var(--accent)}
 .card{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px}
 label.f{display:grid;gap:4px;font-size:13px;color:var(--muted)}
 input[type=text],input[type=url],select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box;min-width:0}
@@ -261,6 +266,9 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 </div>
 
 <div id="mapside">
+  <button class="rbtn" id="btnSearch" type="button" aria-label="Leita">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+  </button>
   <button class="rbtn" id="btnLayers" type="button" aria-label="Lög og grunnkort">
     <svg viewBox="0 0 24 24"><path d="M12 3 2 8.5 12 14l10-5.5z"/><path d="m2 13 10 5.5L22 13"/></svg>
   </button>
@@ -500,6 +508,22 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
     <i style="background:var(--athuga)"></i><span>Friðlýst: kannaðu reglur svæðisins</span>
     <i style="background:var(--info)"></i><span>Upplýsingar</span>
   </div>
+</section>
+
+<section id="searchSheet" class="sheet" hidden aria-label="Leita">
+  <div class="grab"></div>
+  <div class="sh-head"><h2>Leita</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
+  <form id="srchForm" class="srchform" role="search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+    <input type="search" id="srchIn" placeholder="Fjall, bær, vatn, punktur eða hnit" autocomplete="off" enterkeyhint="search" aria-label="Leitarorð">
+  </form>
+  <p class="note" style="margin-top:8px">Dæmi: Kerlingarfjöll, Hlíðarfjall, Fnjóská, 65.6 -18.1</p>
+  <h3 id="srchLocalH" hidden>Í þínum gögnum</h3>
+  <div class="group" id="srchLocal" hidden></div>
+  <h3>Örnefni</h3>
+  <div class="group" id="srchWeb" hidden></div>
+  <p class="msg" id="srchMsg" style="margin-top:8px"></p>
+  <p class="note" style="margin-top:12px">Örnefni koma frá OpenStreetMap og þarf netsamband til að leita í þeim.</p>
 </section>
 
 <section id="ptSheet" class="sheet" hidden aria-label="Nýr punktur">
@@ -2028,6 +2052,127 @@ window.__onPosExtra = () => { if (prevExtra) prevExtra(); addTrackPoint(pos); };
 renderHunt(); drawTrack();
 setTab("map");
 if (hunt && watchId == null) startGps();
+
+/* ---------- Leit: eigin punktar, svæði og örnefni (OpenStreetMap) ---------- */
+const srchSheet = document.getElementById("searchSheet"), srchIn = document.getElementById("srchIn");
+const srchLocal = document.getElementById("srchLocal"), srchWeb = document.getElementById("srchWeb"), srchMsg = document.getElementById("srchMsg");
+let srchMarker = null, srchTimer = null, srchLastWeb = 0, srchSeq = 0;
+const OSM_KIND = {
+  peak:"Fjall", volcano:"Eldfjall", ridge:"Hryggur", hill:"Hæð", saddle:"Skarð", valley:"Dalur", glacier:"Jökull",
+  water:"Vatn", lake:"Vatn", bay:"Vík", fjord:"Fjörður", strait:"Sund", spring:"Lind", waterfall:"Foss",
+  river:"Á", stream:"Lækur", farm:"Bær", isolated_dwelling:"Bær", hamlet:"Þorp", village:"Þorp", town:"Bær", city:"Borg",
+  locality:"Staður", heath:"Heiði", moor:"Heiði", scrub:"Kjarr", wood:"Skógur", cliff:"Klettar", cape:"Nes",
+  peninsula:"Nes", island:"Eyja", islet:"Hólmi", wilderness_hut:"Skáli", alpine_hut:"Skáli", hut:"Skáli", shelter:"Skýli",
+  parking:"Bílastæði", road:"Vegur", track:"Slóði", path:"Gönguleið", administrative:"Sveitarfélag"
+};
+const norm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ð/g, "d").replace(/þ/g, "th").replace(/æ/g, "ae").replace(/ö/g, "o");
+function parseCoords(q){
+  const m = q.replace(/,/g, " ").trim().match(/^(-?\d{2}(?:\.\d+)?)\s+(-?\d{1,2}(?:\.\d+)?)$/);
+  if (!m) return null;
+  let lat = +m[1], lon = +m[2];
+  if (lat > 0 && lon > 0 && lon < 30) lon = -lon;   // Ísland: vestlæg lengd
+  if (lat < 62 || lat > 68 || lon < -26 || lon > -12) return null;
+  return {lat, lon};
+}
+function srchRow(r){
+  const row = document.createElement("div"); row.className = "ptrow"; row.setAttribute("role", "button"); row.tabIndex = 0;
+  const rel = relFromMe({lat:r.lat, lon:r.lon});
+  row.innerHTML = `<span class="dotp" style="background:${r.color || "#55606a"}"><svg viewBox="0 0 24 24">${r.icon || SVG.annad}</svg></span>
+    <div class="t"><b>${esc(r.name)}</b><span>${esc(r.kind)}${r.where ? " · " + esc(r.where) : ""}${rel ? " · " + rel.text : ""}</span></div>`;
+  const go = () => showSearchResult(r);
+  row.onclick = go; row.onkeydown = e => { if (e.key === "Enter"){ e.preventDefault(); go(); } };
+  return row;
+}
+function localSearch(q){
+  const n = norm(q), out = [];
+  if (n.length < 2) return out;
+  for (const p of pts){
+    const t = ptTitle(p);
+    if (norm(t).includes(n) || norm(p.from).includes(n)) out.push({name:t, kind:(TYPES[p.type] || TYPES.annad).label, lat:p.lat, lon:p.lon, color:(TYPES[p.type] || TYPES.annad).color, icon:SVG[p.type], ptId:p.id});
+  }
+  for (const l of layers){
+    const r = runtime[l.id]; if (!r || !r.feats || l.id === "b_land") continue;
+    for (const f of r.feats){
+      if (!norm(f.name).includes(n)) continue;
+      const [a, b, c, d] = f.bbox;
+      out.push({name:f.name, kind:f.kind || CAT[f.cat].label, lat:(b + d) / 2, lon:(a + c) / 2, bounds:[[b, a], [d, c]], color:color(f.cat), icon:'<rect x="5" y="5" width="14" height="14" rx="2"/>'});
+      if (out.length > 40) break;
+    }
+  }
+  return out.slice(0, 25);
+}
+async function webSearch(q){
+  const seq = ++srchSeq;
+  const wait = Math.max(0, 1100 - (Date.now() - srchLastWeb));   // OpenStreetMap leyfir eina fyrirspurn á sekúndu
+  if (wait) await new Promise(r => setTimeout(r, wait));
+  if (seq !== srchSeq) return;
+  srchLastWeb = Date.now();
+  srchMsg.textContent = "Leita í örnefnum…"; srchMsg.className = "msg";
+  try{
+    const c = map.getCenter();
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=is&accept-language=is&limit=12&addressdetails=1&q=${encodeURIComponent(q)}&viewbox=${c.lng - 1.5},${c.lat + 0.8},${c.lng + 1.5},${c.lat - 0.8}`;
+    const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 15000);
+    const res = await fetch(url, {signal:ctl.signal});
+    clearTimeout(tm);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    if (seq !== srchSeq) return;
+    srchWeb.innerHTML = "";
+    const list = (Array.isArray(data) ? data : []).map(d => {
+      const a = d.address || {};
+      return {name:(d.name || d.display_name.split(",")[0]).trim(), kind:OSM_KIND[d.type] || OSM_KIND[d.category] || "Staður",
+        where:a.municipality || a.county || a.state || a.region || "", lat:+d.lat, lon:+d.lon,
+        bounds:d.boundingbox ? [[+d.boundingbox[0], +d.boundingbox[2]], [+d.boundingbox[1], +d.boundingbox[3]]] : null};
+    });
+    list.forEach(r => srchWeb.appendChild(srchRow(r)));
+    srchWeb.hidden = !list.length;
+    srchMsg.textContent = list.length ? "" : "Ekkert fannst í örnefnum. Prófaðu annan rithátt.";
+  }catch(e){
+    if (seq === srchSeq){ srchMsg.textContent = navigator.onLine ? "Náði ekki sambandi við örnefnaleit." : "Engin nettenging. Leitað bara í þínum gögnum."; srchMsg.className = "msg err"; }
+  }
+}
+function runSearch(immediate){
+  const q = srchIn.value.trim();
+  clearTimeout(srchTimer);
+  srchLocal.innerHTML = ""; srchMsg.textContent = "";
+  const c = parseCoords(q);
+  const loc = c ? [{name:`${ddm(c.lat,"N","S")} ${ddm(c.lon,"A","V")}`, kind:"Hnit", lat:c.lat, lon:c.lon}] : localSearch(q);
+  loc.forEach(r => srchLocal.appendChild(srchRow(r)));
+  srchLocal.hidden = !loc.length;
+  document.getElementById("srchLocalH").hidden = !loc.length;
+  if (c || q.length < 3){ srchWeb.hidden = true; srchWeb.innerHTML = ""; srchSeq++; return; }
+  srchTimer = setTimeout(() => webSearch(q), immediate ? 0 : 700);
+}
+function showSearchResult(r){
+  closeSheet(); setTab("map");
+  if (follow){ follow = false; btnGps.classList.remove("follow"); }
+  if (r.ptId && markers[r.ptId]){ map.setView([r.lat, r.lon], Math.max(map.getZoom(), 14)); setTimeout(() => markers[r.ptId].openPopup(), 250); return; }
+  if (r.bounds && Math.abs(r.bounds[1][0] - r.bounds[0][0]) > 0.01) map.fitBounds(r.bounds, {padding:[60, 60], maxZoom:14});
+  else map.setView([r.lat, r.lon], 14);
+  if (srchMarker) map.removeLayer(srchMarker);
+  srchMarker = L.marker([r.lat, r.lon], {icon:L.divIcon({className:"", iconSize:[30,30], iconAnchor:[15,30], popupAnchor:[0,-28],
+    html:'<div class="pin" style="background:#16191a"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg></div>'})}).addTo(map);
+  const rel = relFromMe(r);
+  srchMarker.bindPopup(`<div class="pop"><b>${esc(r.name)}</b><div class="zkind">${esc(r.kind)}${r.where ? " · " + esc(r.where) : ""}</div>
+    <div class="dist">${rel ? rel.text + " frá þér" : ""}</div>
+    <div class="pb"><button type="button" data-srch="go">Vísa leið hingað</button><button type="button" data-srch="save">Vista sem punkt</button><button type="button" data-srch="close">Loka</button></div></div>`).openPopup();
+  srchMarker.on("popupopen", wire); wire();
+  function wire(){
+    const el = srchMarker && srchMarker.getPopup() && srchMarker.getPopup().getElement(); if (!el) return;
+    el.querySelectorAll("[data-srch]").forEach(b => b.onclick = () => {
+      const what = b.dataset.srch;
+      if (what !== "close"){
+        const p = {id:"p" + Date.now().toString(36), lat:r.lat, lon:r.lon, acc:0, type:"annad", name:r.name, ts:Date.now()};
+        pts.push(p); savePts(); renderPts();
+        if (what === "go"){ setTarget(p.id); toast(`Örin vísar á ${r.name}`); } else toast("Punktur vistaður");
+      }
+      map.removeLayer(srchMarker); srchMarker = null;
+    });
+  }
+}
+document.getElementById("btnSearch").onclick = () => { openPanel(srchSheet); srchIn.value = ""; runSearch(); setTimeout(() => srchIn.focus(), 50); };
+srchIn.oninput = () => runSearch(false);
+document.getElementById("srchForm").onsubmit = e => { e.preventDefault(); runSearch(true); srchIn.blur(); };
 
 /* Opið viðmót fyrir Android appið */
 window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, setHunt, setTab, isHunting: () => hunt, getPos: () => pos, addRemotePoint, showRemote, openPanel, closeSheet, relFromMe, esc, fmtM, card, hhmm, ago, openPing: () => openPing(null), lastFrom: n => pts.filter(p => p.type === "ping" && p.from === n).sort((a, b) => b.ts - a.ts)[0] || null };
