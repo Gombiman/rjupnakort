@@ -612,7 +612,8 @@ const BUILTIN = [
     wms:["https://gis.ust.is/geoserver/wms","fridlyst_svaedi:fridlyst_svaedi"] },
   { id:"b_thjodl", name:"Þjóðlendur", cat:"heimilt", owner:"Forsætisráðuneytið", wfs:[], wms:null,
     discover:{servers:["https://gis.natt.is/geoserver/wfs","https://gis.lmi.is/geoserver/wfs","https://gis.ust.is/geoserver/wfs"],
-              re:/þjóðlend|thjodlend|tjodlend|thjodlnd/i, avoid:/kraf|kröf|krof|krafa|claim/i} }
+              re:/þjóðlend|thjodlend|tjodlend|thjodlnd/i, avoid:/kraf|kröf|krof|krafa|claim/i} },
+  { id:"b_land", name:"Landamerki jarða", cat:"leyfi", owner:"HMS (landeignaskrá)", wfs:[], wms:null, viewport:true }
 ];
 const MAX_AGE = 7*24*3600*1000;
 
@@ -724,6 +725,12 @@ function featCat(l, p, fid){
   return l.id === "b_thjodl" ? "heimilt" : "info";   // í þjóðlendugögnum er allt annað en eignarland þjóðlenda
 }
 function featKind(l, p){ return l && p && (l.id === "b_thjodl" || l.cat === "heimilt" || l.cat === "info") ? String(p.tegund || p.tegund2 || "") : ""; }
+function landName(p){ return p && p.LANDEIGN_NR ? `Landeign nr. ${p.LANDEIGN_NR}` : "Landeign"; }
+function displayName(l, p){ return l && l.id === "b_land" ? landName(p) : (nameOf(p || {}) || (l ? l.name : "")); }
+function landKind(p){
+  const o = p && (p["OLJOST EIGNARHALD"] || p.OLJOST_EIGNARHALD);
+  return (p && p._lag ? p._lag : "Eignarland") + (o && String(o) !== "0" && String(o).toLowerCase() !== "nei" ? " · óljóst eignarhald" : "");
+}
 function prep(gj, fallback, l){
   const out = [];
   for (const f of gj.features){
@@ -734,8 +741,8 @@ function prep(gj, fallback, l){
     const pr = f.properties || {};
     const cat = featCat(l, pr, f.id);
     const own = l && OVR[ovrKey(l, pr, f.id)];
-    const kind = own ? "Þitt mat" : featKind(l, pr) || (l && l.id === "b_thjodl" ? (cat === "leyfi" ? "Eignarland" : cat === "heimilt" ? "Þjóðlenda" : "") : "");
-    out.push({polys, bbox:[a,b,c,d], name:nameOf(pr) || fallback, props:pr, cat, kind});
+    const kind = own ? "Þitt mat" : l && l.id === "b_land" ? landKind(pr) : featKind(l, pr) || (l && l.id === "b_thjodl" ? (cat === "leyfi" ? "Eignarland" : cat === "heimilt" ? "Þjóðlenda" : "") : "");
+    out.push({polys, bbox:[a,b,c,d], name:l && l.id === "b_land" ? landName(pr) : (nameOf(pr) || fallback), props:pr, cat, kind, fid:f.id});
   }
   return out;
 }
@@ -782,7 +789,7 @@ const CAT_TXT = {
 };
 function popupHtml(l, f){
   const p = f.properties || {}, key = ovrKey(l, p, f.id), own = OVR[key];
-  const cat = featCat(l, p, f.id), kind = featKind(l, p) || (l.id === "b_thjodl" ? (cat === "leyfi" ? "Eignarland" : "Þjóðlenda") : l.name);
+  const cat = featCat(l, p, f.id), kind = l.id === "b_land" ? landKind(p) : featKind(l, p) || (l.id === "b_thjodl" ? (cat === "leyfi" ? "Eignarland" : "Þjóðlenda") : l.name);
   const rows = Object.entries(p).filter(([k,v]) => k !== "_lag" && v!=null && v!=="" && typeof v !== "object").slice(0,14)
     .map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
   const canEdit = l.cat !== "bann" && l.cat !== "athuga";
@@ -791,11 +798,12 @@ function popupHtml(l, f){
     ? `<div class="pb"><button type="button" data-ovr="" data-key="${k}" data-lid="${lid}">Afturkalla mitt mat</button></div>`
     : `<div class="pb">${cat !== "heimilt" ? `<button type="button" data-ovr="heimilt" data-key="${k}" data-lid="${lid}">Merkja: veiði leyfð</button>` : ""}${cat !== "leyfi" ? `<button type="button" data-ovr="leyfi" data-key="${k}" data-lid="${lid}">Merkja: leyfi þarf</button>` : ""}</div>`;
   return `<div class="pop">
-    <b>${esc(nameOf(p) || l.name)}</b>
+    <b>${esc(displayName(l, p))}</b>
     <div class="zbadge" style="--c:${color(cat)}">${esc(CAT[cat].label)}${own ? " · þitt mat" : ""}</div>
     <div class="zkind">${esc(kind)}</div>
     <p class="ztxt">${own ? "Þú merktir þetta svæði sjálfur. " : ""}${esc(CAT_TXT[cat] || "")}</p>
     ${btns}
+    ${l.id === "b_land" ? `<p class="ztxt"><a href="https://landeignaskra.hms.is/" target="_blank" rel="noopener">Skoða í vefsjá landeigna (HMS)</a></p>` : ""}
     ${rows ? `<details class="zmore"><summary>Nánar</summary><table>${rows}</table></details>` : ""}
   </div>`;
 }
@@ -818,6 +826,7 @@ function drawVector(l, gj){
     pane:"zones", renderer,
     filter: f => !!polysOf(f.geometry).length,
     style: f => { const k = featCat(l, f.properties, f.id), c = color(k);
+      if (l.id === "b_land" && k === "leyfi") return {color:c, weight:1.2, opacity:.9, fillColor:c, fillOpacity:0.04, dashArray:"3 4"};
       return {color:c, weight:k === "info" || k === "heimilt" ? 1.5 : 2, fillColor:c, fillOpacity:k === "heimilt" ? 0.14 : k === "info" ? 0.12 : k === "leyfi" ? 0.1 : 0.18, dashArray:k === "leyfi" ? "6 4" : null}; },
     onEachFeature: (f, ly) => ly.bindPopup(() => popupHtml(l, f), {minWidth:240, maxWidth:300})
   });
@@ -861,6 +870,7 @@ async function fetchWfs(url, type){
 const DATA_VER = 3;   // hækka til að sækja innbyggð gögn upp á nýtt
 async function loadBuiltin(l, force){
   const b = BUILTIN.find(x => x.id === l.id);
+  if (b.viewport) return loadLandCached(l);
   const cached = await IDB.get("gj:"+l.id);
   if (cached){ drawVector(l, cached); setStatus(l, `Vistað ${fmtDate(l.updated)} · ${cached.features.length} svæði`, "v"); }
   if (LS.get("dataVer:" + l.id, 0) !== DATA_VER) force = true;
@@ -936,6 +946,57 @@ async function discoverWfs(d){
 }
 function fmtDate(t){ if (!t) return "—"; const d = new Date(t); return `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`; }
 
+/* ---------- Landamerki jarða (landeignaskrá HMS), sótt fyrir það svæði sem er á skjánum ---------- */
+const LAND = {url:"https://gis.fasteignaskra.is/geoserver/wfs", minZoom:11,
+  types:[["public:Landeignaskra", "Eignarland"], ["public:HMS_AETLUN_SKIKI", "Áætluð eignamörk"]]};
+const landFeats = new Map();
+let landBoxes = LS.get("landBoxes", []), landBusy = false, landTimer = null;
+if (!Array.isArray(landBoxes)) landBoxes = [];
+async function getJsonAny(url){ return window.__nativeGet ? window.__nativeGet(url) : getJson(url); }
+async function loadLandCached(l){
+  const cached = await IDB.get("gj:" + l.id);
+  if (cached && Array.isArray(cached.features)){
+    cached.features.forEach(f => landFeats.set(f.id, f));
+    drawVector(l, cached);
+    setStatus(l, `${landFeats.size} jarðir vistaðar · fleiri sækjast þegar kortið færist`, "v");
+  } else setStatus(l, `Þysjaðu nær (nánar en ${LAND.minZoom}) til að sækja landamerki`, "l");
+  loadLandView();
+}
+async function loadLandView(){
+  const l = layers.find(x => x.id === "b_land"); if (!l || !l.on) return;
+  if (map.getZoom() < LAND.minZoom){ setStatus(l, `${landFeats.size} jarðir · þysjaðu nær til að sækja landamerki`, "l"); return; }
+  const bb = map.getBounds().pad(0.3), box = [bb.getSouth(), bb.getWest(), bb.getNorth(), bb.getEast()].map(v => +v.toFixed(4));
+  if (landBoxes.some(x => x[0] <= box[0] && x[1] <= box[1] && x[2] >= box[2] && x[3] >= box[3])) return;
+  if (landBusy) return;
+  landBusy = true; setStatus(l, "Sæki landamerki…", "l");
+  let ok = false;
+  for (const [type, kind] of LAND.types){
+    try{
+      const q = `${LAND.url}?service=WFS&version=2.0.0&request=GetFeature&typeNames=${encodeURIComponent(type)}&outputFormat=application%2Fjson&srsName=EPSG:4326&count=3000&bbox=${box.join(",")},urn:ogc:def:crs:EPSG::4326`;
+      const gj = fixAxes(await getJsonAny(q));
+      ok = true;
+      for (const f of gj.features){
+        const id = f.id || `${type}:${(f.properties || {}).SKIKI_NR || (f.properties || {}).AE_SKIKI_NR || Math.random()}`;
+        if (landFeats.has(id)) continue;
+        f.id = id; f.properties = Object.assign({}, f.properties, {_lag:kind});
+        landFeats.set(id, f);
+      }
+    }catch(e){ console.warn("landeignaskrá", type, e); }
+  }
+  landBusy = false;
+  if (!ok){ setStatus(l, window.RK_APP ? "Náði ekki sambandi við landeignaskrá HMS" : "Landeignaskrá virkar bara í appinu (vafrinn lokar á hana)", "e"); return; }
+  landBoxes.push(box); while (landBoxes.length > 60) landBoxes.shift();
+  if (landFeats.size > 9000){ [...landFeats.keys()].slice(0, landFeats.size - 9000).forEach(k => landFeats.delete(k)); landBoxes = [box]; }
+  LS.set("landBoxes", landBoxes);
+  const gj = {type:"FeatureCollection", features:[...landFeats.values()]};
+  await IDB.set("gj:" + l.id, gj);
+  l.updated = Date.now(); l.kind = "vector"; saveLayers();
+  drawVector(l, gj);
+  setStatus(l, `${landFeats.size} jarðir · fleiri sækjast þegar kortið færist`, "v");
+  evaluate();
+}
+map.on("moveend", () => { clearTimeout(landTimer); landTimer = setTimeout(loadLandView, 800); });
+
 /* ---------- Ræsa lög ---------- */
 async function bootLayers(){
   for (const l of layers){
@@ -973,7 +1034,7 @@ function renderList(){
     }
     const t = document.createElement("input"); t.type = "checkbox"; t.className = "tog"; t.checked = !!l.on; t.id = "tog_"+l.id;
     t.setAttribute("aria-label", "Sýna "+l.name);
-    t.onchange = () => { l.on = t.checked; saveLayers(); const r = runtime[l.id]; if (r){ l.on ? r.leaflet.addTo(map) : map.removeLayer(r.leaflet); } evaluate(); };
+    t.onchange = () => { l.on = t.checked; saveLayers(); const r = runtime[l.id]; if (r){ l.on ? r.leaflet.addTo(map) : map.removeLayer(r.leaflet); } if (l.on && l.id === "b_land") loadLandView(); evaluate(); };
     row.appendChild(t);
     listEl.appendChild(row);
   }
@@ -1227,9 +1288,12 @@ function evaluate(){
       const [a,b,c,d] = f.bbox;
       if (pos.lon < a-padLon || pos.lon > c+padLon || pos.lat < b-padLat || pos.lat > d+padLat) continue;
       if (f.polys.some(p => inPoly(pos.lon, pos.lat, p))) inside.push({l, f, d:edgeDist(pos.lon,pos.lat,f.polys)});
-      else if (f.cat !== "info" && f.cat !== "heimilt"){ const dd = edgeDist(pos.lon, pos.lat, f.polys); if (dd <= near) close.push({l, f, d:dd}); }
+      else if (l.id !== "b_land" && f.cat !== "info" && f.cat !== "heimilt"){ const dd = edgeDist(pos.lon, pos.lat, f.polys); if (dd <= near) close.push({l, f, d:dd}); }
     }
   }
+  // Úrskurður óbyggðanefndar (þjóðlenda) gildir framar jarðamörkum úr landeignaskrá
+  if (inside.some(x => x.l.id === "b_thjodl" && x.f.cat === "heimilt"))
+    for (let i = inside.length - 1; i >= 0; i--) if (inside[i].l.id === "b_land" && !OVR[ovrKey(inside[i].l, inside[i].f.props, inside[i].f.fid)]) inside.splice(i, 1);
   inside.sort((x,y) => CAT[y.f.cat].rank - CAT[x.f.cat].rank);
   close.sort((x,y) => x.d - y.d);
   let level, cls, title, sub;

@@ -11,6 +11,13 @@
   }
 
   const BG = C.registerPlugin("BackgroundGeolocation");
+  // Sækja gögn framhjá CORS-takmörkunum vafrans (t.d. landeignaskrá HMS)
+  const HTTP = C.registerPlugin("CapacitorHttp");
+  window.__nativeGet = async (url) => {
+    const r = await HTTP.get({ url, responseType: "json", connectTimeout: 30000, readTimeout: 60000 });
+    if (r.status < 200 || r.status >= 300) throw new Error("HTTP " + r.status);
+    return typeof r.data === "string" ? JSON.parse(r.data) : r.data;
+  };
   const LN = C.registerPlugin("LocalNotifications");
   const get = (k, d) => { try { const v = localStorage.getItem("rk:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
   const set = (k, v) => { try { localStorage.setItem("rk:" + k, JSON.stringify(v)); } catch (e) {} };
