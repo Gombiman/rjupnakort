@@ -250,6 +250,13 @@ body.masson #btnKill{background:var(--accent)} body.masson #btnKill svg{stroke:#
 textarea,input[type=number]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box;min-width:0}
 textarea{resize:vertical;font-size:14px;line-height:1.5}
 #joinCard{margin-bottom:14px}
+#updBar{position:fixed;z-index:960;left:max(12px,env(safe-area-inset-left,0px));right:calc(max(12px,env(safe-area-inset-right,0px)) + 66px);
+  top:calc(env(safe-area-inset-top,0px) + 68px);background:var(--fg);color:var(--bg);border-radius:14px;box-shadow:var(--shadow);
+  display:flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;font-size:14px;font-weight:600}
+#updBar[hidden]{display:none}
+#updBar span{flex:1;min-width:0}
+#updBar a{background:var(--accent);color:#fff;text-decoration:none;border-radius:10px;padding:8px 12px;flex:none}
+#updBar button{border:none;background:transparent;color:inherit;font-size:20px;line-height:1;padding:6px 8px;flex:none;opacity:.7}
 #consent{position:fixed;inset:0;z-index:1260;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:20px}
 #consent[hidden]{display:none}
 #consent .box{background:var(--panel);border-radius:18px;box-shadow:var(--shadow);padding:20px;max-width:420px;width:100%;box-sizing:border-box;display:grid;gap:12px}
@@ -598,6 +605,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
         <p class="note">Gögn: Umhverfisstofnun (bannsvæði og friðlýst svæði), óbyggðanefnd í gegnum Náttúrufræðistofnun (þjóðlendur), HMS (landeignaskrá), OpenStreetMap og OpenTopoMap (kort og örnefni).</p>
         <p class="note">Línur á kortinu eru til hliðsjónar. Úrskurðir, auglýsingar um friðlýsingu og leyfi landeigenda ráða alltaf.</p>
         <p class="note" id="verNote"></p>
+        <button class="btn sec" id="updCheck" type="button" hidden>Athuga með uppfærslu</button>
       </div>
     </div>
   </div>
@@ -760,6 +768,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
     </div>
   </div>
 </div>
+<div id="updBar" hidden role="status"><span id="updTx">Ný útgáfa komin</span><a id="updGo" href="https://github.com/Gombiman/rjupnakort/releases/download/app/rjupnakort.apk" target="_blank" rel="noopener">Sækja</a><button type="button" id="updX" aria-label="Seinna">×</button></div>
 <div id="toast" hidden role="status"></div>
 <div id="undoBar" hidden role="status"><span id="undoTx"></span><button type="button" id="undoBtn">Afturkalla</button></div>
 
@@ -2962,6 +2971,33 @@ window.__onPosExtra = () => {
   const every = (typeof saverActive === "function" && saverActive() ? 5 : 2) * 60000;
   if (Date.now() - lastPosSent > every){ lastPosSent = Date.now(); groupSend("pos"); }
 };
+
+/* ---------- Ný útgáfa af appinu ---------- */
+const curVer = () => parseInt(String(window.RK_VERSION || "").split(".").pop(), 10) || 0;
+async function checkUpdate(manual){
+  if (!window.RK_APP) return;
+  try{
+    const url = "https://api.github.com/repos/Gombiman/rjupnakort/releases/tags/app";
+    const r = window.__nativeGet ? await window.__nativeGet(url) : await (await fetch(url)).json();
+    const m = String((r && r.body) || "").match(/0\.1\.(\d+)/), latest = m ? +m[1] : 0;
+    LS.set("updChecked", Date.now());
+    if (latest > curVer()){
+      if (manual || LS.get("updDismiss", 0) < latest){
+        document.getElementById("updTx").textContent = isMasson() ? `Ný Másson-útgáfa komin (0.1.${latest}) 🍺` : `Ný útgáfa komin (0.1.${latest})`;
+        const bar = document.getElementById("updBar"); bar.hidden = false; bar.dataset.v = latest;
+        if (manual) toast(`Útgáfa 0.1.${latest} er komin. Ýttu á Sækja og settu hana upp.`, 7000);
+      }
+    } else if (manual) toast(`Þú ert með nýjustu útgáfuna (0.1.${curVer()}).`);
+  }catch(e){ if (manual) toast("Náði ekki sambandi til að athuga með uppfærslu."); }
+}
+document.getElementById("updX").onclick = () => { const b = document.getElementById("updBar"); LS.set("updDismiss", +b.dataset.v || 0); b.hidden = true; };
+document.getElementById("updGo").onclick = () => { document.getElementById("updBar").hidden = true; toast("Opnaðu skrána þegar niðurhalinu lýkur og veldu Setja upp.", 8000); };
+if (window.RK_APP){
+  const uc = document.getElementById("updCheck"); uc.hidden = false; uc.onclick = () => checkUpdate(true);
+  const auto = () => { if (Date.now() - LS.get("updChecked", 0) > 6 * 3600e3) checkUpdate(false); };
+  setTimeout(() => checkUpdate(false), 4000);   // alltaf þegar appið opnast
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") auto(); });
+}
 
 /* ---------- Stillingar: gælunöfn og kvóti ---------- */
 const nickIn = document.getElementById("nickIn"), quotaIn = document.getElementById("quotaIn");
