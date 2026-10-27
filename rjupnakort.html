@@ -93,9 +93,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 .tog.big:checked{background:var(--ok)} .tog.big:checked::after{transform:translateX(22px)}
 
 /* Rammi fyrir kort án nets */
-#capFrame{position:fixed;z-index:880;left:max(28px,env(safe-area-inset-left,0px));right:max(28px,env(safe-area-inset-right,0px));
+#capFrame{overflow:visible;position:fixed;z-index:880;left:max(28px,env(safe-area-inset-left,0px));right:max(28px,env(safe-area-inset-right,0px));
   top:calc(env(safe-area-inset-top,0px) + 76px);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 252px);
   border:2px dashed #fff;border-radius:14px;box-shadow:0 0 0 9999px rgba(10,16,14,.45);pointer-events:none}
+.capdim{position:absolute;background:rgba(10,16,14,.78);color:#fff;font:700 13px var(--f-display);letter-spacing:.03em;padding:3px 9px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
+#capW{top:-12px;left:50%;transform:translateX(-50%)}
+#capH{left:-10px;top:50%;transform:translate(-50%,-50%) rotate(-90deg)}
 #capPanel{position:fixed;z-index:905;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));
   bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 12px);background:var(--panel);border-radius:20px;box-shadow:var(--shadow);
   padding:14px 16px;display:grid;gap:8px}
@@ -326,7 +329,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
   </button>
 </div>
 
-<div id="capFrame" hidden></div>
+<div id="capFrame" hidden><span class="capdim" id="capW"></span><span class="capdim" id="capH"></span></div>
 <div id="capPanel" hidden>
   <div class="cp-h">Kort án nets</div>
   <p class="note" style="margin:2px 0 0">Færðu og þysjaðu kortið svo ramminn nái yfir svæðið.</p>
@@ -1541,12 +1544,19 @@ function frameBounds(){
   const se = map.containerPointToLatLng([fr.right - mr.left, fr.bottom - mr.top]);
   return L.latLngBounds(se, nw);
 }
+const fmtLen = m => m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(m < 10000 ? 1 : 0).replace(".", ",")} km`;
 function capEstimate(){
   if (!capOn || capBusy) return;
-  capPlan = planTiles(frameBounds(), +capZoom.value);
-  if (capPlan.too){ capTx.textContent = "Of stórt svæði. Þysjaðu nær eða veldu minni nákvæmni."; capGo.disabled = true; return; }
+  const b = frameBounds(), midLat = (b.getNorth() + b.getSouth()) / 2;
+  const w = distM(midLat, b.getWest(), midLat, b.getEast()), h = distM(b.getSouth(), b.getWest(), b.getNorth(), b.getWest());
+  const km2 = w * h / 1e6;
+  document.getElementById("capW").textContent = fmtLen(w);
+  document.getElementById("capH").textContent = fmtLen(h);
+  const size = `${km2 < 10 ? km2.toFixed(km2 < 1 ? 2 : 1).replace(".", ",") : String(Math.round(km2)).replace(/\B(?=(\d{3})+(?!\d))/g, ".")} km²`;
+  capPlan = planTiles(b, +capZoom.value);
+  if (capPlan.too){ capTx.textContent = `${size}. Of stórt svæði: þysjaðu nær eða veldu minni nákvæmni.`; capGo.disabled = true; return; }
   const mb = Math.max(1, Math.round(capPlan.list.length * 22 / 1024));
-  capTx.textContent = `Um ${capPlan.list.length.toLocaleString("is-IS")} kortaflísar · ${mb} MB${mb > 40 ? " · helst á WiFi" : ""}`;
+  capTx.textContent = `${size} · ${mb} MB${mb > 40 ? " · helst á WiFi" : ""}`;
   capGo.disabled = false;
 }
 function openCapture(){
