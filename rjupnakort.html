@@ -693,14 +693,22 @@ function polysOf(g){
   if (g.type === "GeometryCollection") return g.geometries.flatMap(polysOf);
   return [];
 }
-function prep(gj, fallback){
+/* Þjóðlendugögnin innihalda bæði þjóðlendur og dæmd eignarlönd: flokka eftir tegund */
+function featCat(l, p){
+  if (!l || l.id !== "b_thjodl") return l ? l.cat : "info";
+  const t = String((p && (p.tegund || p.tegund2)) || "").toLowerCase();
+  return /eignarland|afréttareign/.test(t) ? "leyfi" : "info";
+}
+function featKind(l, p){ return l && l.id === "b_thjodl" && p ? String(p.tegund || p.tegund2 || "") : ""; }
+function prep(gj, fallback, l){
   const out = [];
   for (const f of gj.features){
     const polys = polysOf(f.geometry);
     if (!polys.length) continue;
     let a=180,b=90,c=-180,d=-90;
     for (const p of polys) for (const pt of p[0]){ if(pt[0]<a)a=pt[0]; if(pt[0]>c)c=pt[0]; if(pt[1]<b)b=pt[1]; if(pt[1]>d)d=pt[1]; }
-    out.push({polys, bbox:[a,b,c,d], name:nameOf(f.properties||{}) || fallback, props:f.properties||{}});
+    const pr = f.properties || {};
+    out.push({polys, bbox:[a,b,c,d], name:nameOf(pr) || fallback, props:pr, cat:featCat(l, pr), kind:featKind(l, pr)});
   }
   return out;
 }
@@ -745,14 +753,14 @@ function popupHtml(l, p){
 }
 function drawVector(l, gj){
   removeRuntime(l.id);
-  const c = color(l.cat);
   const lay = L.geoJSON(gj, {
     pane:"zones", renderer,
     filter: f => !!polysOf(f.geometry).length,
-    style: () => ({color:c, weight:2, fillColor:c, fillOpacity:l.cat==="info"?0.08:0.18, dashArray:l.cat==="leyfi"?"6 4":null}),
+    style: f => { const k = featCat(l, f.properties), c = color(k);
+      return {color:c, weight:k === "info" ? 1.5 : 2, fillColor:c, fillOpacity:k === "info" ? 0.12 : k === "leyfi" ? 0.08 : 0.18, dashArray:k === "leyfi" ? "6 4" : null}; },
     onEachFeature: (f, ly) => ly.bindPopup(() => popupHtml(l, f.properties||{}))
   });
-  runtime[l.id] = {leaflet:lay, feats:prep(gj, l.name)};
+  runtime[l.id] = {leaflet:lay, feats:prep(gj, l.name, l)};
   if (l.on) lay.addTo(map);
 }
 function drawWms(l, url, name){
@@ -766,21 +774,35 @@ function drawWms(l, url, name){
 function removeRuntime(id){ const r = runtime[id]; if (r && r.leaflet) map.removeLayer(r.leaflet); delete runtime[id]; }
 
 /* ---------- Sækja innbyggð lög ---------- */
-async function fetchWfs(url, type){
-  const q = `${url}?service=WFS&version=1.0.0&request=GetFeature&typeName=${encodeURIComponent(type)}&outputFormat=application%2Fjson&srsName=EPSG:4326`;
-  const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 45000);
+async function getJson(q){
+  const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 60000);
   try{
     const r = await fetch(q, {signal:ctl.signal});
     if (!r.ok) throw new Error("HTTP "+r.status);
     const gj = await r.json();
     if (!gj || !Array.isArray(gj.features)) throw new Error("Ekki GeoJSON");
-    return fixAxes(gj);
+    return gj;
   } finally { clearTimeout(tm); }
 }
+async function fetchWfs(url, type){
+  const t = encodeURIComponent(type), PAGE = 1000, all = [];
+  try{
+    for (let start = 0; start < 50000; start += PAGE){
+      const gj = await getJson(`${url}?service=WFS&version=2.0.0&request=GetFeature&typeNames=${t}&outputFormat=application%2Fjson&srsName=EPSG:4326&count=${PAGE}&startIndex=${start}`);
+      all.push(...gj.features);
+      const total = gj.numberMatched || gj.totalFeatures;
+      if (gj.features.length < PAGE || (typeof total === "number" && all.length >= total)) break;
+    }
+    if (all.length) return fixAxes({type:"FeatureCollection", features:all});
+  }catch(e){ if (all.length) throw e; }
+  return fixAxes(await getJson(`${url}?service=WFS&version=1.0.0&request=GetFeature&typeName=${t}&outputFormat=application%2Fjson&srsName=EPSG:4326`));
+}
+const DATA_VER = 2;   // hækka til að sækja innbyggð gögn upp á nýtt
 async function loadBuiltin(l, force){
   const b = BUILTIN.find(x => x.id === l.id);
   const cached = await IDB.get("gj:"+l.id);
   if (cached){ drawVector(l, cached); setStatus(l, `Vistað ${fmtDate(l.updated)} · ${cached.features.length} svæði`, "v"); }
+  if (LS.get("dataVer:" + l.id, 0) !== DATA_VER) force = true;
   const stale = !l.updated || Date.now()-l.updated > MAX_AGE;
   if (!force && cached && !stale) return;
   if (!navigator.onLine && cached) return;
@@ -800,8 +822,9 @@ async function loadBuiltin(l, force){
       const gj = await fetchWfs(url, type);
       l.updated = Date.now(); l.kind = "vector"; saveLayers();
       await IDB.set("gj:"+l.id, gj);
+      LS.set("dataVer:" + l.id, DATA_VER);
       drawVector(l, gj);
-      setStatus(l, `Uppfært ${fmtDate(l.updated)} · ${gj.features.length} svæði`, "v");
+      setStatus(l, `Uppfært ${fmtDate(l.updated)} · ${gj.features.length} svæði${b.discover ? " · " + type.split(":").pop() : ""}`, "v");
       evaluate();
       return;
     }catch(e){ /* reyni næsta */ }
@@ -1124,22 +1147,22 @@ function evaluate(){
       const [a,b,c,d] = f.bbox;
       if (pos.lon < a-padLon || pos.lon > c+padLon || pos.lat < b-padLat || pos.lat > d+padLat) continue;
       if (f.polys.some(p => inPoly(pos.lon, pos.lat, p))) inside.push({l, f, d:edgeDist(pos.lon,pos.lat,f.polys)});
-      else if (l.cat !== "info"){ const dd = edgeDist(pos.lon, pos.lat, f.polys); if (dd <= near) close.push({l, f, d:dd}); }
+      else if (f.cat !== "info"){ const dd = edgeDist(pos.lon, pos.lat, f.polys); if (dd <= near) close.push({l, f, d:dd}); }
     }
   }
-  inside.sort((x,y) => CAT[y.l.cat].rank - CAT[x.l.cat].rank);
+  inside.sort((x,y) => CAT[y.f.cat].rank - CAT[x.f.cat].rank);
   close.sort((x,y) => x.d - y.d);
   let level, cls, title, sub;
   const top = inside[0];
   const m = v => v < 1000 ? `${Math.round(v)} m` : `${(v/1000).toFixed(1).replace(".",",")} km`;
-  if (top && top.l.cat === "bann"){ level=5; cls="bann"; title="Innan bannsvæðis"; sub=`${top.f.name} · ${m(top.d)} að mörkum`; }
-  else if (top && top.l.cat === "athuga"){ level=4; cls="athuga"; title="Innan friðlýsts svæðis"; sub=`${top.f.name} · kannaðu reglur · ${m(top.d)} að mörkum`; }
-  else if (top && top.l.cat === "leyfi"){ level=3; cls="leyfi"; title="Leyfi þarf"; sub=`${top.f.name} (${top.l.name})`; }
-  else if (close.length){ level=2; cls="near"; title=`${m(close[0].d)} að svæði`; sub=`${close[0].f.name} · ${CAT[close[0].l.cat].label}`; }
-  else if (top){ level=1; cls="info"; title=top.f.name; sub=`${top.l.name} · ekkert bannsvæði innan ${m(near)}`; }
+  if (top && top.f.cat === "bann"){ level=5; cls="bann"; title="Innan bannsvæðis"; sub=`${top.f.name} · ${m(top.d)} að mörkum`; }
+  else if (top && top.f.cat === "athuga"){ level=4; cls="athuga"; title="Innan friðlýsts svæðis"; sub=`${top.f.name} · kannaðu reglur · ${m(top.d)} að mörkum`; }
+  else if (top && top.f.cat === "leyfi"){ level=3; cls="leyfi"; title=top.f.kind ? `${top.f.kind}: leyfi þarf` : "Leyfi þarf"; sub=`${top.f.name} (${top.f.kind || top.l.name})`; }
+  else if (close.length){ level=2; cls="near"; title=`${m(close[0].d)} að svæði`; sub=`${close[0].f.name} · ${close[0].f.kind || CAT[close[0].f.cat].label}`; }
+  else if (top){ level=1; cls="info"; title=top.f.name; sub=`${top.f.kind || top.l.name} · ekkert bannsvæði innan ${m(near)}`; }
   else if (anyVector){ level=0; cls="ok"; title="Ekkert svæði nálægt"; sub=`Ekkert merkt svæði innan ${m(near)}`; }
   else { level=0; cls="none"; title="Engin svæðisgögn"; sub="Opnaðu lög og bættu við gögnum — viðvaranir óvirkar"; }
-  if (top && top.l.cat !== "info" && inside.find(x => x.l.cat === "info")) sub += " · " + inside.find(x => x.l.cat === "info").f.name;
+  if (top && top.f.cat !== "info" && inside.find(x => x.f.cat === "info")) sub += " · " + inside.find(x => x.f.cat === "info").f.name;
   showState(cls, title, sub);
   if (lastLevel != null && level > lastLevel && level >= 2 && S.vib && navigator.vibrate){
     try{ navigator.vibrate(level >= 5 ? [400,150,400,150,400] : [250,120,250]); }catch(e){}
