@@ -220,6 +220,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 
 /* Kortið */
 .leaflet-container{font:inherit}
+.leaflet-track-pane,.leaflet-track-pane canvas,.leaflet-track-pane svg{pointer-events:none!important}
 .leaflet-bottom.leaflet-left{display:none}
 .leaflet-control-attribution{font-size:10px}
 .leaflet-bottom.leaflet-right{bottom:84px}
@@ -231,6 +232,11 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 .me{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 0 0 2px var(--accent),0 2px 8px rgba(0,0,0,.4);box-sizing:border-box;position:relative}
 .me .hd{position:absolute;left:50%;top:-15px;width:0;height:0;margin-left:-6px;border:6px solid transparent;border-bottom:10px solid var(--accent);transform-origin:6px 26px}
 .pop b{display:block;font-size:15px;margin-bottom:4px}
+.pop .zbadge{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:var(--c);border-radius:999px;padding:2px 9px}
+.pop .zkind{font-size:12.5px;color:#5c6668;margin-top:4px}
+.pop .ztxt{font-size:13px;line-height:1.4;margin:6px 0 0;color:#1b1f20}
+.pop details.zmore{margin-top:8px}
+.pop details.zmore summary{font-size:12.5px;color:#5c6668;cursor:pointer}
 .pop table{border-collapse:collapse;font-size:12px}
 .pop td{padding:1px 6px 1px 0;vertical-align:top}
 .pop td:first-child{color:#667}
@@ -662,6 +668,8 @@ async function discoverLmi(){
 
 const renderer = L.canvas({padding:.5});
 map.createPane("zones"); map.getPane("zones").style.zIndex = 420;
+// Línur sem á ekki að vera hægt að ýta á (staðsetning, slóð, lína að skotmarki) — mega ekki grípa snertingu frá svæðunum
+map.createPane("track"); map.getPane("track").style.zIndex = 430; map.getPane("track").style.pointerEvents = "none";
 map.createPane("wms");   map.getPane("wms").style.zIndex = 410;
 
 /* ---------- Ástand laga ---------- */
@@ -700,14 +708,20 @@ function polysOf(g){
   return [];
 }
 /* Þjóðlendugögnin innihalda bæði þjóðlendur og dæmd eignarlönd: flokka eftir tegund */
-function featCat(l, p){
+/* Eigið mat notanda á svæði (t.d. „veiði leyfð“ með leyfi landeiganda) */
+let OVR = LS.get("ovr", {});
+if (!OVR || typeof OVR !== "object") OVR = {};
+function ovrKey(l, p, fid){ return `${l.id}|${fid || (p && (p.heiti || p.nafn || p.name)) || ""}|${(p && p.landnumer) || ""}`; }
+function featCat(l, p, fid){
   if (!l) return "info";
+  const o = OVR[ovrKey(l, p, fid)];
+  if (o) return o;
   const typed = p && (p.tegund || p.tegund2 || p._lag);
   if (l.id !== "b_thjodl" && !(typed && (l.cat === "heimilt" || l.cat === "info"))) return l.cat;
   const t = String((p && (p.tegund || p.tegund2 || p._lag)) || "").toLowerCase();
   if (/eignarland|eignarlond|eignarlönd|afréttareign/.test(t)) return "leyfi";
   if (/þjóðlend|thjodlend|afrétt|afrett/.test(t)) return "heimilt";
-  return "info";
+  return l.id === "b_thjodl" ? "heimilt" : "info";   // í þjóðlendugögnum er allt annað en eignarland þjóðlenda
 }
 function featKind(l, p){ return l && p && (l.id === "b_thjodl" || l.cat === "heimilt" || l.cat === "info") ? String(p.tegund || p.tegund2 || "") : ""; }
 function prep(gj, fallback, l){
@@ -718,8 +732,9 @@ function prep(gj, fallback, l){
     let a=180,b=90,c=-180,d=-90;
     for (const p of polys) for (const pt of p[0]){ if(pt[0]<a)a=pt[0]; if(pt[0]>c)c=pt[0]; if(pt[1]<b)b=pt[1]; if(pt[1]>d)d=pt[1]; }
     const pr = f.properties || {};
-    const cat = featCat(l, pr);
-    const kind = featKind(l, pr) || (l && l.id === "b_thjodl" ? (cat === "leyfi" ? "Eignarland" : cat === "heimilt" ? "Þjóðlenda" : "") : "");
+    const cat = featCat(l, pr, f.id);
+    const own = l && OVR[ovrKey(l, pr, f.id)];
+    const kind = own ? "Þitt mat" : featKind(l, pr) || (l && l.id === "b_thjodl" ? (cat === "leyfi" ? "Eignarland" : cat === "heimilt" ? "Þjóðlenda" : "") : "");
     out.push({polys, bbox:[a,b,c,d], name:nameOf(pr) || fallback, props:pr, cat, kind});
   }
   return out;
@@ -758,21 +773,55 @@ function edgeDist(lon, lat, polys){
 
 /* ---------- Teikna ---------- */
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
-function popupHtml(l, p){
+const CAT_TXT = {
+  heimilt: "Íslenskum ríkisborgurum er almennt heimilt að veiða fugl í þjóðlendum. Kannaðu sérreglur svæðisins.",
+  leyfi: "Eignarland. Leyfi landeiganda eða umsjónaraðila þarf til veiða.",
+  bann: "Rjúpnaveiðar eru bannaðar á þessu svæði.",
+  athuga: "Friðlýst svæði. Kannaðu reglur svæðisins um veiðar.",
+  info: "Upplýsingasvæði."
+};
+function popupHtml(l, f){
+  const p = f.properties || {}, key = ovrKey(l, p, f.id), own = OVR[key];
+  const cat = featCat(l, p, f.id), kind = featKind(l, p) || (l.id === "b_thjodl" ? (cat === "leyfi" ? "Eignarland" : "Þjóðlenda") : l.name);
   const rows = Object.entries(p).filter(([k,v]) => k !== "_lag" && v!=null && v!=="" && typeof v !== "object").slice(0,14)
     .map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
-  return `<div class="pop"><b>${esc(nameOf(p) || l.name)}</b><div style="color:${color(l.cat)};font-weight:600;margin-bottom:4px">${esc(l.name)}</div><table>${rows}</table></div>`;
+  const canEdit = l.cat !== "bann" && l.cat !== "athuga";
+  const k = esc(key), lid = esc(l.id);
+  const btns = !canEdit ? "" : own
+    ? `<div class="pb"><button type="button" data-ovr="" data-key="${k}" data-lid="${lid}">Afturkalla mitt mat</button></div>`
+    : `<div class="pb">${cat !== "heimilt" ? `<button type="button" data-ovr="heimilt" data-key="${k}" data-lid="${lid}">Merkja: veiði leyfð</button>` : ""}${cat !== "leyfi" ? `<button type="button" data-ovr="leyfi" data-key="${k}" data-lid="${lid}">Merkja: leyfi þarf</button>` : ""}</div>`;
+  return `<div class="pop">
+    <b>${esc(nameOf(p) || l.name)}</b>
+    <div class="zbadge" style="--c:${color(cat)}">${esc(CAT[cat].label)}${own ? " · þitt mat" : ""}</div>
+    <div class="zkind">${esc(kind)}</div>
+    <p class="ztxt">${own ? "Þú merktir þetta svæði sjálfur. " : ""}${esc(CAT_TXT[cat] || "")}</p>
+    ${btns}
+    ${rows ? `<details class="zmore"><summary>Nánar</summary><table>${rows}</table></details>` : ""}
+  </div>`;
 }
+map.on("popupopen", e => {
+  const el = e.popup.getElement(); if (!el) return;
+  el.querySelectorAll("[data-ovr]").forEach(b => b.onclick = () => {
+    const key = b.dataset.key, v = b.dataset.ovr, l = layers.find(x => x.id === b.dataset.lid);
+    if (v) OVR[key] = v; else delete OVR[key];
+    LS.set("ovr", OVR);
+    map.closePopup();
+    const r = l && runtime[l.id];
+    if (r && r.gj) drawVector(l, r.gj);
+    evaluate();
+    toast(v === "heimilt" ? "Merkt: veiði leyfð" : v === "leyfi" ? "Merkt: leyfi þarf" : "Þitt mat afturkallað");
+  });
+});
 function drawVector(l, gj){
   removeRuntime(l.id);
   const lay = L.geoJSON(gj, {
     pane:"zones", renderer,
     filter: f => !!polysOf(f.geometry).length,
-    style: f => { const k = featCat(l, f.properties), c = color(k);
+    style: f => { const k = featCat(l, f.properties, f.id), c = color(k);
       return {color:c, weight:k === "info" || k === "heimilt" ? 1.5 : 2, fillColor:c, fillOpacity:k === "heimilt" ? 0.14 : k === "info" ? 0.12 : k === "leyfi" ? 0.1 : 0.18, dashArray:k === "leyfi" ? "6 4" : null}; },
-    onEachFeature: (f, ly) => ly.bindPopup(() => popupHtml(l, f.properties||{}))
+    onEachFeature: (f, ly) => ly.bindPopup(() => popupHtml(l, f), {minWidth:240, maxWidth:300})
   });
-  runtime[l.id] = {leaflet:lay, feats:prep(gj, l.name, l)};
+  runtime[l.id] = {leaflet:lay, feats:prep(gj, l.name, l), gj};
   if (l.on) lay.addTo(map);
 }
 function drawWms(l, url, name){
@@ -1127,7 +1176,7 @@ function onPos(p){
   const ll = [pos.lat, pos.lon];
   if (!meMarker){
     meMarker = L.marker(ll, {icon:meIcon, zIndexOffset:1000, keyboard:false}).addTo(map);
-    accCircle = L.circle(ll, {radius:pos.acc, color:color("accent"), weight:1, fillOpacity:.08, interactive:false}).addTo(map);
+    accCircle = L.circle(ll, {pane:"track", radius:pos.acc, color:color("accent"), weight:1, fillOpacity:.08, interactive:false}).addTo(map);
     map.setView(ll, Math.max(map.getZoom(), 14));
   } else { meMarker.setLatLng(ll); accCircle.setLatLng(ll).setRadius(pos.acc); }
   const hd = meMarker.getElement() && meMarker.getElement().querySelector(".hd");
@@ -1466,7 +1515,7 @@ function updateCar(){
     document.getElementById("bdEta").textContent = hv == null ? "Haltu símanum flötum fyrir áttavita" : (mins < 1 ? "rétt hjá" : `um ${mins < 60 ? mins + " mín" : Math.floor(mins/60) + " klst " + (mins%60) + " mín"} gangur`);
     if (S.carline){
       const ll = [[pos.lat, pos.lon], [tg.lat, tg.lon]];
-      if (!carLine) carLine = L.polyline(ll, {color:t.color, weight:2.5, dashArray:"6 8", opacity:.85, interactive:false}).addTo(map);
+      if (!carLine) carLine = L.polyline(ll, {pane:"track", color:t.color, weight:2.5, dashArray:"6 8", opacity:.85, interactive:false}).addTo(map);
       else carLine.setLatLngs(ll).setStyle({color:t.color});
     }
   } else {
@@ -1835,7 +1884,6 @@ let hunt = !!LS.get("hunt", false), huntStart = LS.get("huntStart", 0);
 let track = LS.get("track", null);
 if (track && !Array.isArray(track.pts)) track = null;
 let trackLine = null;
-map.createPane("track"); map.getPane("track").style.zIndex = 430;
 const saveTrack = () => LS.set("track", track);
 function drawTrack(){
   const ll = track ? track.pts.map(q => [q[0], q[1]]) : [];
