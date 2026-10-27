@@ -250,6 +250,12 @@ body.masson #btnKill{background:var(--accent)} body.masson #btnKill svg{stroke:#
 textarea,input[type=number]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box;min-width:0}
 textarea{resize:vertical;font-size:14px;line-height:1.5}
 #joinCard{margin-bottom:14px}
+#consent{position:fixed;inset:0;z-index:1260;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:20px}
+#consent[hidden]{display:none}
+#consent .box{background:var(--panel);border-radius:18px;box-shadow:var(--shadow);padding:20px;max-width:420px;width:100%;box-sizing:border-box;display:grid;gap:12px}
+#consent h2{font:700 22px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.02em;margin:0}
+#consent ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:14px;line-height:1.4}
+#consent .row .btn{font-size:17px}
 .jh{font:700 19px var(--f-display);letter-spacing:.03em;text-transform:uppercase}
 .jrow .t b{display:block;font-weight:700;font-size:16px}
 .jrow .t span{font-size:13px;color:var(--muted)}
@@ -689,6 +695,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
     <div class="codebig" id="jNewCode"></div>
     <p class="note">Þú sendir hann á félagana í næsta skrefi.</p>
   </div>
+  <label class="setrow" style="margin-top:14px;border-top:1px solid var(--soft)"><div class="t"><b>Deila staðsetningu með hópnum</b><span>Félagarnir sjá þig á kortinu á meðan ferð er í gangi.</span></div><input type="checkbox" class="tog" id="jShare"></label>
   <p class="msg" id="jMsg" style="margin-top:10px"></p>
   <button class="btn wide" id="jSave" type="button" style="margin-top:12px">Skrá</button>
   <p class="note" style="margin-top:12px">Allt sem fer á milli símanna er dulkóðað með hópkóðanum. Nafnið, símanúmerið og staðsetningin sjást bara hjá þeim sem eru í hópnum.</p>
@@ -738,6 +745,21 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
   <p class="tip">Lestu fyrst gráður og mínútur (efsta línan), svo tugabrotin ef beðið er um þau. Ef 112 Iceland appið er í símanum sendir það staðsetninguna sjálfkrafa.</p>
 </section>
 
+<div id="consent" hidden role="dialog" aria-modal="true" aria-labelledby="consentH">
+  <div class="box">
+    <h2 id="consentH">Deila staðsetningu?</h2>
+    <ul>
+      <li>Á meðan ferð er í gangi sjá <b>allir í hópnum</b> hvar þú ert á kortinu, uppfært á 2 mínútna fresti.</li>
+      <li>Deilingin hættir þegar þú lýkur ferð. Síðasti staðurinn sést hjá hinum í allt að 12 klst.</li>
+      <li>Staðsetningin fer dulkóðuð með hópkóðanum um ntfy.sh. Aðeins þeir sem hafa kóðann geta lesið hana, svo ekki deila honum með öðrum.</li>
+      <li>Þú getur slökkt á þessu hvenær sem er í Hópnum eða í Stillingum.</li>
+    </ul>
+    <div class="row">
+      <button class="btn sec" id="consentNo" type="button">Nauts</button>
+      <button class="btn" id="consentYes" type="button">Skál 🍺</button>
+    </div>
+  </div>
+</div>
 <div id="toast" hidden role="status"></div>
 <div id="undoBar" hidden role="status"><span id="undoTx"></span><button type="button" id="undoBtn">Afturkalla</button></div>
 
@@ -1378,7 +1400,7 @@ const SETTINGS = [
   ["autosaver", "Sparnaður sjálfvirkt undir 20%", "Kveikir á sparnaðarham þegar rafhlaðan er lág og síminn ekki í hleðslu.", true],
   ["saver",     "Sparnaðarhamur", "Skjárinn má slökkva á sér, áttavitinn slökktur og GPS mælir sjaldnar.", false],
   ["masson",    "Másson-hamur", "Másson-stig, gælunöfn og bjórtími. Slökktu til að fá venjulegt viðmót (Tracking).", true],
-  ["shareloc",  "Sýna mig á korti félaganna", "Á meðan ferð er í gangi sést staðsetningin þín hjá hópnum (á 2 mín fresti, 5 í sparnaðarham).", true]
+  ["shareloc",  "Deila staðsetningu með hópnum", "Á meðan ferð er í gangi sjá félagarnir þig á kortinu (á 2 mín fresti, 5 í sparnaðarham).", false]
 ];
 const S = Object.assign(Object.fromEntries(SETTINGS.map(x => [x[0], x[3]])), {vib:LS.get("vib", true)}, LS.get("set", {}));
 const setList = document.getElementById("setList");
@@ -1386,7 +1408,10 @@ for (const [k, title, desc] of SETTINGS){
   const row = document.createElement("label"); row.className = "setrow";
   row.innerHTML = `<div class="t"><b>${esc(title)}</b><span>${esc(desc)}</span></div>`;
   const t = document.createElement("input"); t.type = "checkbox"; t.className = "tog"; t.id = "set_" + k; t.checked = !!S[k];
-  t.onchange = () => { S[k] = t.checked; LS.set("set", S); if (window.__applyAll) window.__applyAll(); };
+  t.onchange = () => {
+    if (k === "shareloc" && t.checked && window.__askShare){ t.checked = false; window.__askShare(() => { t.checked = true; S[k] = true; LS.set("set", S); if (window.__applyAll) window.__applyAll(); }); return; }
+    S[k] = t.checked; LS.set("set", S); if (window.__applyAll) window.__applyAll();
+  };
   row.appendChild(t); (k === "masson" || k === "shareloc" ? document.getElementById("massonSet") : setList).appendChild(row);
 }
 
@@ -2625,7 +2650,7 @@ function mySnapshot(){
   const td = myKillsOn(today());
   const o = {id:last7(LS.get("myPhone", "")) || "me", name:LS.get("me", "") || "Ég", phone:String(LS.get("myPhone", "")), day:today(), today:td.length, season:mySeason(),
           first:td.length ? Math.min(...td.map(k => k.ts)) : 0, km:Math.round(todayKm()), hunting:!!hunt, ts:Date.now()};
-  if (hunt && S.shareloc !== false && pos && Date.now() - (pos.t || 0) < 5 * 60000){ o.lat = +pos.lat.toFixed(5); o.lon = +pos.lon.toFixed(5); o.acc = Math.round(pos.acc || 0); o.pt = pos.t; }
+  if (hunt && S.shareloc === true && pos && Date.now() - (pos.t || 0) < 5 * 60000){ o.lat = +pos.lat.toFixed(5); o.lon = +pos.lon.toFixed(5); o.acc = Math.round(pos.acc || 0); o.pt = pos.t; }
   return o;
 }
 let boardMode = "day";
@@ -2783,7 +2808,7 @@ function renderJoin(){
   } else {
     const n = Object.keys(board).length + 1;
     box.innerHTML = `<div class="group"><div class="ginner">
-      <div class="jrow"><div class="t"><b>Hópur ${esc(groupCode())}</b><span>${n} í hópnum · þú ert ${esc(dispName(String(LS.get("me", ""))))}</span></div></div>
+      <div class="jrow"><div class="t"><b>Hópur ${esc(groupCode())}</b><span>${n} í hópnum · þú ert ${esc(dispName(String(LS.get("me", ""))))}<br>${S.shareloc === true ? "📍 Deilir staðsetningu í ferðum" : "Deilir ekki staðsetningu"}</span></div></div>
       <div class="row"><button class="btn" type="button" data-j="invite">Bjóða félögum</button><button class="btn sec" type="button" data-j="open">Breyta</button></div></div></div>`;
   }
   box.querySelectorAll("[data-j]").forEach(b => b.onclick = () => b.dataset.j === "open" ? openJoin() : openInvite());
@@ -2805,6 +2830,7 @@ function openJoin(){
   document.getElementById("jNewCode").textContent = "";
   document.getElementById("jMsg").textContent = "";
   document.getElementById("jSave").textContent = groupReady() ? "Vista" : "Skrá";
+  jShare.checked = S.shareloc === true;
   setJMode("join");
   openPanel(joinSheet);
 }
@@ -2821,6 +2847,7 @@ document.getElementById("jSave").onclick = () => {
   if (last7(phone).length < 7){ msg.textContent = "Skrifaðu símanúmerið þitt (7 tölustafir eða fleiri)."; return; }
   if (code.length < 4){ msg.textContent = "Límdu hópkóðann frá félaga eða stofnaðu nýjan hóp."; return; }
   LS.set("me", name); LS.set("myPhone", phone); LS.set("group", code);
+  setShare(jShare.checked);
   const pm = document.getElementById("myName"); if (pm) pm.value = name;
   if (window.__groupChanged) window.__groupChanged();
   closeSheet(); checkGroup(); groupSend("hello"); groupPoll(); renderBoard();
@@ -2838,6 +2865,34 @@ function openInvite(){
 }
 document.getElementById("invShare").onclick = async () => { try{ await navigator.share({text:invText}); }catch(e){} };
 document.getElementById("invCopy").onclick = e => copyText(invText, e.currentTarget, "Afrita");
+
+/* ---------- Samþykki fyrir deilingu staðsetningar ---------- */
+const consentEl = document.getElementById("consent");
+let consentCb = null;
+function askShare(onYes){
+  const m = isMasson();
+  document.getElementById("consentYes").textContent = m ? "Skál 🍺" : "Samþykkja";
+  document.getElementById("consentNo").textContent = m ? "Nauts" : "Hætta við";
+  consentCb = onYes; consentEl.hidden = false;
+  setTimeout(() => document.getElementById("consentYes").focus(), 50);
+}
+window.__askShare = askShare;
+document.getElementById("consentYes").onclick = () => {
+  consentEl.hidden = true; LS.set("shareOk", Date.now());
+  const f = consentCb; consentCb = null; if (f) f();
+  toast(isMasson() ? "Skál! Félagarnir sjá þig á kortinu í ferðum." : "Staðsetningu deilt með hópnum í ferðum.");
+};
+document.getElementById("consentNo").onclick = () => { consentEl.hidden = true; consentCb = null; };
+consentEl.addEventListener("click", e => { if (e.target === consentEl){ consentEl.hidden = true; consentCb = null; } });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !consentEl.hidden){ consentEl.hidden = true; consentCb = null; } });
+function setShare(on){
+  S.shareloc = !!on; LS.set("set", S);
+  const t = document.getElementById("set_shareloc"); if (t) t.checked = !!on;
+}
+// Deiling þarf alltaf samþykki (líka ef stillingin kom úr eldri útgáfu)
+if (S.shareloc === true && !LS.get("shareOk", 0)) setShare(false);
+const jShare = document.getElementById("jShare");
+jShare.onchange = () => { if (jShare.checked){ jShare.checked = false; askShare(() => { jShare.checked = true; }); } };
 
 /* ---------- Félagarnir á kortinu (live) ---------- */
 let live = LS.get("live", {});
@@ -2903,7 +2958,7 @@ window.__massonHunt = on => { lastPosSent = 0; groupSend(on ? "start" : "stop");
 const prevPosExtra3 = window.__onPosExtra;
 window.__onPosExtra = () => {
   if (prevPosExtra3) prevPosExtra3();
-  if (!hunt || S.shareloc === false || !pos) return;
+  if (!hunt || S.shareloc !== true || !pos) return;
   const every = (typeof saverActive === "function" && saverActive() ? 5 : 2) * 60000;
   if (Date.now() - lastPosSent > every){ lastPosSent = Date.now(); groupSend("pos"); }
 };
