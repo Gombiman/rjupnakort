@@ -82,7 +82,7 @@ final class Hopur {
             if (Felagar.last7(Felagar.myPhone(c)).equals(m.optString("id"))) return;   // eigin skilaboð
             FelagarPlugin.emit("group", m);
             long ts = m.optLong("ts", 0);
-            if (!visible && "kill".equals(m.optString("t")) && System.currentTimeMillis() - ts < 30 * 60 * 1000L) {
+            if (!visible && "kill".equals(m.optString("t")) && m.optBoolean("joined", true) && System.currentTimeMillis() - ts < 30 * 60 * 1000L) {
                 boolean masson = Felagar.prefs(c).getBoolean("masson", true);
                 String name = m.optString("name", "Félagi");
                 int n = m.optInt("today", 1);

@@ -16,7 +16,18 @@ rep("https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css", "lib
 rep('<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>',
     '<script src="lib/capacitor.js"></script>\n<script src="app.js"></script>\n<script src="lib/leaflet.js"></script>');
 const ver = "0.1." + (process.env.RK_VERSION_CODE || "0");
-html = html.replace("<head>", `<head>\n<script>window.RK_VERSION = "${ver}";</script>`);
+// Hvað er nýtt: fyrsti kafli CHANGES.md
+let changes = null;
+try {
+  const lines = fs.readFileSync(path.join(root, "CHANGES.md"), "utf8").split(/\r?\n/);
+  const i = lines.findIndex(l => /^##\s/.test(l));
+  if (i >= 0) {
+    const items = [];
+    for (let j = i + 1; j < lines.length && !/^##\s/.test(lines[j]); j++) { const m = lines[j].match(/^\s*[-*]\s+(.*)/); if (m) items.push(m[1].trim()); }
+    changes = { title: lines[i].replace(/^##\s*/, "").trim(), items };
+  }
+} catch (e) {}
+html = html.replace("<head>", `<head>\n<script>window.RK_VERSION = "${ver}"; window.RK_CHANGES = ${JSON.stringify(changes).replace(/</g, "\\u003c")};</script>`);
 fs.writeFileSync(path.join(www, "index.html"), html);
 fs.copyFileSync(path.join(root, "sw.js"), path.join(www, "sw.js"));
 fs.cpSync(path.join(root, "img"), path.join(www, "img"), {recursive: true});

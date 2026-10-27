@@ -79,7 +79,12 @@ jobs:
         run: |
           gh release view app >/dev/null 2>&1 || gh release create app --title "Rjúpnakort app" --notes "Nýjasta útgáfa af Android appinu. Sæktu rjupnakort.apk hér fyrir neðan." --latest
           gh release upload app rjupnakort.apk --clobber
-          gh release edit app --notes "Nýjasta útgáfa: 0.1.${{ github.run_number }} ($(date -u +%Y-%m-%d)). Sæktu rjupnakort.apk hér fyrir neðan."
+          {
+            echo "Nýjasta útgáfa: 0.1.${{ github.run_number }} ($(date -u +%Y-%m-%d)). Sæktu rjupnakort.apk hér fyrir neðan."
+            echo
+            awk '/^## /{n++} n==1' CHANGES.md
+          } > release-notes.md
+          gh release edit app --notes-file release-notes.md
 
       - name: Gefa út prufu (ekki undirritað með lykli hópsins)
         if: env.RK_KEYSTORE == ''
