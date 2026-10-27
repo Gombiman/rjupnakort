@@ -1364,17 +1364,29 @@ function readHash(){
   const type = TYPES[q.get("k")] ? q.get("k") : "ping";
   const from = (q.get("f") || "").slice(0, 24), name = (q.get("n") || "").slice(0, 40);
   try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
-  let p = pts.find(x => Math.abs(x.lat-lat) < 1e-5 && Math.abs(x.lon-lon) < 1e-5 && x.ts === ts);
+  showRemote(addRemotePoint({lat, lon, acc:+q.get("a") || 0, ts, type: type === "bill" ? "annad" : type,
+                              name: type === "bill" && !name ? "Bíll" : name, from}));
+}
+/* Bætir við punkti frá öðrum (ping-hlekkur eða svar úr appinu). Eldri ping frá sama aðila eru fjarlægð. */
+function addRemotePoint(o){
+  let p = pts.find(x => Math.abs(x.lat-o.lat) < 1e-5 && Math.abs(x.lon-o.lon) < 1e-5 && x.ts === o.ts);
   if (!p){
-    p = {id:"r" + Date.now().toString(36), lat, lon, acc:+q.get("a") || 0, type: type === "bill" ? "annad" : type, name: type === "bill" && !name ? "Bíll" : name, from, ts};
+    if (o.type === "ping" && o.from) pts = pts.filter(x => !(x.type === "ping" && x.from === o.from));
+    p = {id:"r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), lat:o.lat, lon:o.lon, acc:o.acc || 0,
+         type:o.type || "ping", name:o.name || "", from:o.from || "", ts:o.ts};
     pts.push(p); savePts(); renderPts();
   }
+  return p;
+}
+function showRemote(p, quiet){
   setTarget(p.id);
-  if (typeof follow !== "undefined" && follow){ follow = false; btnGps.classList.remove("follow"); }
-  map.setView([lat, lon], Math.max(map.getZoom(), 14));
-  setTimeout(() => markers[p.id] && markers[p.id].openPopup(), 300);
+  if (!quiet){
+    if (follow){ follow = false; btnGps.classList.remove("follow"); }
+    map.setView([p.lat, p.lon], Math.max(map.getZoom(), 14));
+    setTimeout(() => markers[p.id] && markers[p.id].openPopup(), 300);
+  }
   const rel = relFromMe(p);
-  toast(`${p.type === "ping" ? "Ping" : "Punktur"}${from ? " frá " + from : ""} · ${ago(ts)}${rel ? " · " + rel.text : ""}`, 6000);
+  toast(`${p.type === "ping" ? "Ping" : "Punktur"}${p.from ? " frá " + p.from : ""} · ${ago(p.ts)}${rel ? " · " + rel.text : ""}`, 6000);
 }
 window.addEventListener("hashchange", readHash);
 
@@ -1552,7 +1564,7 @@ if (navigator.getBattery){
 window.__applyAll = () => { applyPower(); onBatt(); updateSun(); updateCar(); };
 
 /* Opið viðmót fyrir Android appið */
-window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, getPos: () => pos };
+window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, getPos: () => pos, addRemotePoint, showRemote, openPanel, closeSheet, relFromMe, esc, fmtM, card, hhmm, ago, openPing: () => openPing(null), lastFrom: n => pts.filter(p => p.type === "ping" && p.from === n).sort((a, b) => b.ts - a.ts)[0] || null };
 if (window.RK_APP) document.getElementById("getApp").hidden = true;
 document.getElementById("verNote").textContent = window.RK_APP ? `Android app · útgáfa ${window.RK_VERSION || "?"}` : "Vefútgáfa (í vafra)";
 
