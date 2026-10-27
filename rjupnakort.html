@@ -702,11 +702,11 @@ function polysOf(g){
 /* Þjóðlendugögnin innihalda bæði þjóðlendur og dæmd eignarlönd: flokka eftir tegund */
 function featCat(l, p){
   if (!l) return "info";
-  const typed = p && (p.tegund || p.tegund2);
+  const typed = p && (p.tegund || p.tegund2 || p._lag);
   if (l.id !== "b_thjodl" && !(typed && (l.cat === "heimilt" || l.cat === "info"))) return l.cat;
-  const t = String((p && (p.tegund || p.tegund2)) || "").toLowerCase();
-  if (/eignarland|afréttareign/.test(t)) return "leyfi";
-  if (/þjóðlend|afrétt/.test(t)) return "heimilt";
+  const t = String((p && (p.tegund || p.tegund2 || p._lag)) || "").toLowerCase();
+  if (/eignarland|eignarlond|eignarlönd|afréttareign/.test(t)) return "leyfi";
+  if (/þjóðlend|thjodlend|afrétt|afrett/.test(t)) return "heimilt";
   return "info";
 }
 function featKind(l, p){ return l && p && (l.id === "b_thjodl" || l.cat === "heimilt" || l.cat === "info") ? String(p.tegund || p.tegund2 || "") : ""; }
@@ -718,7 +718,9 @@ function prep(gj, fallback, l){
     let a=180,b=90,c=-180,d=-90;
     for (const p of polys) for (const pt of p[0]){ if(pt[0]<a)a=pt[0]; if(pt[0]>c)c=pt[0]; if(pt[1]<b)b=pt[1]; if(pt[1]>d)d=pt[1]; }
     const pr = f.properties || {};
-    out.push({polys, bbox:[a,b,c,d], name:nameOf(pr) || fallback, props:pr, cat:featCat(l, pr), kind:featKind(l, pr)});
+    const cat = featCat(l, pr);
+    const kind = featKind(l, pr) || (l && l.id === "b_thjodl" ? (cat === "leyfi" ? "Eignarland" : cat === "heimilt" ? "Þjóðlenda" : "") : "");
+    out.push({polys, bbox:[a,b,c,d], name:nameOf(pr) || fallback, props:pr, cat, kind});
   }
   return out;
 }
@@ -757,7 +759,7 @@ function edgeDist(lon, lat, polys){
 /* ---------- Teikna ---------- */
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function popupHtml(l, p){
-  const rows = Object.entries(p).filter(([k,v]) => v!=null && v!=="" && typeof v !== "object").slice(0,14)
+  const rows = Object.entries(p).filter(([k,v]) => k !== "_lag" && v!=null && v!=="" && typeof v !== "object").slice(0,14)
     .map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
   return `<div class="pop"><b>${esc(nameOf(p) || l.name)}</b><div style="color:${color(l.cat)};font-weight:600;margin-bottom:4px">${esc(l.name)}</div><table>${rows}</table></div>`;
 }
@@ -807,7 +809,7 @@ async function fetchWfs(url, type){
   }catch(e){ if (all.length) throw e; }
   return fixAxes(await getJson(`${url}?service=WFS&version=1.0.0&request=GetFeature&typeName=${t}&outputFormat=application%2Fjson&srsName=EPSG:4326`));
 }
-const DATA_VER = 2;   // hækka til að sækja innbyggð gögn upp á nýtt
+const DATA_VER = 3;   // hækka til að sækja innbyggð gögn upp á nýtt
 async function loadBuiltin(l, force){
   const b = BUILTIN.find(x => x.id === l.id);
   const cached = await IDB.get("gj:"+l.id);
@@ -819,13 +821,32 @@ async function loadBuiltin(l, force){
   if (!cached) setStatus(l, "Sæki gögn…", "l");
   let sources = b.wfs;
   if (b.discover){
-    let found = LS.get("disc:" + b.id, null);
-    if (!found || force){ setStatus(l, "Leita á opnum kortaþjónum…", "l"); found = await discoverWfs(b.discover); if (found) LS.set("disc:" + b.id, found); }
+    let found = LS.get("disc2:" + b.id, null);
+    if (!found || force){ setStatus(l, "Leita á opnum kortaþjónum…", "l"); found = await discoverWfs(b.discover); if (found) LS.set("disc2:" + b.id, found); }
     if (!found){
       if (!cached) setStatus(l, "Fannst ekki á opnum kortaþjónum. Hægt er að flytja inn skrá.", "e");
       return;
     }
-    sources = [found];
+    // Öll lögin sótt og sameinuð (t.d. þjóðlendur + dæmd eignarlönd)
+    const feats = [], got = [];
+    for (const type of found.types){
+      try{
+        const gj = await fetchWfs(found.srv, type);
+        gj.features.forEach(f => { f.properties = Object.assign({}, f.properties, {_lag: type.split(":").pop()}); feats.push(f); });
+        got.push(type.split(":").pop() + " (" + gj.features.length + ")");
+      }catch(e){}
+    }
+    if (feats.length){
+      const gj = {type:"FeatureCollection", features:feats};
+      l.updated = Date.now(); l.kind = "vector"; saveLayers();
+      await IDB.set("gj:"+l.id, gj);
+      LS.set("dataVer:" + l.id, DATA_VER);
+      drawVector(l, gj);
+      setStatus(l, `Uppfært ${fmtDate(l.updated)} · ${feats.length} svæði · ${got.join(", ")}`, "v");
+      evaluate();
+      return;
+    }
+    sources = [];
   }
   for (const [url, type] of sources){
     try{
@@ -858,8 +879,8 @@ async function discoverWfs(d){
         const g = tag => { const e = ft.getElementsByTagNameNS("*", tag)[0]; return e ? e.textContent.trim() : ""; };
         return {name:g("Name"), title:g("Title")};
       }).filter(f => f.name && (d.re.test(f.name) || d.re.test(f.title)));
-      fts.sort((a, b) => (d.avoid.test(a.name + a.title) ? 1 : 0) - (d.avoid.test(b.name + b.title) ? 1 : 0));
-      if (fts.length) return [srv, fts[0].name];
+      const good = fts.filter(f => !d.avoid.test(f.name + " " + f.title));
+      if (good.length) return {srv, types:good.slice(0, 6).map(f => f.name)};
     }catch(e){}
   }
   return null;
