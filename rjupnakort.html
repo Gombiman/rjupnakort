@@ -86,8 +86,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
   box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;padding:8px 14px 8px 16px}
 .hdot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
 .hdot.on{background:var(--ok);box-shadow:0 0 0 4px rgba(43,138,75,.2);animation:pulse 1.8s infinite}
+.hdot.on.paused{background:var(--muted);box-shadow:none;animation:none}
+#huntPause{width:44px;height:44px;border:none;border-radius:50%;background:var(--soft);display:grid;place-items:center;flex:none;padding:0}
+#huntPause svg{width:20px;height:20px;fill:var(--fg)}
 #huntCard .t{flex:1;min-width:0;line-height:1.2}
-#huntCard .h{font:700 17px var(--f-display);letter-spacing:.03em;text-transform:uppercase}
+#huntCard .h{font:700 17px var(--f-display);letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #huntTx{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tog{appearance:none;width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;margin:0;cursor:pointer;transition:background .2s}
 .tog::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
@@ -498,6 +501,7 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
     <div id="huntTx">Ýttu til að hefja ferð</div>
   </label>
   <button type="button" id="huntKills" hidden aria-label="Opna stigatöflu">🦃 0</button>
+  <button type="button" id="huntPause" hidden aria-label="Pása"></button>
   <input type="checkbox" class="tog big" id="huntSw" aria-label="Másson activate">
 </div>
 
@@ -2588,6 +2592,7 @@ window.RK_settingsBack = () => { if (pgSettings.hidden) return false; settingsBa
 /* ---------- Veiðihamur og slóð ---------- */
 const huntSw = document.getElementById("huntSw"), huntTx = document.getElementById("huntTx"), huntDot = document.getElementById("huntDot");
 let hunt = !!LS.get("hunt", false), huntStart = LS.get("huntStart", 0), huntBusy = false;
+let huntPaused = hunt && !!LS.get("huntPaused", false);
 let track = LS.get("track", null);
 if (track && !Array.isArray(track.pts)) track = null;
 let trackLine = null;
@@ -2605,19 +2610,25 @@ function tripText(tr, end){
 function renderHunt(){
   if (!huntBusy) huntSw.checked = hunt;
   huntDot.classList.toggle("on", hunt);
-  document.getElementById("huntH").textContent = huntTitle(hunt);
+  document.getElementById("huntH").textContent = hunt && huntPaused ? "Í pásu" : huntTitle(hunt);
   huntSw.setAttribute("aria-label", huntTitle(false));
   const nk = window.__killsToday ? window.__killsToday() : 0, hk = document.getElementById("huntKills");
   hk.hidden = !(hunt || nk); hk.textContent = `🦃 ${nk}`;
-  if (hunt && track) huntTx.textContent = tripText(track);
+  const pb = document.getElementById("huntPause");
+  pb.hidden = !hunt; pb.setAttribute("aria-label", huntPaused ? "Halda áfram" : "Pása");
+  pb.innerHTML = huntPaused ? '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M7.5 5.5h3v13h-3zM13.5 5.5h3v13h-3z"/></svg>';
+  huntDot.classList.toggle("paused", hunt && huntPaused);
+  if (hunt && track && huntPaused) huntTx.textContent = `Slóðin skráist ekki · ${tripText(track)}`;
+  else if (hunt && track) huntTx.textContent = tripText(track);
   else if (track && track.end) huntTx.textContent = `Síðasta ferð: ${tripText(track, track.end)}`;
   else huntTx.textContent = "Ýttu til að hefja ferð og skrá slóð";
 }
 function addTrackPoint(p){
-  if (!hunt || !track || !p) return;
+  if (!hunt || !track || !p || huntPaused) return;
   if (p.acc > 40) return;
   const last = track.pts[track.pts.length - 1];
-  if (last){
+  if (track.gap){ track.gap = false; track.lastAlt = null; }   // eftir pásu: ekki telja vegalengdina á milli
+  else if (last){
     const d = distM(last[0], last[1], p.lat, p.lon);
     if (d < Math.max(12, p.acc * 0.8)) return;
     track.dist += d;
@@ -2639,6 +2650,7 @@ async function setHunt(on){
   if (on === hunt || huntBusy){ renderHunt(); return; }
   if (on && window.__beforeHunt){ huntBusy = true; try{ await window.__beforeHunt(); }catch(e){} huntBusy = false; }
   hunt = on; LS.set("hunt", on);
+  huntPaused = false; LS.set("huntPaused", false);
   if (on){
     huntStart = Date.now(); LS.set("huntStart", huntStart);
     track = {start:huntStart, pts:[], dist:0, gain:0, loss:0, lastAlt:null};
@@ -2666,6 +2678,16 @@ async function setHunt(on){
   if (window.__massonHunt) window.__massonHunt(on);
   if (window.__onHunt) window.__onHunt(on);
 }
+function setPause(p){
+  p = !!p;
+  if (!hunt || p === huntPaused){ renderHunt(); return; }
+  huntPaused = p; LS.set("huntPaused", p);
+  if (!p && track){ track.gap = true; saveTrack(); }
+  toast(p ? "⏸ Ferðin er í pásu. Slóðin og kílómetrarnir skráast ekki á meðan, en viðvaranir um bannsvæði virka áfram." : "▶ Ferðin heldur áfram.", 6000);
+  renderHunt();
+  if (window.__onPause) window.__onPause(p);
+}
+document.getElementById("huntPause").onclick = () => setPause(!huntPaused);
 let huntArmed = false;
 huntSw.onchange = () => {
   if (huntSw.checked) return setHunt(true);
@@ -4683,7 +4705,7 @@ massonApply();
 setTimeout(() => { groupPoll().then(() => { if (Date.now() - LS.get("gLastSent", 0) > 3600e3){ LS.set("gLastSent", Date.now()); groupSend("score"); } }); }, 1500);
 
 /* Opið viðmót fyrir Android appið */
-window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, setHunt, setTab, isHunting: () => hunt, getPos: () => pos, addRemotePoint, showRemote, openPanel, closeSheet, relFromMe, esc, fmtM, card, hhmm, ago, openPing: () => openPing(null), lastFrom: n => pts.filter(p => p.type === "ping" && p.from === n).sort((a, b) => b.ts - a.ts)[0] || null };
+window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, setHunt, setPause, isPaused: () => hunt && huntPaused, setTab, isHunting: () => hunt, getPos: () => pos, addRemotePoint, showRemote, openPanel, closeSheet, relFromMe, esc, fmtM, card, hhmm, ago, openPing: () => openPing(null), lastFrom: n => pts.filter(p => p.type === "ping" && p.from === n).sort((a, b) => b.ts - a.ts)[0] || null };
 if (window.RK_APP){ document.getElementById("getApp").hidden = true; document.getElementById("friendsWeb").hidden = true; document.getElementById("setFriendsWeb").hidden = true; }
 document.getElementById("verNote").textContent = window.RK_APP ? `S. Másson · Android app · útgáfa ${window.RK_VERSION || "?"}` : "S. Másson · vefútgáfa (í vafra)";
 

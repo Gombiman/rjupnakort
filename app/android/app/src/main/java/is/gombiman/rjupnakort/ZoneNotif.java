@@ -16,7 +16,19 @@ final class ZoneNotif {
 
     private ZoneNotif() {}
 
+    static String lastKind = "q", lastTitle = "", lastText = "";
+    static boolean paused = false;
+
+    static PendingIntent action(Context ctx, String a, int req) {
+        Intent i = new Intent(ctx, HuntActionReceiver.class).setAction(HuntActionReceiver.ACTION).putExtra("a", a);
+        return PendingIntent.getBroadcast(ctx, req, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    /** Endurbirtir tilkynninguna með síðustu stöðu (t.d. eftir pásu). */
+    static void refresh(Context ctx) { update(ctx, lastKind, lastTitle, lastText); }
+
     static void update(Context ctx, String kind, String title, String text) {
+        lastKind = kind; lastTitle = title; lastText = text;
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
         NotificationManager nm = ctx.getSystemService(NotificationManager.class);
         if (nm == null) return;
@@ -33,6 +45,7 @@ final class ZoneNotif {
 
         Notification.Builder b = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
             ? new Notification.Builder(ctx, CHANNEL) : new Notification.Builder(ctx);
+        if (paused) { color = 0xFF6B6A63; title = "⏸ Í pásu · slóðin skráist ekki"; }
         b.setSmallIcon(icon).setColor(color).setColorized(true)
             .setContentTitle(title).setContentText(text)
             .setStyle(new Notification.BigTextStyle().bigText(text))
@@ -43,6 +56,9 @@ final class ZoneNotif {
             launch.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             b.setContentIntent(PendingIntent.getActivity(ctx, 0, launch, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
         }
+        android.graphics.drawable.Icon ai = android.graphics.drawable.Icon.createWithResource(ctx, R.drawable.ic_stat_rjupa);
+        b.addAction(new Notification.Action.Builder(ai, paused ? "▶ Halda áfram" : "⏸ Pása", action(ctx, paused ? "resume" : "pause", 1)).build());
+        b.addAction(new Notification.Action.Builder(ai, "⏹ Ljúka ferð", action(ctx, "stop", 2)).build());
         try { nm.notify(ID, b.build()); } catch (Exception ignored) {}
     }
 }

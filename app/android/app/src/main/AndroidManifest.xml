@@ -33,6 +33,10 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".HuntActionReceiver"
+            android:exported="false" />
+
         <service
             android:name=".HopurService"
             android:exported="false"

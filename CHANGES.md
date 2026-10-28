@@ -2,6 +2,12 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Pása og Ljúka ferð úr tilkynningunni ⏸
+- Dragðu niður Másson-tilkynninguna: Pása, Halda áfram og Ljúka ferð án þess að opna appið
+- Í pásu skráist slóðin ekki og keyrslan á milli staða telst ekki í kílómetrana. Viðvaranir um bannsvæði virka áfram
+- Pásuhnappur líka á ferðaspjaldinu á kortinu
+- Ruslafata á ferðaspjöldum í Dagbók (síðasta útgáfa)
+
 ## Auðveldara að eyða ferðum 🗑️
 - Ruslafata á hverju ferðaspjaldi í Dagbók: ýttu á hana og svo á „Eyða?“ til að staðfesta
 - Rjúpan í tilkynningunni sýnir svæðið: hak, X eða ? og grænn, rauður eða gulur litur (síðasta útgáfa)

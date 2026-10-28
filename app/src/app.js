@@ -78,7 +78,7 @@
     });
     return bgBusy;
   }
-  const restart = () => { stop(); return start(); };
+  const restart = () => { stop(); zoneLast = ""; return start(); };
 
   const geo = navigator.geolocation || {};
   try {
@@ -130,10 +130,11 @@
     if (hunt && bgId) {
       const kind = cls === "heimilt" ? "ok" : cls === "bann" ? "bann" : "q";
       const icon = kind === "ok" ? "✅" : kind === "bann" ? "⛔" : (cls === "leyfi" || cls === "athuga" || cls === "near") ? "⚠️" : "❔";
-      const t = `${icon} ${title}`, key = kind + "|" + t + "|" + sub;
+      const paused = !!(window.RK && window.RK.isPaused && window.RK.isPaused());
+      const t = `${icon} ${title}`, key = kind + "|" + t + "|" + sub + "|" + paused;
       if (key !== zoneLast || Date.now() - zoneAt > 90000) {
         zoneLast = key; zoneAt = Date.now();
-        try { F.zone({ kind, title: t, text: sub }).catch(() => {}); } catch (e) {}
+        try { F.zone({ kind, title: t, text: sub, paused }).catch(() => {}); } catch (e) {}
       }
     }
     if (!hunt || prev == null) return;
@@ -164,6 +165,19 @@
   window.__groupFetch = since => F.groupFetch({ since });
   window.__listenUntil = until => F.listenUntil({ until }).catch(() => {});
   F.addListener("group", m => { if (window.__onGroupMsg) window.__onGroupMsg(m, true); }).catch(() => {});
+  // Takkarnir í Másson-tilkynningunni (Pása / Halda áfram / Ljúka ferð)
+  async function drainHuntAction() {
+    let a = null;
+    try { a = (await F.takeHuntAction()).a; } catch (e) {}
+    const R = window.RK; if (!a || !R) return;
+    if (a === "pause") R.setPause(true);
+    else if (a === "resume") R.setPause(false);
+    else if (a === "stop" && R.isHunting()) R.setHunt(false);
+  }
+  F.addListener("huntAction", () => drainHuntAction()).catch(() => {});
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") drainHuntAction(); });
+  setTimeout(drainHuntAction, 1500);
+  window.__onPause = paused => { zoneLast = ""; try { F.huntPaused({ paused }).catch(() => {}); } catch (e) {} };
   const fstate = {};   // síðustu 7 tölustafir -> {state, t}
   const last7 = p => { const d = String(p || "").replace(/[^0-9]/g, ""); return d.length <= 7 ? d : d.slice(-7); };
   const escH = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

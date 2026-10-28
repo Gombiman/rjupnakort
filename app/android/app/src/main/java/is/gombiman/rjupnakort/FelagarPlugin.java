@@ -46,8 +46,28 @@ public class FelagarPlugin extends Plugin {
     // Uppfærir aðeins tilkynningu GPS-þjónustunnar ef hún er þegar á skjánum.
     @PluginMethod
     public void zone(PluginCall call) {
+        if (call.getBoolean("paused") != null) ZoneNotif.paused = Boolean.TRUE.equals(call.getBoolean("paused"));
         ZoneNotif.update(getContext(), call.getString("kind", "q"), call.getString("title", ""), call.getString("text", ""));
         call.resolve();
+    }
+
+    @PluginMethod
+    public void huntPaused(PluginCall call) {
+        ZoneNotif.paused = Boolean.TRUE.equals(call.getBoolean("paused", false));
+        ZoneNotif.refresh(getContext());
+        call.resolve();
+    }
+
+    // Aðgerð úr tilkynningunni sem kortið hefur ekki enn tekið við (yngri en 10 mín)
+    @PluginMethod
+    public void takeHuntAction(PluginCall call) {
+        SharedPreferences p = Felagar.prefs(getContext());
+        String a = p.getString("huntAction", null);
+        long ts = p.getLong("huntActionTs", 0);
+        p.edit().remove("huntAction").remove("huntActionTs").apply();
+        JSObject r = new JSObject();
+        if (a != null && System.currentTimeMillis() - ts < 600000) r.put("a", a);
+        call.resolve(r);
     }
 
     @PluginMethod
