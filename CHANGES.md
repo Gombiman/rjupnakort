@@ -2,6 +2,10 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Auðveldara að eyða ferðum 🗑️
+- Ruslafata á hverju ferðaspjaldi í Dagbók: ýttu á hana og svo á „Eyða?“ til að staðfesta
+- Rjúpan í tilkynningunni sýnir svæðið: hak, X eða ? og grænn, rauður eða gulur litur (síðasta útgáfa)
+
 ## Rjúpan í tilkynningunni sýnir svæðið 🟢🔴🟡
 - Táknið við klukkuna er alltaf rjúpa: með haki á leyfðu svæði, X á bannsvæði og ? á eignarlandi, friðlýstu eða óvissu svæði
 - Másson-tilkynningin litast græn, rauð eða gul og fyrirsögnin segir hvar þú ert

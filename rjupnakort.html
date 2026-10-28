@@ -378,7 +378,9 @@ details.tl li.live i{background:var(--ok)}
 details.tl li div{display:grid;padding-bottom:10px}
 details.tl li b{font-size:15px;font-weight:700}
 details.tl li span{font-size:12.5px;color:var(--muted)}
-details.tl .del{display:block;margin:0 14px 10px auto;font-size:13px;font-weight:600}
+.tc-del{width:44px;height:44px;border:none;border-radius:14px;background:transparent;display:grid;place-items:center;flex:none;padding:0;color:var(--muted);font-size:14px;font-weight:700}
+.tc-del svg{width:21px;height:21px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tc-del.armed{width:auto;padding:0 12px;background:var(--bann);color:#fff}
 
 .ctiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .ctiles button{border:1px solid var(--line);background:var(--bg);border-radius:16px;min-height:76px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12.5px;font-weight:600;color:var(--fg);text-align:center;line-height:1.2}
@@ -2971,16 +2973,19 @@ function renderLog(){
     det.innerHTML = `<summary>Tímalína</summary><ol>${ev.map(e => `<li class="${e.c}"><time>${hhmm(e.ts)}</time><i></i><div><b>${esc(e.h)}</b>${e.s ? `<span>${esc(e.s)}</span>` : ""}</div></li>`).join("")}</ol>`;
     card.appendChild(det);
     if (!t.live){
-      const del = document.createElement("button"); del.className = "del"; del.type = "button"; del.textContent = "Eyða ferð";
+      const TRASH = '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>';
+      const del = document.createElement("button"); del.className = "tc-del"; del.type = "button"; del.innerHTML = TRASH;
       del.setAttribute("aria-label", "Eyða ferð " + fmtDay(dayKey(t.start)));
+      const disarm = () => { del.dataset.armed = ""; del.classList.remove("armed"); del.innerHTML = TRASH; };
+      del.onkeydown = e => e.stopPropagation();
       del.onclick = ev2 => {
         ev2.stopPropagation();
-        if (del.dataset.armed !== "1"){ del.dataset.armed = "1"; del.textContent = "Ýttu aftur til að eyða"; del.style.color = color("bann");
-          setTimeout(() => { if (del.isConnected){ del.dataset.armed = ""; del.textContent = "Eyða ferð"; del.style.color = ""; } }, 3000); return; }
+        if (del.dataset.armed !== "1"){ del.dataset.armed = "1"; del.classList.add("armed"); del.textContent = "Eyða?";
+          setTimeout(() => { if (del.isConnected) disarm(); }, 3000); return; }
         LS.set("trips", LS.get("trips", []).filter(x => x.start !== t.start)); IDB.del("trip:" + t.start);
-        viewLayer.clearLayers(); renderLog();
+        viewLayer.clearLayers(); renderLog(); toast("Ferðinni eytt");
       };
-      det.appendChild(del);
+      head.appendChild(del);
     }
     logBox.appendChild(card);
   });
