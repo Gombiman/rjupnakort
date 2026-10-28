@@ -34,15 +34,17 @@ final class NtfyListener {
     }
 
     static synchronized void apply(Context c) {
-        if (Felagar.hunt(c) && Felagar.group(c).length() >= 4 && Felagar.myPhone(c).length() > 0) start(c);
+        if ((Felagar.hunt(c) || System.currentTimeMillis() < listenUntil(c)) && Felagar.group(c).length() >= 4 && Felagar.myPhone(c).length() > 0) start(c);
         else if (System.currentTimeMillis() > until) stop();
     }
 
     static synchronized void restart(Context c) { stop(); apply(c); }
 
+    static long listenUntil(Context c) { return Felagar.prefs(c).getLong("listenUntil", 0); }
+
     private static boolean wanted(Context c) {
         return Felagar.group(c).length() >= 4 && Felagar.myPhone(c).length() > 0
-            && (Felagar.hunt(c) || System.currentTimeMillis() < until);
+            && (Felagar.hunt(c) || System.currentTimeMillis() < until || System.currentTimeMillis() < listenUntil(c));
     }
 
     private static synchronized void start(Context c) {
@@ -66,8 +68,8 @@ final class NtfyListener {
         String since = "2m";
         while (!stopFlag && wanted(ctx)) {
             String topic = Felagar.topic(Felagar.group(ctx), Felagar.myPhone(ctx));
-            // Í veiðiham líka hóprásin (Másson-stig félaganna)
-            String gTopic = Felagar.hunt(ctx) ? Hopur.topic(Felagar.group(ctx)) : null;
+            // Hóprásin líka (Másson-stig, kosning, einvígi, spil, mont)
+            String gTopic = Hopur.topic(Felagar.group(ctx));
             HttpURLConnection con = null;
             try {
                 con = (HttpURLConnection) new URL(Felagar.NTFY + topic + (gTopic != null ? "," + gTopic : "") + "/json?since=" + since).openConnection();

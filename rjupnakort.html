@@ -251,6 +251,17 @@ textarea,input[type=number]{font:inherit;color:var(--fg);background:var(--bg);bo
 textarea{resize:vertical;font-size:14px;line-height:1.5}
 #joinCard,#compCard{margin-bottom:14px}
 .ptrow .t span.badges{display:block;color:var(--fg);font-size:13px;line-height:1.5;white-space:normal}
+.ptrow.wanted{background:color-mix(in srgb,var(--bann) 9%,transparent)}
+.ptrow .t span.wtag{display:block;font-size:11.5px;font-style:italic;color:var(--bann)}
+.hcard{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px;background:var(--bg)}
+.hcard.used{opacity:.55}
+.hcard .hc-e{font-size:30px;width:40px;text-align:center;flex:none}
+.hcard .t{flex:1;min-width:0}.hcard .t b{display:block}.hcard .t span{display:block;font-size:13px;color:var(--muted)}
+.hcard .hc-u{font-style:italic}
+.jbox{display:grid;gap:8px}
+.jbox select,.jbox input{min-width:0}
+#undoSame{border:none;background:var(--accent);color:#fff;border-radius:10px;font:inherit;font-weight:700;padding:8px 10px;flex:none}
+#undoSame[hidden]{display:none}
 .duelbox,.votebox{display:grid;gap:6px;background:var(--bg);border-radius:12px;padding:10px 12px}
 .duelbox span,.votebox span{font-size:13px;color:var(--muted)}
 .bragbtn{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;text-align:left;font:inherit;color:var(--fg)}
@@ -475,7 +486,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
     <div id="boardWrap" hidden>
       <div class="boardhead">
         <div class="sect" id="boardH">Másson-stig</div>
-        <div class="seg sm" id="boardSeg"><button type="button" data-m="day" aria-pressed="true">Í dag</button><button type="button" data-m="season" aria-pressed="false">Tímabilið</button></div>
+        <div class="seg sm" id="boardSeg"><button type="button" data-m="day" aria-pressed="true">Í dag</button><button type="button" data-m="season" aria-pressed="false">Tímabilið</button><button type="button" data-m="judge" aria-pressed="false" hidden>⚖️</button></div>
       </div>
       <div class="group" id="board"></div>
     </div>
@@ -553,7 +564,18 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 
     <div class="sect">Félagar og hópkóði</div>
     <div id="setFriendsApp"></div>
-    <div class="group" id="setFriendsWeb"><div class="ginner"><p class="note">Félagar, hópkóði og sjálfvirk svör eru í Android appinu.</p></div></div>
+    <div class="group" id="setFriendsWeb"><div class="ginner"><p class="note">Í vafranum skráir þú þig í hópinn í Hópnum (Skrá Másson). Félagarnir birtast þar sjálfkrafa og síminn svarar „Finna“ á meðan síðan er opin.</p></div></div>
+
+    <div class="sect">Afrit</div>
+    <details class="group">
+      <summary>Afrit af öllum gögnum</summary>
+      <div class="ginner">
+        <p class="note">Afritar ferðir, rjúpur, keppnina og stillingar sem texta. Geymdu hann t.d. í tölvupósti til þín. Til að flytja inn í nýjan síma: límdu textann hér og ýttu á Flytja inn.</p>
+        <button class="btn sec" type="button" id="bkCopy">Afrita öll gögn</button>
+        <textarea id="bkIn" rows="3" placeholder="SMASSON-AFRIT:…"></textarea>
+        <button class="btn sec" type="button" id="bkLoad">Flytja inn</button>
+      </div>
+    </details>
 
     <div class="sect">Gögn</div>
     <details class="group">
@@ -751,9 +773,13 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
   <label class="setrow"><div class="t"><b>Bara rjúpur skráðar í ferð</b><span>Aðeins rjúpur sem eru skráðar á meðan Másson er virkur telja.</span></div><input type="checkbox" class="tog" id="cTrip"></label>
   <label class="setrow"><div class="t"><b>Hámark stiga á dag</b><span>Rjúpur umfram hámarkið gefa ekki stig.</span></div><input type="checkbox" class="tog" id="cCapOn"></label>
   <label class="f" id="cCapRow" hidden>Hámark á dag<input type="number" id="cCap" min="1" max="50" inputmode="numeric"></label>
+  <label class="setrow"><div class="t"><b>🃏 Hunting Cards</b><span>Hver keppandi fær 3 spil á viku: Double or Nothing, The Thief, Immunity, The Gambler, The Curse.</span></div><input type="checkbox" class="tog" id="cCards"></label>
+  <label class="f" style="margin-top:6px">💀 WANTED: bounty fyrir að fara fram úr efsta manni
+    <select id="cBounty"><option value="0">Ekkert WANTED</option><option value="1">1 stig</option><option value="2">2 stig</option><option value="3">3 stig</option><option value="4">4 stig</option><option value="5">5 stig</option></select>
+  </label>
   <label class="setrow"><div class="t"><b>⚔️ Einvígi</b><span>Keppendur geta skorað hver á annan. Sá sem fær fleiri rjúpur tekur 1 stig af hinum.</span></div><input type="checkbox" class="tog" id="cDuel"></label>
-  <h3>Kvöldkosning á bjórtíma</h3>
-  <p class="note">Hver kýs einn í hverjum flokki, en ekki sjálfan sig.</p>
+  <h3>Kvöldkosning (leynileg)</h3>
+  <p class="note">Þú sendir kosninguna út á kvöldin. Bara þú sérð atkvæðin þar til keppni lýkur. Flokkarnir sem þú velur hér eru í boði:</p>
   <div id="cVotes"></div>
   <h3>Aukastig</h3>
   <p class="note">Merkin birtast alltaf. Hakaðu við þau sem eiga líka að gefa aukastig.</p>
@@ -780,10 +806,57 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
   </div>
 </section>
 
+<section id="judgeSheet" class="sheet" hidden aria-label="Dómarinn">
+  <div class="grab"></div>
+  <div class="sh-head"><h2>⚖️ Dómarinn</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
+  <p class="note" style="margin-top:6px">Bara keppnisstjórinn sér þetta. Það sem er merkt „falið“ birtist hjá öllum þegar keppni lýkur.</p>
+  <h3>🗳️ Kvöldkosning</h3>
+  <div id="jBallot"></div>
+  <h3>🎲 Áskorun dagsins</h3>
+  <select id="jChal"></select>
+  <h3>📝 Skrá fyrir keppanda (sést strax)</h3>
+  <div class="jbox">
+    <div class="row"><select id="jPxWho"></select><input type="date" id="jPxDay"></div>
+    <div class="row"><input type="number" id="jPxK" min="0" max="50" inputmode="numeric" placeholder="Rjúpur"><input type="number" id="jPxS" min="0" max="200" inputmode="numeric" placeholder="Skot framhjá"></div>
+    <button class="btn sec" type="button" id="jPxAdd">Skrá</button>
+  </div>
+  <h3>⚖️ Stigabreyting (falin)</h3>
+  <div class="jbox">
+    <div class="row"><select id="jAdjWho"></select><input type="date" id="jAdjDay"></div>
+    <div class="row"><input type="number" id="jAdjPts" inputmode="numeric" placeholder="t.d. -1 eða 2"><input type="text" id="jAdjWhy" maxlength="80" placeholder="Ástæða"></div>
+    <button class="btn sec" type="button" id="jAdjAdd">Skrá í leyni</button>
+  </div>
+  <h3>🗨️ Orð dagsins (falið)</h3>
+  <div class="jbox">
+    <div class="row"><select id="jQWho"></select><input type="date" id="jQDay"></div>
+    <input type="text" id="jQTxt" maxlength="160" placeholder="Hvað var sagt? t.d. Það var sólin í augunum">
+    <select id="jQKind"><option value="afsökun">Afsökun</option><option value="lygasaga">Lygasaga</option><option value="gullkorn">Gullkorn</option></select>
+    <button class="btn sec" type="button" id="jQAdd">Skrá í leyni</button>
+  </div>
+  <h3>👤 Gestakeppandi (án apps)</h3>
+  <div style="display:flex;gap:8px"><input type="text" id="jGuest" maxlength="24" placeholder="Nafn" style="flex:1"><button class="btn sec" type="button" id="jGuestAdd" style="flex:none">Bæta við</button></div>
+  <h3>Skráð af dómara</h3>
+  <div class="group" id="jLog"></div>
+  <h3>💾 Vista tímabilið á GitHub</h3>
+  <p class="note">Dulkóðað með hópkóðanum, svo aðeins hópurinn getur lesið það. Búðu til lykil á GitHub: Settings → Developer settings → Fine-grained token, aðeins fyrir rjupnakort repo með „Contents: Read and write“.</p>
+  <div style="display:flex;gap:8px;margin-top:8px"><input type="text" id="jGhTok" placeholder="github_pat_…" autocomplete="off" style="flex:1"><button class="btn sec" type="button" id="jGhSave" style="flex:none">Vista</button></div>
+  <p class="note" id="jGhStat" style="margin-top:6px"></p>
+  <h3>🏁 Ljúka keppni</h3>
+  <p class="note">Opinberar úrslitin, kosninguna, faldar stigabreytingar og tilvitnanir hjá öllum. Annars gerist það sjálfkrafa þegar tímabilinu lýkur og þú opnar appið.</p>
+  <button class="btn wide" type="button" id="jEnd" style="margin-top:8px;background:var(--bann)">Ljúka keppni og opinbera</button>
+</section>
+
+<section id="cardsSheet" class="sheet" hidden aria-label="Hunting Cards">
+  <div class="grab"></div>
+  <div class="sh-head"><h2>🃏 Hunting Cards</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
+  <p class="note" style="margin-top:6px">Þrjú spil á viku. Hvert spil má spila einu sinni og hinir fá að vita af því.</p>
+  <div id="cardList"></div>
+</section>
+
 <section id="voteSheet" class="sheet" hidden aria-label="Kvöldkosning">
   <div class="grab"></div>
   <div class="sh-head"><h2 id="voteH">Kvöldkosning</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
-  <p class="note" style="margin-top:6px">Veldu einn í hverjum flokki. Það má sleppa flokki og breyta atkvæðunum fram að úrslitum.</p>
+  <p class="note" style="margin-top:6px">Leynileg: bara keppnisstjórinn sér atkvæðin og úrslitin birtast þegar keppni lýkur. Veldu einn í hverjum flokki, ekki sjálfan þig.</p>
   <div id="voteList"></div>
   <button class="btn wide" id="voteSave" type="button" style="margin-top:16px">Kjósa</button>
 </section>
@@ -875,7 +948,7 @@ pre.preview{white-space:pre-wrap;word-break:break-all;font:500 12.5px/1.45 var(-
 </div>
 <div id="updBar" hidden role="status"><span id="updTx">Ný útgáfa komin</span><button type="button" id="updNews" class="updnews">Hvað er nýtt?</button><a id="updGo" href="https://github.com/Gombiman/rjupnakort/releases/download/app/rjupnakort.apk" target="_blank" rel="noopener">Sækja</a><button type="button" id="updX" aria-label="Seinna">×</button></div>
 <div id="toast" hidden role="status"></div>
-<div id="undoBar" hidden role="status"><span id="undoTx"></span><button type="button" id="undoBtn">Afturkalla</button></div>
+<div id="undoBar" hidden role="status"><span id="undoTx"></span><button type="button" id="undoSame" hidden>＋ sama skot</button><button type="button" id="undoBtn">Afturkalla</button></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
@@ -1515,6 +1588,7 @@ const SETTINGS = [
   ["saver",     "Sparnaðarhamur", "Skjárinn má slökkva á sér, áttavitinn slökktur og GPS mælir sjaldnar.", false],
   ["masson",    "Másson-hamur", "Másson-stig, gælunöfn og bjórtími. Slökktu til að fá venjulegt viðmót (Tracking).", true],
   ["poopmap",   "Kúkakortið", "Sýnir kúkaafrek tímabilsins á kortinu 💩", true],
+  ["hoplisten", "Tilkynningar frá hópnum til miðnættis", "Kvöldkosning, einvígi, mont og spil berast líka með appið lokað, á keppnisdögum. Lítil tilkynning sést á meðan.", true],
   ["shareloc",  "Deila staðsetningu með hópnum", "Á meðan ferð er í gangi sjá félagarnir þig á kortinu (á 2 mín fresti, 5 í sparnaðarham).", false]
 ];
 const S = Object.assign(Object.fromEntries(SETTINGS.map(x => [x[0], x[3]])), {vib:LS.get("vib", true)}, LS.get("set", {}));
@@ -1527,7 +1601,7 @@ for (const [k, title, desc] of SETTINGS){
     if (k === "shareloc" && t.checked && window.__askShare){ t.checked = false; window.__askShare(() => { t.checked = true; S[k] = true; LS.set("set", S); if (window.__applyAll) window.__applyAll(); }); return; }
     S[k] = t.checked; LS.set("set", S); if (window.__applyAll) window.__applyAll();
   };
-  row.appendChild(t); (k === "masson" || k === "shareloc" || k === "poopmap" ? document.getElementById("massonSet") : setList).appendChild(row);
+  row.appendChild(t); (["masson", "shareloc", "poopmap", "hoplisten"].includes(k) ? document.getElementById("massonSet") : setList).appendChild(row);
 }
 
 /* ---------- Spjald ---------- */
@@ -2661,18 +2735,22 @@ window.__onPtsSaved = () => {
 };
 const undoBar = document.getElementById("undoBar"), undoTx = document.getElementById("undoTx");
 let undoTimer = null, undoFn = null;
-function showUndo(text, fn){
+function showUndo(text, fn, same){
   undoTx.textContent = text; undoFn = fn; undoBar.hidden = false;
+  const us = document.getElementById("undoSame"); us.hidden = !same; us.onclick = same ? () => { undoBar.hidden = true; same(); } : null;
   toastEl.hidden = true;
   clearTimeout(undoTimer); undoTimer = setTimeout(() => { undoBar.hidden = true; undoFn = null; }, 7000);
 }
 document.getElementById("undoBtn").onclick = () => { const f = undoFn; undoBar.hidden = true; undoFn = null; if (f) f(); };
-function registerKill(p){
+function registerKill(p, same){
   const car = pts.find(x => x.type === "bill");
   const k = {id:p.id, ts:p.ts, lat:p.lat, lon:p.lon, trip:!!hunt, car:car ? Math.round(distM(car.lat, car.lon, p.lat, p.lon)) : null};
+  if (same) k.same = same;
   kills.push(k); saveKills();
+  const root = same || k.id, grp = kills.filter(x => (x.same || x.id) === root).length;
   const n = myKillsOn(today()).length, quota = +LS.get("kvoti", 0);
   let text = isMasson() ? `+1 Másson-stig! 🦃 ${n} í dag` : `Rjúpa skráð · ${n} í dag`;
+  if (grp === 2) text = `💥 Double Kill! ${n} í dag`; else if (grp >= 3) text = `☄️ Triple Kill! ${n} í dag`;
   if (quota && n === quota) text = isMasson() ? `Kvóti náð (${n}). Beint í bjórinn 🍺` : `Kvóta dagsins náð (${n})`;
   else if (quota && n > quota) text += ` · kvótinn var ${quota}`;
   if (joined() && today() < comp.from) text += ` · keppnin hefst ${fmtD(comp.from)}`;
@@ -2683,7 +2761,10 @@ function registerKill(p){
     pts = pts.filter(x => x.id !== p.id); LS.set("pts", pts); renderPts();
     groupSend("score"); refreshAll();
     toast("Afturkallað");
-  });
+  }, grp < 3 ? () => {
+    const p2 = {id:"k" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), lat:p.lat, lon:p.lon, acc:p.acc, type:"felld", name:"", ts:Date.now()};
+    pts.push(p2); LS.set("pts", pts); renderPts(); registerKill(p2, root);
+  } : null);
   try{ S.vib && navigator.vibrate && navigator.vibrate(60); }catch(e){}
   groupSend("kill"); refreshAll();
 }
@@ -2774,31 +2855,37 @@ let comp = LS.get("comp", null);
 if (comp && (typeof comp !== "object" || !comp.id)) comp = null;
 const saveComp = () => LS.set("comp", comp);
 const joined = () => !!(comp && LS.get("compJoin", null) === comp.id);
+const isOwner = () => !!(comp && comp.owner === myId());
 const dayStart = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d).getTime(); };
 const addDays = (k, n) => dayKey(dayStart(k) + n * 864e5 + 3 * 3600e3);
+const weekKey = k => { const t = new Date(dayStart(k)); const wd = (t.getDay() + 6) % 7; return addDays(k, -wd); };   // mánudagur vikunnar
 const compFrom = () => comp ? dayStart(comp.from) : seasonStart();
-const compEnded = () => !!(comp && today() > comp.to);
+const compEnded = () => !!(comp && (today() > comp.to || comp.ended));
 const minOfDay = t => { const d = new Date(t); return d.getHours() * 60 + d.getMinutes(); };
 const hm = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 const carPt = () => pts.find(p => p.type === "bill");
 const hashStr = s => { let h = 2166136261; for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 const lsObj = (k, d) => { const v = LS.get(k, d); return v && typeof v === "object" ? v : d; };
+const fmtD = k => { const [y, m, d] = k.split("-"); return `${+d}.${+m}.`; };
 
-/* Eigin skráningar: skot, kúkar, atkvæði, leitir, sjónarvottur, rafhlaða, einvígi, montveggur */
+/* Eigin skráningar */
 let shots = lsObj("shots", []); if (!Array.isArray(shots)) shots = [];
 let poops = lsObj("poops", []); if (!Array.isArray(poops)) poops = [];
-let votes = lsObj("votes", {});
+let votes = lsObj("votes", {});          // mín atkvæði (bara hjá mér)
+let vbEnc = lsObj("vbEnc", {});          // mín atkvæði dulkóðuð til keppnisstjórans
 let finds = lsObj("finds", {});
 let wit = lsObj("wit", []); if (!Array.isArray(wit)) wit = [];
 let batmin = lsObj("batmin", {});
 let duels = lsObj("duels", {});
 let wall = lsObj("wall", []); if (!Array.isArray(wall)) wall = [];
+let myCards = lsObj("cards", []); if (!Array.isArray(myCards)) myCards = [];
+let judge = lsObj("judge", {}); judge.adj = judge.adj || []; judge.quotes = judge.quotes || []; judge.ballots = judge.ballots || {}; judge.px = judge.px || [];
+const saveJudge = () => LS.set("judge", judge);
 
 // Bjórtími (myrkur) tiltekins dags
 function beerTime(d){
   const c = pos || (() => { const x = map.getCenter(); return {lat:x.lat, lon:x.lng}; })();
-  const noon = new Date(dayStart(d) + 12 * 3600e3);
-  const cv = sunTimes(noon, c.lat, c.lon, -6);
+  const cv = sunTimes(new Date(dayStart(d) + 12 * 3600e3), c.lat, c.lon, -6);
   return cv ? cv.set.getTime() : dayStart(d) + 17 * 3600e3;
 }
 function liveFar(){
@@ -2808,11 +2895,12 @@ function liveFar(){
 }
 const maxAlt = list => { let a = -1; for (const q of list || []) if (q[2] != null && q[2] > a) a = q[2]; return Math.round(a); };
 
-const EMPTY = Object.freeze({k:0, kt:0, km:0, gain:0, first:-1, last:-1, start:-1, sofa:0, far:0, trio:0, beer:-1, shots:-1, hi:-1, fin:-1, bat:-1, alt:-1, am:0, ms:[]});
+/* Dagsstaða */
+const EMPTY = Object.freeze({k:0, kt:0, km:0, gain:0, first:-1, last:-1, start:-1, sofa:0, far:0, trio:0, beer:-1, shots:-1, hi:-1, fin:-1, bat:-1, alt:-1, am:0, ms:[], jw:0, mk:0, seen:0, inv:0});
 function myDays(){
   const ss = compFrom(), out = {};
   const get = d => out[d] || (out[d] = {k:0, kt:0, km:0, gain:0, first:-1, last:-1, start:-1, sofa:0, far:0, trio:0, beer:-1,
-                                         shots:0, hi:-1, fin:-1, bat:-1, alt:-1, am:0, ms:[], ks:[], live:false});
+    shots:0, hi:-1, fin:-1, bat:-1, alt:-1, am:0, ms:[], jw:0, mk:0, seen:0, inv:0, ks:[], ev:[], grp:{}, live:false});
   for (const k of kills) if (k.ts >= ss){
     const o = get(dayKey(k.ts)), m = minOfDay(k.ts);
     o.k++; if (k.trip) o.kt++;
@@ -2821,11 +2909,14 @@ function myDays(){
     if (m < 720) o.am++;
     if (k.car != null && k.car < 300) o.sofa++;
     o.ks.push(k.ts); o.ms.push(m);
+    const root = k.same || k.id; o.grp[root] = (o.grp[root] || 0) + 1;
+    if (!k.same){ o.shots++; o.ev.push([k.ts, 1]); }   // rjúpa í sama skoti telst ekki sem nýtt skot
   }
-  for (const t of shots) if (t >= ss) get(dayKey(t)).shots++;
+  for (const t of shots) if (t >= ss){ const o = get(dayKey(t)); o.shots++; o.ev.push([t, 0]); }
   for (const p of poops) if (p.ts >= ss && p.alt != null){ const o = get(dayKey(p.ts)); if (p.alt > o.hi) o.hi = Math.round(p.alt); }
+  for (const p of pts) if (p.type === "rjupa" && !p.from && p.ts >= ss) get(dayKey(p.ts)).seen++;
   const trips = LS.get("trips", []).slice();
-  if (hunt && track) trips.push({start:track.start, end:Date.now(), dist:track.dist, gain:track.gain, far:liveFar(), alt:maxAlt(track.pts), live:true});
+  if (hunt && track) trips.push({start:track.start, end:Date.now(), dist:track.dist, gain:track.gain, far:liveFar(), alt:maxAlt(track.pts), live:true, share:S.shareloc === true});
   for (const t of trips) if (t.start >= ss){
     const o = get(dayKey(t.start)), m = minOfDay(t.start);
     o.km += t.dist || 0; o.gain += t.gain || 0;
@@ -2834,23 +2925,27 @@ function myDays(){
     o.alt = Math.max(o.alt, t.alt != null ? t.alt : -1);
     if (t.live) o.live = true; else o.fin = Math.max(o.fin, minOfDay(t.end));
     if (t.beer){ const e = minOfDay(t.end); if (o.beer < 0 || e < o.beer) o.beer = e; }
+    if (t.share === false || (t.share == null && S.shareloc !== true)) o.inv = 1;
   }
   for (const d in batmin) if (dayStart(d) >= ss) get(d).bat = batmin[d];
   for (const d in out){
     const o = out[d], ks = o.ks.sort((a, b) => a - b);
     for (let i = 2; i < ks.length; i++) if (ks[i] - ks[i - 2] <= 3600e3){ o.trio = 1; break; }
-    o.shots += o.k;                 // hver rjúpa er líka skot
-    if (o.live) o.fin = -1;         // ferð enn í gangi
+    o.ev.sort((a, b) => a[0] - b[0]); let run = 0; for (const e of o.ev){ run = e[1] ? run + 1 : 0; o.jw = Math.max(o.jw, run); }
+    o.mk = Math.max(0, ...Object.values(o.grp));
+    if (o.live) o.fin = -1;
+    if (o.start < 0) o.inv = 0;
     o.ms = o.ms.slice(0, 30);
-    delete o.ks; delete o.live;
+    delete o.ks; delete o.ev; delete o.grp; delete o.live;
   }
   return out;
 }
 const encDays = days => Object.keys(days).sort().map(d => { const o = days[d];
   return [d, o.k, o.kt, Math.round(o.km), Math.round(o.gain), o.first, o.last, o.start, o.sofa, Math.round(o.far), o.trio, o.beer,
-          o.shots, o.hi, o.fin, o.bat, o.alt, o.am, o.ms]; });
+          o.shots, o.hi, o.fin, o.bat, o.alt, o.am, o.ms, o.jw, o.mk, o.seen, o.inv]; });
 const decArr = a => ({k:a[1], kt:a[2], km:a[3], gain:a[4], first:a[5], last:a[6], start:a[7], sofa:a[8], far:a[9], trio:a[10], beer:a[11],
-  shots:a[12] ?? -1, hi:a[13] ?? -1, fin:a[14] ?? -1, bat:a[15] ?? -1, alt:a[16] ?? -1, am:a[17] ?? 0, ms:Array.isArray(a[18]) ? a[18] : []});
+  shots:a[12] ?? -1, hi:a[13] ?? -1, fin:a[14] ?? -1, bat:a[15] ?? -1, alt:a[16] ?? -1, am:a[17] ?? 0, ms:Array.isArray(a[18]) ? a[18] : [],
+  jw:a[19] ?? 0, mk:a[20] ?? 0, seen:a[21] ?? 0, inv:a[22] ?? 0});
 const decDays = list => { const out = {}; (list || []).forEach(a => { if (Array.isArray(a) && a.length >= 12) out[a[0]] = decArr(a); }); return out; };
 const recentObj = (o, n) => { const cut = addDays(today(), -n), r = {}; for (const d in o) if (d >= cut) r[d] = o[d]; return r; };
 
@@ -2863,65 +2958,97 @@ function mySnapshot(kind){
   let h = encDays(myDays());
   if (!FULL.has(kind)) h = h.filter(a => a[0] >= addDays(today(), -2));
   o.h = h;
-  o.v = recentObj(votes, 2); o.fd = recentObj(finds, 2);
+  o.vb = recentObj(vbEnc, 2); o.fd = recentObj(finds, 2);
   o.wit = wit.filter(w => w[1] >= Date.now() - 3 * 864e5);
   o.pp = poops.filter(p => p.ts >= Date.now() - 2 * 864e5).map(p => [p.ts, +p.lat.toFixed(5), +p.lon.toFixed(5), p.alt != null ? Math.round(p.alt) : null]);
   o.du = Object.values(duels).filter(d => (d.a === me || d.b === me) && d.day >= addDays(today(), -2));
-  if (comp && comp.owner === me) o.comp = comp;
+  o.cd = myCards.filter(c => c.day >= addDays(today(), -8));
+  if (comp && comp.owner === me){ o.comp = comp; o.px = judge.px.filter(p => p.day >= addDays(today(), -3)); }
   if (hunt && S.shareloc === true && pos && Date.now() - (pos.t || 0) < 5 * 60000){ o.lat = +pos.lat.toFixed(5); o.lon = +pos.lon.toFixed(5); o.acc = Math.round(pos.acc || 0); o.pt = pos.t; }
   // ntfy tekur ~4 KB: elstu dagarnir detta út ef þarf (hinir geyma þá frá fyrri skilaboðum)
   while (JSON.stringify(o).length > 2700 && o.h.length > 1) o.h.shift();
   return o;
 }
 
-/* Merki og leikir */
+/* Merki, kosningaflokkar, leikir og spil */
 const DAY_BADGES = [
-  {k:"blood",    e:"🩸", n:"Fyrsta blóð",          d:"Fyrsta rjúpa dagsins"},
-  {k:"crown",    e:"👑", n:"Másson dagsins",       d:"Flestar rjúpur"},
-  {k:"walker",   e:"🥾", n:"Göngugarpur",          d:"Gekk lengst"},
-  {k:"goat",     e:"⛰️", n:"Fjallageitin",         d:"Mest hækkun"},
-  {k:"rooster",  e:"🐓", n:"Morgunhaninn",         d:"Fyrstur af stað"},
-  {k:"owl",      e:"🦉", n:"Náttuglan",            d:"Síðasta rjúpa dagsins"},
-  {k:"trio",     e:"🎩", n:"Þrenna",               d:"3 rjúpur innan klukkustundar"},
-  {k:"sofa",     e:"🛋️", n:"Sófaveiðimaðurinn",    d:"Rjúpa innan 300 m frá bílnum"},
-  {k:"explorer", e:"🧭", n:"Landkönnuðurinn",      d:"Fór lengst frá bílnum"},
-  {k:"beer",     e:"🍺", n:"Fyrstur í bjórinn",    d:"Fyrstur að ljúka ferð við bílinn á bjórtíma"},
-  {k:"sniper",   e:"🔭", n:"Leyniskyttan",         d:"Fæst skot á hverja rjúpu"},
-  {k:"rambo",    e:"🔫", n:"Rambó",                d:"Flest skot dagsins"},
-  {k:"powder",   e:"🧨", n:"Púðurkerlingin",       d:"Flest skot framhjá"},
-  {k:"hipoop",   e:"🏔️", n:"Hæsti kúkurinn",       d:"Kúkaði hæst yfir sjávarmáli", masson:true},
-  {k:"caught",   e:"📸", n:"Staðinn að verki",     d:"Félagi var innan 200 m þegar þú kúkaðir", masson:true},
-  {k:"witness",  e:"🕵️", n:"Sjónarvotturinn",      d:"Stóðst félaga að verki", masson:true},
-  {k:"sheep",    e:"🐑", n:"Týndi sauðurinn",      d:"Oftast leitað að með Finna"},
-  {k:"mama",     e:"🍼", n:"Mömmustrákurinn",      d:"Lauk ferð fyrstur"},
-  {k:"turtle",   e:"🐢", n:"Skjaldbakan",          d:"Síðastur að ljúka ferð"},
-  {k:"battery",  e:"🔋", n:"Rafhlöðusóðinn",       d:"Lægsta rafhlaðan"},
-  {k:"wander",   e:"🌀", n:"Ráfarinn",             d:"Mesta krókaleiðin miðað við fjarlægð frá bílnum"},
-  {k:"poop",     e:"💩", n:"Rjúpnakúkur dagsins",  d:"Fæstar rjúpur af þeim sem fóru út", nobonus:true, masson:true}
+  {k:"blood",    e:"🩸", n:"First Blood",            d:"Fyrsta rjúpa dagsins"},
+  {k:"crown",    e:"👑", n:"Másson dagsins",         d:"Flestar rjúpur"},
+  {k:"double",   e:"💥", n:"Double Kill",            d:"Tvær rjúpur í einu skoti"},
+  {k:"triple",   e:"☄️", n:"Triple Kill",            d:"Þrjár rjúpur í einu skoti"},
+  {k:"jw",       e:"🕴️", n:"John Wick",              d:"Flestar rjúpur í röð án þess að skjóta framhjá (minnst 3)"},
+  {k:"army",     e:"🦾", n:"One Man Army",           d:"Sá eini sem felldi rjúpu"},
+  {k:"walker",   e:"🥾", n:"Forrest Gump",           d:"Gekk lengst"},
+  {k:"goat",     e:"⛰️", n:"Everest",                d:"Mest hækkun"},
+  {k:"rooster",  e:"🐓", n:"Morgunhaninn",           d:"Fyrstur af stað"},
+  {k:"owl",      e:"🦉", n:"Náttuglan",              d:"Síðasta rjúpa dagsins"},
+  {k:"trio",     e:"🎩", n:"Þrenna",                 d:"3 rjúpur innan klukkustundar"},
+  {k:"sofa",     e:"🛋️", n:"Sofa King",              d:"Rjúpa innan 300 m frá bílnum"},
+  {k:"explorer", e:"🧭", n:"Marco Polo",             d:"Fór lengst frá bílnum"},
+  {k:"beer",     e:"🍺", n:"Fyrstur í bjórinn",      d:"Fyrstur að ljúka ferð við bílinn á bjórtíma"},
+  {k:"sniper",   e:"🔭", n:"Sniperinn",              d:"Fæst skot á hverja rjúpu"},
+  {k:"rambo",    e:"🔫", n:"Rambó",                  d:"Flest skot dagsins, ammunition sponsor"},
+  {k:"powder",   e:"✈️", n:"Air Traffic Controller", d:"Flestar rjúpur sluppu (flest skot framhjá)", shame:true},
+  {k:"storm",    e:"🪖", n:"Stormtrooper",           d:"Versta skotnýtingin (minnst 5 skot)", shame:true},
+  {k:"bird",     e:"🐦", n:"The Bird Watcher",       d:"„Ég sá alveg helling“: flest Rjúpa séð merki en mest ein felld", shame:true},
+  {k:"ghost",    e:"👻", n:"The Invisible Hunter",   d:"Deildi ekki staðsetningu og var aldrei fundinn"},
+  {k:"hipoop",   e:"🏔️", n:"Hæsti kúkurinn",         d:"Kúkaði hæst yfir sjávarmáli", masson:true},
+  {k:"caught",   e:"📸", n:"Staðinn að verki",       d:"Félagi var innan 200 m þegar þú kúkaðir", masson:true, shame:true},
+  {k:"witness",  e:"🕵️", n:"Sjónarvotturinn",        d:"Stóðst félaga að verki", masson:true},
+  {k:"sheep",    e:"🐑", n:"Týndi sauðurinn",        d:"Oftast leitað að með Finna", shame:true},
+  {k:"mama",     e:"🍼", n:"Mömmustrákurinn",        d:"Lauk ferð fyrstur", shame:true},
+  {k:"turtle",   e:"🐢", n:"Slow Motion",            d:"Síðastur að ljúka ferð"},
+  {k:"battery",  e:"🔋", n:"Rafhlöðusóðinn",         d:"Lægsta rafhlaðan", shame:true},
+  {k:"wander",   e:"🗺️", n:"Google Maps Offline",    d:"Mesta krókaleiðin miðað við fjarlægð frá bílnum", shame:true},
+  {k:"poop",     e:"💩", n:"Rjúpnakúkur dagsins",    d:"Fæstar rjúpur af þeim sem fóru út", nobonus:true, masson:true, shame:true}
 ];
 const VOTES = [
-  {k:"shot",  e:"🎯", n:"Flottasta skotið"},
-  {k:"flop",  e:"🙈", n:"Klúður dagsins"},
-  {k:"whine", e:"🗣️", n:"Röflari dagsins"},
-  {k:"hero",  e:"🦸", n:"Hetja dagsins"},
-  {k:"story", e:"🎣", n:"Veiðisaga dagsins"},
-  {k:"brain", e:"🧠", n:"Heilinn"}
+  {k:"shot",     e:"🎯", n:"Shot of the Day",        d:"Flottasta skotið"},
+  {k:"flop",     e:"🙈", n:"Klúður dagsins",         d:"WTF moment dagsins", shame:true},
+  {k:"whine",    e:"🎙️", n:"The Podcast",            d:"Talaði mest og röflaði", shame:true},
+  {k:"hero",     e:"🌟", n:"MVP",                    d:"Hetja dagsins"},
+  {k:"story",    e:"🤥", n:"Pinocchio",              d:"Mesta lygasagan", shame:true},
+  {k:"brain",    e:"🧠", n:"The Professor",          d:"Besta ákvörðun dagsins"},
+  {k:"gotaway",  e:"🎣", n:"The One That Got Away",  d:"Rjúpan sem slapp", shame:true},
+  {k:"gordon",   e:"👨‍🍳", n:"Gordon Ramsay",          d:"Besta nestið"},
+  {k:"drama",    e:"🎭", n:"Drama Queen",            d:"Mesta dramað", shame:true},
+  {k:"obvious",  e:"🙄", n:"Captain Obvious",        d:"Sagði það augljósa", shame:true},
+  {k:"excuse",   e:"🫣", n:"The Golden Excuse",      d:"Besta afsökunin", shame:true},
+  {k:"lucky",    e:"🎰", n:"Lucky Bastard",          d:"Heppnasti maður dagsins"},
+  {k:"atc",      e:"🛫", n:"Air Traffic Controller", d:"Sagði öllum hvert rjúpurnar flugu"}
 ];
 const GAMES = [
   {k:"challenge",  e:"🎲", n:"Áskorun dagsins",  d:"Náðir áskorun dagsins"},
   {k:"kingslayer", e:"🗡️", n:"Kóngabani",        d:"Fleiri rjúpur en efsti maður tímabilsins sama dag"},
-  {k:"gold",       e:"✨", n:"Gullrjúpan",       d:"Ein handahófskennd rjúpa dagsins, kemur í ljós á bjórtíma", val:2},
+  {k:"gold",       e:"🍀", n:"Lukkurjúpan",      d:"Ein handahófskennd rjúpa dagsins, kemur í ljós á bjórtíma", val:2},
+  {k:"bounty",     e:"💰", n:"Bounty",           d:"Fyrstur fram úr WANTED", nobonus:true},
   {k:"duel",       e:"⚔️", n:"Vann einvígi",     d:"Tekur 1 stig af þeim sem tapar", nobonus:true},
   {k:"duelLost",   e:"🏳️", n:"Tapaði einvígi",   d:"Missir 1 stig", nobonus:true}
 ];
 const SEASON_BADGES = [
-  {k:"champ",  e:"🏆", n:"Másson ársins",          d:"Flest stig"},
-  {k:"spoop",  e:"💩", n:"Rjúpnakúkur ársins",     d:"Fæst stig", masson:true},
+  {k:"champ",  e:"🏆", n:"Másson ársins",            d:"Flest stig"},
+  {k:"spoop",  e:"💩", n:"Rjúpnakúkur ársins",       d:"Fæst stig", masson:true},
   {k:"sfirst", e:"🥇", n:"Fyrsta rjúpa tímabilsins", d:""},
-  {k:"streak", e:"🔥", n:"Í stuði",                d:"Rjúpa þrjá veiðidaga í röð"},
-  {k:"skm",    e:"🚶", n:"Mest gengið",            d:"Samtals km"},
-  {k:"sgain",  e:"🗻", n:"Mest klifrað",           d:"Samtals hækkun"},
-  {k:"scrown", e:"👑", n:"Flestir dagssigrar",     d:""}
+  {k:"streak", e:"🔥", n:"Hot Streak",               d:"Rjúpa þrjá veiðidaga í röð"},
+  {k:"skm",    e:"🚶", n:"Mest gengið",              d:"Samtals km"},
+  {k:"sgain",  e:"🗻", n:"Mest klifrað",             d:"Samtals hækkun"},
+  {k:"scrown", e:"👑", n:"Flestir dagssigrar",       d:""},
+  {k:"wanted", e:"💀", n:"WANTED",                   d:"For crimes against the ptarmigan population"}
+];
+const LEGENDS = [
+  {k:"gptarm", e:"🏆", n:"The Golden Ptarmigan",   d:"Besta helgin"},
+  {k:"gstorm", e:"💀", n:"The Golden Stormtrooper", d:"Versta skotnýting tímabilsins (minnst 10 skot)"},
+  {k:"gclown", e:"🤡", n:"The Golden Clown",       d:"Flestir skammartitlar í kvöldkosningunni"},
+  {k:"iron",   e:"🥾", n:"The Iron Man",           d:"Mesta líkamlega afrekið (km og hækkun)"},
+  {k:"people", e:"👑", n:"The People's Champion",  d:"Flestir sigrar í kvöldkosningunni"},
+  {k:"legend", e:"🐦", n:"Legend of the Mountain", d:"Flest stig í öllum keppnum samanlagt"}
+];
+const CARDS = [
+  {k:"double",   e:"🎲", n:"Double or Nothing", d:"Tvöföld stig dagsins ef þú vinnur flokk í kvöldkosningunni. Annars færðu ekkert þann daginn."},
+  {k:"thief",    e:"🦹", n:"The Thief",         d:"Steldu 1 stigi af öðrum keppanda.", target:true},
+  {k:"immunity", e:"🛡️", n:"Immunity",          d:"Ónæmur fyrir skammarmerkjum og skammartitlum dagsins."},
+  {k:"gambler",  e:"🎰", n:"The Gambler",       d:"Veðjaðu 3 stigum á áskorun dagsins: +6 ef þú nærð henni, annars −3."},
+  {k:"curse",    e:"🧙", n:"The Curse",         d:"Veldu keppanda: hann þarf að tala með sænskum hreim í 15 mínútur.", target:true}
 ];
 const CHALLENGES = [
   {t:"Rjúpa fyrir kl. 10",               f:o => o.first >= 0 && o.first < 600},
@@ -2933,21 +3060,45 @@ const CHALLENGES = [
   {t:"Upp fyrir 600 m hæð",              f:o => o.alt >= 600},
   {t:"Rjúpa án þess að skjóta framhjá",  f:o => o.k >= 1 && o.shots >= 0 && o.shots <= o.k}
 ];
-const challengeFor = d => CHALLENGES[hashStr((comp ? comp.id : "") + "|" + d) % CHALLENGES.length];
-const ALL_BADGES = [...DAY_BADGES, ...VOTES.map(v => ({k:"v_" + v.k, e:v.e, n:v.n, d:"Kosið á bjórtíma"})), ...GAMES, ...SEASON_BADGES];
+const challengeFor = d => (comp && comp.chal && comp.chal[d] != null && CHALLENGES[comp.chal[d]]) || CHALLENGES[hashStr((comp ? comp.id : "") + "|" + d) % CHALLENGES.length];
+const VB = VOTES.map(v => ({k:"v_" + v.k, e:v.e, n:v.n, d:v.d, shame:v.shame}));
+const ALL_BADGES = [...DAY_BADGES, ...VB, ...GAMES, ...SEASON_BADGES, ...LEGENDS];
 const badgeOf = k => ALL_BADGES.find(b => b.k === k) || {e:"", n:k};
 const badgeE = k => badgeOf(k).e;
-const compVotes = () => VOTES.filter(v => !comp || !Array.isArray(comp.votes) || comp.votes.includes(v.k));
+const DEF_VOTES = ["shot", "flop", "whine", "hero", "story", "brain"];
+const compVoteKeys = () => comp && Array.isArray(comp.votes) ? comp.votes : DEF_VOTES;
 const duelOn = () => !comp || comp.duel !== false;
+const cardsOn = () => !!comp && comp.cards !== false;
+const bountyVal = () => comp && comp.bounty != null ? +comp.bounty : 3;
 const bonusVal = k => (badgeOf(k).val || 1);
+const cardOf = k => CARDS.find(c => c.k === k);
+// Spil vikunnar: 3 af 5, dregin eins hjá öllum
+function dealt(id, w){
+  const order = CARDS.map((c, i) => [hashStr(`${comp ? comp.id : ""}|${w}|${id}|${i}`), c.k]).sort((a, b) => a[0] - b[0]);
+  return order.slice(0, 3).map(x => x[1]);
+}
 
-// Keppendur og gögnin þeirra
+/* Keppendur: ég, aðrir í keppninni og gestir; skráningar keppnisstjórans bætast við */
+function ownerPx(){
+  if (!comp) return [];
+  if (isOwner()) return judge.px;
+  const o = board[comp.owner]; return (o && o.pxAll) || [];
+}
 function competitors(){
   if (!comp) return [];
-  const me = {id:myId(), name:LS.get("me", "") || "Ég", me:true, days:myDays(), v:votes, fd:finds, wit, ts:Date.now()};
+  const me = {id:myId(), name:LS.get("me", "") || "Ég", me:true, days:myDays(), fd:finds, wit, cd:myCards, vbDays:Object.keys(vbEnc), ts:Date.now()};
   const others = Object.values(board).filter(r => r && r.id && r.id !== me.id && r.cid === comp.id && r.joined)
-    .map(r => ({id:r.id, name:r.name, me:false, days:decDays(Object.values(r.hm || {})), v:r.v || {}, fd:r.fd || {}, wit:r.wit || [], ts:r.ts}));
-  return joined() ? [me, ...others] : others;
+    .map(r => ({id:r.id, name:r.name, me:false, days:decDays(Object.values(r.hm || {})), fd:r.fd || {}, wit:r.wit || [], cd:r.cdAll || [], vbDays:r.vbDays || [], ts:r.ts}));
+  const guests = (comp.guests || []).map(g => ({id:g.id, name:g.name, guest:true, me:false, days:{}, fd:{}, wit:[], cd:[], vbDays:[], ts:0}));
+  const people = [...(joined() ? [me] : []), ...others, ...guests];
+  for (const p of ownerPx()){
+    const x = people.find(q => q.id === p.id); if (!x || !p.day) continue;
+    const o = x.days[p.day] || (x.days[p.day] = Object.assign({}, EMPTY, {ms:[], shots:0}));
+    if (o.shots < 0) o.shots = o.k;
+    o.k += p.k || 0; o.kt += p.k || 0; o.shots += (p.k || 0) + (p.s || 0);
+    if ((p.k || 0) > 0 && o.start < 0) o.start = 0;
+  }
+  return people;
 }
 const counted = o => { if (!o) return 0; let n = comp && comp.onlyTrip ? o.kt : o.k; if (comp && comp.cap > 0) n = Math.min(n, comp.cap); return n; };
 const hunted = o => !!o && (o.start >= 0 || o.k > 0);
@@ -2957,17 +3108,51 @@ function winners(list, val, best, min){
   const b = best === "max" ? Math.max(...xs.map(val)) : Math.min(...xs.map(val));
   return xs.filter(x => val(x) === b);
 }
-const allVoted = (d, people) => people.length >= 2 && people.every(p => p.v && p.v[d] && Object.keys(p.v[d]).length);
-const votesFinal = (d, people) => allVoted(d, people) || d < addDays(today(), -1) || (d < today() && new Date().getHours() >= 12);
 const goldRevealed = d => d < today() || Date.now() >= beerTime(d);
 
-// Merki og stig eins dags. run = stig hvers og eins fyrir þennan dag (fyrir Kóngabanann)
-function scoreDay(d, people, run){
+/* Leyndu gögnin: kosning, stigabreytingar og tilvitnanir */
+function tallyVotes(ballots, people){
+  const out = {};
+  for (const d in ballots){
+    const per = ballots[d] || {}, cats = {};
+    for (const vk of compVoteKeys()){
+      const cnt = {};
+      for (const voter in per){ const t = per[voter] && per[voter][vk]; if (t && t !== voter) cnt[t] = (cnt[t] || 0) + 1; }
+      const ids = Object.keys(cnt); if (!ids.length) continue;
+      const top = Math.max(...ids.map(i => cnt[i])), w = ids.filter(i => cnt[i] === top);
+      if (w.length < Math.max(2, people.length)) cats[vk] = w;   // ef allir eru jafnir vinnur enginn
+    }
+    out[d] = cats;
+  }
+  return out;
+}
+let revealCache = null;
+function getReveal(){
+  if (!comp) return null;
+  if (revealCache && revealCache.cid === comp.id) return revealCache;
+  const r = LS.get("reveal:" + comp.id, null);
+  revealCache = r && r.cid === comp.id ? r : null;
+  return revealCache;
+}
+function hidden(people, judgeView){
+  const r = getReveal();
+  if (r) return r;
+  if (judgeView && isOwner()) return {cid:comp.id, votes:tallyVotes(judge.ballots, people), adj:judge.adj, quotes:judge.quotes};
+  return null;
+}
+
+// Merki og stig eins dags. ctx: {run: stig fyrir daginn, hid: leynd gögn eða null}
+function scoreDay(d, people, ctx){
+  ctx = ctx || {};
   const ps = people.map(p => ({id:p.id, p, o:p.days[d] || EMPTY}));
-  const res = {}; ps.forEach(x => res[x.id] = {badges:[], base:counted(x.o), bonus:0, duel:0, pts:0, o:x.o});
-  const give = (k, arr) => arr.forEach(x => { if (!res[x.id].badges.includes(k)) res[x.id].badges.push(k); });
+  const res = {}; ps.forEach(x => res[x.id] = {badges:[], base:counted(x.o), bonus:0, extra:0, pts:0, o:x.o, cards:[], notes:[]});
+  const give = (k, arr) => arr.forEach(x => { if (res[x.id] && !res[x.id].badges.includes(k)) res[x.id].badges.push(k); });
   give("blood",    winners(ps, x => x.o.first, "min", 0));
   give("crown",    winners(ps, x => counted(x.o), "max", 0));
+  give("double",   ps.filter(x => x.o.mk === 2));
+  give("triple",   ps.filter(x => x.o.mk >= 3));
+  give("jw",       winners(ps, x => x.o.jw, "max", 2));
+  const shooters = ps.filter(x => counted(x.o) > 0); if (shooters.length === 1 && ps.filter(x => hunted(x.o)).length >= 2) give("army", shooters);
   give("walker",   winners(ps, x => x.o.km, "max", 500));
   give("goat",     winners(ps, x => x.o.gain, "max", 50));
   give("rooster",  winners(ps, x => x.o.start, "min", 0));
@@ -2979,12 +3164,13 @@ function scoreDay(d, people, run){
   give("sniper",   winners(ps.filter(x => x.o.k >= 1 && x.o.shots >= 0), x => Math.round(x.o.shots / x.o.k * 100), "min", 0));
   give("rambo",    winners(ps.filter(x => x.o.shots >= 0), x => x.o.shots, "max", 2));
   give("powder",   winners(ps.filter(x => x.o.shots >= 0), x => x.o.shots - x.o.k, "max", 0));
+  give("storm",    winners(ps.filter(x => x.o.shots >= 5), x => Math.round((x.o.shots - x.o.k) / x.o.shots * 100), "max", 0));
+  give("bird",     winners(ps.filter(x => x.o.k <= 1), x => x.o.seen, "max", 2));
   give("hipoop",   winners(ps, x => x.o.hi, "max", -1));
-  // Kúkadeildin: sjónarvottar
   for (const p of people) for (const w of p.wit || []) if (dayKey(w[1]) === d && w[0] !== p.id && res[w[0]]){ give("witness", [{id:p.id}]); give("caught", [{id:w[0]}]); }
-  // Týndi sauðurinn: oftast leitað að
   const fcount = {}; for (const p of people){ const f = p.fd && p.fd[d]; if (f) for (const id in f) if (id !== p.id) fcount[id] = (fcount[id] || 0) + f[id]; }
   give("sheep", winners(ps, x => fcount[x.id] || 0, "max", 0));
+  give("ghost", ps.filter(x => x.o.inv && hunted(x.o) && !fcount[x.id]));
   const fins = ps.filter(x => x.o.fin >= 0);
   if (fins.length >= 2){ give("mama", winners(fins, x => x.o.fin, "min", 0)); give("turtle", winners(fins, x => x.o.fin, "max", -1)); }
   const bats = ps.filter(x => x.o.bat >= 0);
@@ -2992,53 +3178,76 @@ function scoreDay(d, people, run){
   give("wander", winners(ps.filter(x => x.o.km >= 1000 && x.o.far >= 200), x => Math.round(x.o.km / x.o.far * 10), "max", 25));
   const hs = ps.filter(x => hunted(x.o));
   if (hs.length >= 2){ const vals = hs.map(x => counted(x.o)), lo = Math.min(...vals); if (lo < Math.max(...vals)) give("poop", hs.filter(x => counted(x.o) === lo)); }
-  // Áskorun dagsins
   const ch = challengeFor(d); give("challenge", ps.filter(x => hunted(x.o) && ch.f(x.o)));
-  // Kóngabani: fleiri rjúpur en sá sem leiddi tímabilið fyrir daginn
-  if (run){
-    const top = Math.max(0, ...people.map(p => run[p.id] || 0));
+  if (ctx.run){
+    const top = Math.max(0, ...people.map(p => ctx.run[p.id] || 0));
     if (top > 0){
-      const kings = ps.filter(x => (run[x.id] || 0) === top), kmax = Math.max(...kings.map(x => counted(x.o)));
+      const kings = ps.filter(x => (ctx.run[x.id] || 0) === top), kmax = Math.max(...kings.map(x => counted(x.o)));
       give("kingslayer", ps.filter(x => !kings.includes(x) && counted(x.o) > kmax));
     }
   }
-  // Gullrjúpan
   if (goldRevealed(d)){
     const all = []; ps.forEach(x => (x.o.ms || []).forEach(m => all.push([m, x.id])));
     all.sort((a, b) => a[0] - b[0] || (a[1] < b[1] ? -1 : 1));
     if (all.length) give("gold", [{id:all[hashStr("gull|" + (comp ? comp.id : "") + "|" + d) % all.length][1]}]);
   }
-  // Kvöldkosningin
-  if (votesFinal(d, people)) for (const v of compVotes()){
-    const cnt = {};
-    for (const p of people){ const t = p.v && p.v[d] && p.v[d][v.k]; if (t && t !== p.id && res[t]) cnt[t] = (cnt[t] || 0) + 1; }
-    const w = winners(ps, x => cnt[x.id] || 0, "max", 0);
-    if (w.length && w.length < ps.length) give("v_" + v.k, w);   // ef allir eru jafnir vinnur enginn
-  }
-  // Einvígi
+  const hid = ctx.hid;
+  if (hid && hid.votes && hid.votes[d]) for (const vk in hid.votes[d]) give("v_" + vk, hid.votes[d][vk].map(id => ({id})));
   if (duelOn()) for (const du of Object.values(duels)){
     if (du.day !== d || du.st !== "ok" || !res[du.a] || !res[du.b]) continue;
-    const ca = res[du.a].base, cb = res[du.b].base;
-    if (ca === cb || (d === today() && !(du.a && Date.now() >= beerTime(d)))) continue;   // úrslit á bjórtíma
+    if (d === today() && Date.now() < beerTime(d)) continue;
+    const ca = res[du.a].base, cb = res[du.b].base; if (ca === cb) continue;
     const [w, l] = ca > cb ? [du.a, du.b] : [du.b, du.a];
-    give("duel", [{id:w}]); give("duelLost", [{id:l}]); res[w].duel += 1; res[l].duel -= 1;
+    give("duel", [{id:w}]); give("duelLost", [{id:l}]); res[w].extra += 1; res[l].extra -= 1;
   }
+  const played = []; people.forEach(p => (p.cd || []).forEach(c => { if (c.day === d) played.push({...c, by:p.id}); }));
+  for (const c of played) if (res[c.by]) res[c.by].cards.push(c.c);
+  for (const c of played.filter(c => c.c === "immunity")){ const r = res[c.by]; if (r) r.badges = r.badges.filter(k => !badgeOf(k).shame); }
   const bonus = new Set((comp && comp.bonus) || []);
-  for (const id in res){ const r = res[id]; r.bonus = r.badges.filter(k => bonus.has(k)).reduce((a, k) => a + bonusVal(k), 0); r.pts = r.base + r.bonus + r.duel; }
+  for (const id in res){ const r = res[id]; r.bonus = r.badges.filter(k => bonus.has(k)).reduce((a, k) => a + bonusVal(k), 0); }
+  for (const c of played){
+    if (c.c === "thief" && res[c.by] && res[c.to]){ res[c.by].extra += 1; res[c.to].extra -= 1; res[c.to].notes.push("🦹 −1"); }
+    if (c.c === "gambler" && res[c.by]){
+      const ok = res[c.by].badges.includes("challenge");
+      if (ok) res[c.by].extra += 6; else if (d < today() || Date.now() >= beerTime(d)) res[c.by].extra -= 3;
+    }
+  }
+  for (const id in res){ const r = res[id]; r.pts = r.base + r.bonus + r.extra; }
+  for (const c of played.filter(c => c.c === "double")){
+    const r = res[c.by]; if (!r || !hid) continue;
+    const wonVote = r.badges.some(k => k.startsWith("v_") && !badgeOf(k).shame);
+    r.pts = wonVote ? r.pts * 2 : 0;
+  }
+  if (hid && Array.isArray(hid.adj)) for (const a of hid.adj) if (a.day === d && res[a.id]){ res[a.id].pts += a.pts; res[a.id].notes.push(`⚖️ ${a.pts > 0 ? "+" : ""}${a.pts}`); }
   return res;
 }
 function compDays(people){
   const s = new Set(); people.forEach(p => Object.keys(p.days).forEach(d => s.add(d)));
+  if (comp && today() >= comp.from && today() <= comp.to) s.add(today());
+  if (comp) (getReveal() || {adj:[]}).adj.forEach(a => s.add(a.day));
+  if (isOwner()) judge.adj.forEach(a => s.add(a.day));
   return [...s].filter(d => comp && d >= comp.from && d <= comp.to).sort();
 }
-// Allt tímabilið: dagar, samtölur og tímabilsmerki
-function scoreAll(people){
+// Allt tímabilið: dagar, samtölur, WANTED og tímabilsmerki
+function scoreAll(people, judgeView){
+  const hid = hidden(people, judgeView);
   const days = compDays(people), tot = {}, run = {}, out = {};
-  people.forEach(p => { tot[p.id] = {pts:0, kills:0, crowns:0, km:0, gain:0, badges:[], hdays:[]}; run[p.id] = 0; });
+  people.forEach(p => { tot[p.id] = {pts:0, kills:0, crowns:0, km:0, gain:0, shots:0, hits:0, badges:[], hdays:[], weeks:{}, vwins:0, vshame:0}; run[p.id] = 0; });
+  const B = bountyVal();
   for (const d of days){
-    const r = scoreDay(d, people, Object.assign({}, run)); out[d] = r;
-    for (const id in r){ const t = tot[id]; t.pts += r[id].pts; run[id] += r[id].pts; t.kills += r[id].base; t.km += r[id].o.km; t.gain += r[id].o.gain;
-      if (r[id].badges.includes("crown")) t.crowns++; if (hunted(r[id].o)) t.hdays.push(counted(r[id].o)); }
+    const top0 = Math.max(0, ...people.map(p => run[p.id])), w0 = people.filter(p => run[p.id] === top0);
+    const lead = top0 > 0 && w0.length === 1 ? w0[0].id : null;
+    const r = scoreDay(d, people, {run:Object.assign({}, run), hid}); out[d] = r;
+    for (const id in r) run[id] += r[id].pts;
+    if (lead && B > 0){
+      const over = people.filter(p => p.id !== lead && run[p.id] > run[lead]).sort((a, b) => run[b.id] - run[a.id]);
+      if (over.length){ const w = over[0].id; r[w].badges.push("bounty"); r[w].pts += B; run[w] += B; }
+    }
+    for (const id in r){ const t = tot[id], x = r[id]; t.pts += x.pts; t.kills += x.base; t.km += x.o.km; t.gain += x.o.gain;
+      if (x.o.shots >= 0){ t.shots += x.o.shots; t.hits += x.o.k; }
+      const wk = weekKey(d); t.weeks[wk] = (t.weeks[wk] || 0) + x.pts;
+      x.badges.forEach(k => { if (k.startsWith("v_")){ if (badgeOf(k).shame) t.vshame++; else t.vwins++; } });
+      if (x.badges.includes("crown")) t.crowns++; if (hunted(x.o)) t.hdays.push(counted(x.o)); }
   }
   const ps = people.map(p => ({id:p.id, t:tot[p.id]}));
   const give = (k, arr) => arr.forEach(x => tot[x.id].badges.push(k));
@@ -3051,7 +3260,22 @@ function scoreAll(people){
   give("skm", winners(ps, x => x.t.km, "max", 1000));
   give("sgain", winners(ps, x => x.t.gain, "max", 100));
   give("scrown", winners(ps, x => x.t.crowns, "max", 0));
-  return {days:out, tot};
+  const top = Math.max(0, ...ps.map(x => run[x.id])), tw = ps.filter(x => run[x.id] === top);
+  const wanted = top > 0 && tw.length === 1 && B > 0 ? tw[0].id : null;
+  if (wanted) tot[wanted].badges.push("wanted");
+  let legends = null;
+  if (hid){
+    legends = {};
+    const pick = (k, arr) => { if (arr.length) legends[k] = arr.map(x => x.id); };
+    pick("gptarm", winners(ps, x => Math.max(0, ...Object.values(x.t.weeks)), "max", 0));
+    pick("gstorm", winners(ps.filter(x => x.t.shots >= 10), x => Math.round((x.t.shots - x.t.hits) / x.t.shots * 1000), "max", 0));
+    pick("gclown", winners(ps, x => x.t.vshame, "max", 0));
+    pick("iron",   winners(ps, x => Math.round(x.t.km + x.t.gain * 10), "max", 0));
+    pick("people", winners(ps, x => x.t.vwins, "max", 0));
+    const past = {}; LS.get("hall", []).filter(h => h.id !== comp.id).forEach(h => (h.all || []).forEach(a => { past[a.name] = (past[a.name] || 0) + a.pts; }));
+    pick("legend", winners(people.map(p => ({id:p.id, v:(past[p.name] || 0) + tot[p.id].pts})), x => x.v, "max", 0));
+  }
+  return {days:out, tot, wanted, legends, hid};
 }
 
 /* Stigatafla */
@@ -3063,43 +3287,60 @@ function badgeText(k, o, t){
   if (k === "explorer") return `🧭 ${fmtKm(o.far)}`;
   if (k === "sniper") return `🔭 ${(o.shots / o.k).toFixed(1).replace(".", ",")} skot/rjúpu`;
   if (k === "rambo") return `🔫 ${o.shots} skot`;
-  if (k === "powder") return `🧨 ${o.shots - o.k} framhjá`;
+  if (k === "powder") return `✈️ ${o.shots - o.k} sluppu`;
+  if (k === "storm") return `🪖 ${Math.round((o.shots - o.k) / o.shots * 100)}% framhjá`;
+  if (k === "jw") return `🕴️ ${o.jw} í röð`;
+  if (k === "bird") return `🐦 ${o.seen} séðar`;
   if (k === "hipoop") return `🏔️💩 ${o.hi} m`;
   if (k === "battery") return `🔋 ${o.bat}%`;
   if (k === "scrown") return `👑×${t.crowns}`;
+  if (k === "wanted") return "💀 WANTED";
   return badgeE(k);
 }
 function renderBoard(){
-  checkGroup(); renderJoin(); renderComp(); renderWall();
+  checkGroup(); renderJoin(); renderComp(); renderWall(); renderWebFriends();
   const m = isMasson(), box = document.getElementById("board");
   document.getElementById("boardH").textContent = comp ? comp.name : (m ? "Másson-stig" : "Veiði");
   document.getElementById("pgFriendsH").textContent = m ? "Hópurinn" : "Félagar";
   document.getElementById("tabFriendsLbl").textContent = m ? "Hópurinn" : "Félagar";
+  const jb = document.querySelector('#boardSeg [data-m="judge"]'); if (jb) jb.hidden = !isOwner() || compEnded();
+  if (boardMode === "judge" && (!isOwner() || compEnded())) boardMode = "day";
+  document.querySelectorAll("#boardSeg button").forEach(x => x.setAttribute("aria-pressed", x.dataset.m === boardMode));
   const people = competitors();
   const show = !!comp && (joined() || people.length > 0);
   document.getElementById("boardWrap").hidden = !show;
   box.innerHTML = "";
   if (show){
-    const all = scoreAll(people);
-    const hide = k => !m && (badgeOf(k).masson);
+    const judgeView = boardMode === "judge";
+    const all = scoreAll(people, judgeView || compEnded());
+    const hide = k => !m && badgeOf(k).masson;
     let rows;
     if (boardMode === "day"){
-      const r = all.days[today()] || scoreDay(today(), people, null);
-      rows = people.map(p => { const x = r[p.id] || {badges:[], base:0, bonus:0, duel:0, pts:0, o:EMPTY}; return {p, pts:x.pts, base:x.base, extra:x.bonus + x.duel, badges:x.badges, o:x.o}; });
-    } else rows = people.map(p => { const t = all.tot[p.id]; return {p, pts:t.pts, base:t.kills, extra:t.pts - t.kills, badges:t.badges, t}; });
+      const r = all.days[today()] || {};
+      rows = people.map(p => { const x = r[p.id] || {badges:[], base:0, bonus:0, extra:0, pts:0, o:EMPTY, cards:[], notes:[]};
+        return {p, pts:x.pts, base:x.base, extra:x.pts - x.base, badges:x.badges.slice(), o:x.o, cards:x.cards, notes:x.notes}; });
+    } else rows = people.map(p => { const t = all.tot[p.id]; return {p, pts:t.pts, base:t.kills, extra:t.pts - t.kills, badges:t.badges.slice(), t, cards:[], notes:[]}; });
+    if (all.wanted && boardMode === "day"){ const w = rows.find(r => r.p.id === all.wanted); if (w) w.badges.unshift("wanted"); }
     rows.sort((a, b) => b.pts - a.pts || a.p.me - b.p.me);
     rows.forEach((r, i) => {
-      const bits = r.badges.filter(k => !hide(k)).map(k => badgeText(k, r.o || EMPTY, r.t));
-      if (boardMode === "season" && r.t && r.t.crowns && !r.badges.includes("scrown")) bits.push(`👑×${r.t.crowns}`);
-      const sc = r.extra ? `${r.base} 🦃 ${r.extra > 0 ? "+" : "−"} ${Math.abs(r.extra)} ${Math.abs(r.extra) === 1 ? "aukastig" : "aukastig"}` : "";
-      const sub = [sc, r.p.me ? "þú" : r.p.ts ? "uppfært " + ago(r.p.ts) : ""].filter(Boolean).join(" · ");
-      const row = document.createElement("div"); row.className = "ptrow"; row.style.cursor = "default";
+      const bits = r.badges.filter(k => !hide(k) && k !== "wanted").map(k => badgeText(k, r.o || EMPTY, r.t));
+      if (boardMode !== "day" && r.t && r.t.crowns && !r.badges.includes("scrown")) bits.push(`👑×${r.t.crowns}`);
+      r.cards.forEach(c => bits.push(`🃏${cardOf(c) ? cardOf(c).e : ""}`));
+      if (judgeView) bits.push(...r.notes);
+      const sc = r.extra ? `${r.base} 🦃 ${r.extra > 0 ? "+" : "−"} ${Math.abs(r.extra)} aukastig` : "";
+      const sub = [sc, r.p.me ? "þú" : r.p.guest ? "gestur" : r.p.ts ? "uppfært " + ago(r.p.ts) : ""].filter(Boolean).join(" · ");
+      const wanted = r.badges.includes("wanted") && !compEnded();
+      const row = document.createElement("div"); row.className = "ptrow" + (wanted ? " wanted" : ""); row.style.cursor = "default";
       row.innerHTML = `<span class="rank${i === 0 && r.pts > 0 ? " lead" : ""}">${i + 1}</span>
-        <div class="t"><b>${esc(dispName(r.p.name))}</b>${bits.length ? `<span class="badges">${esc(bits.join("  "))}</span>` : ""}<span>${esc(sub)}</span></div>
+        <div class="t"><b>${wanted ? "💀 WANTED: " : ""}${esc(dispName(r.p.name))}</b>${wanted ? `<span class="wtag">For crimes against the ptarmigan population · bounty ${bountyVal()} stig</span>` : ""}${bits.length ? `<span class="badges">${esc(bits.join("  "))}</span>` : ""}<span>${esc(sub)}</span></div>
         <span class="score">${r.pts}</span>`;
       box.appendChild(row);
     });
-    if (!joined()){ const n = document.createElement("div"); n.className = "empty"; n.textContent = "Þú ert ekki með í keppninni."; box.appendChild(n); }
+    const note = t => { const n = document.createElement("div"); n.className = "empty"; n.textContent = t; box.appendChild(n); };
+    if (judgeView) note("⚖️ Dómarasýn: með leynilegu kosningunni og földum stigabreytingum. Hinir sjá þetta ekki fyrr en keppni lýkur.");
+    else if (!getReveal() && !compEnded()) note("Kosningastig, faldar stigabreytingar og titlar bætast við þegar keppninni lýkur.");
+    if (!joined()) note("Þú ert ekki með í keppninni.");
+    if (isOwner() && !compEnded()) wantedCheck(scoreAll(people, false).wanted, people);
   }
   const quota = +LS.get("kvoti", 0), q = document.getElementById("boardQuota");
   if (quota){
@@ -3107,41 +3348,45 @@ function renderBoard(){
     q.hidden = false;
     q.textContent = n >= quota ? (m ? `Kvótinn þinn náður (${n}/${quota}). Beint í bjórinn 🍺` : `Kvóta dagsins náð (${n}/${quota})`) : `Kvótinn þinn í dag: ${n} af ${quota}`;
   } else q.hidden = true;
-  document.getElementById("boardNote").textContent = !window.__groupSend ? "Keppnin og stigataflan eru í Android appinu."
+  document.getElementById("boardNote").textContent = !window.__groupSend ? "Keppnin og stigataflan þurfa hópkóða."
     : show && today() < comp.from ? `Keppnin hefst ${fmtD(comp.from)}. Rjúpur fyrir þann dag gefa ekki stig.`
     : show ? "Stigin berast á milli símanna þegar netsamband er." : "";
   renderHall(); renderPoops();
 }
-document.querySelectorAll("#boardSeg button").forEach(b => b.onclick = () => {
-  boardMode = b.dataset.m;
-  document.querySelectorAll("#boardSeg button").forEach(x => x.setAttribute("aria-pressed", x === b));
-  renderBoard();
-});
+// Nýr WANTED: tilkynning til allra (send frá keppnisstjóra svo hún komi bara einu sinni)
+function wantedCheck(w, people){
+  const key = "lastWanted:" + comp.id, prev = LS.get(key, null);
+  if (!w || prev === w) return;
+  LS.set(key, w);
+  if (prev == null) return;
+  const p = people.find(x => x.id === w); if (!p) return;
+  groupSend("wanted", {nt:{title:`💀 NEW WANTED: ${p.name}`, body:`For crimes against the ptarmigan population. Bounty: ${bountyVal()} stig`}});
+}
+document.querySelectorAll("#boardSeg button").forEach(b => b.onclick = () => { boardMode = b.dataset.m; renderBoard(); });
 function refreshAll(){ renderBoard(); renderLog(); renderHunt(); }
 window.__massonRefresh = refreshAll;
 window.__onLogTab = renderLog;
 
 /* Keppnisspjald */
-const fmtD = k => { const [y, m, d] = k.split("-"); return `${+d}.${+m}.`; };
 function compRulesHtml(c){
   const bonus = ALL_BADGES.filter(b => (c.bonus || []).includes(b.k));
-  const vs = VOTES.filter(v => !Array.isArray(c.votes) || c.votes.includes(v.k));
+  const vs = VOTES.filter(v => (Array.isArray(c.votes) ? c.votes : DEF_VOTES).includes(v.k));
   return `<li><b>Tímabil:</b> ${fmtD(c.from)}–${fmtD(c.to)}${c.to.slice(0, 4)}</li>
     <li><b>Keppt um:</b> 🏆 Másson ársins og 💩 Rjúpnakúkur ársins${c.prize ? ` · ${esc(c.prize)}` : ""}</li>
     <li><b>Stig:</b> 1 á hverja rjúpu${c.onlyTrip ? ", bara skráðar í virkri ferð" : ""}${c.cap > 0 ? `, mest ${c.cap} á dag` : ""}</li>
     <li><b>Aukastig:</b> ${bonus.length ? bonus.map(b => `${b.e} ${esc(b.n)} +${b.val || 1}`).join(", ") : "engin, merkin eru til heiðurs"}</li>
-    <li><b>Kvöldkosning:</b> ${vs.length ? vs.map(v => `${v.e} ${esc(v.n)}`).join(", ") : "engin"}</li>
-    <li><b>Einvígi:</b> ${c.duel !== false ? "já, sigurvegarinn tekur 1 stig af hinum" : "nei"}</li>
-    <li><b>Keppnisstjóri:</b> ${esc(dispName(c.ownerName || ""))}</li>`;
+    <li><b>Kvöldkosning (leynileg):</b> ${vs.length ? vs.map(v => `${v.e} ${esc(v.n)}`).join(", ") : "engin"}</li>
+    <li><b>Leikir:</b> ${[c.duel !== false ? "⚔️ einvígi" : "", c.cards !== false ? "🃏 Hunting Cards" : "", (c.bounty ?? 3) > 0 ? `💀 WANTED (bounty ${c.bounty ?? 3})` : ""].filter(Boolean).join(", ") || "engir"}</li>
+    <li><b>Keppnisstjóri og dómari:</b> ${esc(dispName(c.ownerName || ""))}</li>`;
 }
-function ballotDay(){
-  if (!comp || !joined()) return null;
-  const t = today(), y = addDays(t, -1);
-  if (Date.now() >= beerTime(t) && t >= comp.from && t <= comp.to) return t;
-  if (new Date().getHours() < 12 && y >= comp.from && y <= comp.to) return y;
-  return null;
-}
+const ballotOpen = () => { const t = today(); if (!comp || !comp.bal) return null;
+  for (const d of [t, addDays(t, -1)]){ const b = comp.bal[d]; if (b && b.open && !b.closed) return d; } return null; };
 function myDuelToday(){ return Object.values(duels).find(d => d.day === today() && (d.a === myId() || d.b === myId()) && d.st !== "no"); }
+function cursesNow(){
+  const out = [], t = Date.now();
+  for (const p of competitors()) for (const c of p.cd || []) if (c.c === "curse" && t - c.ts < 15 * 60000) out.push({by:p, to:c.to, left:Math.ceil((15 * 60000 - (t - c.ts)) / 60000)});
+  return out;
+}
 function renderComp(){
   const box = document.getElementById("compCard");
   if (!window.__groupSend || !groupReady()){ box.hidden = true; return; }
@@ -3150,54 +3395,69 @@ function renderComp(){
   if (!comp){
     box.innerHTML = `<div class="group"><div class="ginner">
       <div class="jh">${m ? "Engin Másson-keppni í gangi" : "Engin keppni í gangi"}</div>
-      <p class="note">Stofnaðu keppni og bjóddu hinum. Þú velur tímabil, um hvað er keppt, kvöldkosninguna og hvaða merki gefa aukastig.</p>
+      <p class="note">Stofnaðu keppni og bjóddu hinum. Þú verður keppnisstjóri og dómari: velur tímabil og um hvað er keppt, sendir út kvöldkosninguna og getur breytt stigum.</p>
       <button class="btn wide" type="button" data-c="new">Stofna keppni 🏆</button>
       <button class="btn sec wide" type="button" data-c="brag">📣 Mont</button></div></div>`;
   } else if (compEnded()){
-    archiveIfEnded();
-    const res = finalResults();
-    box.innerHTML = `<div class="group"><div class="ginner">
-      <div class="jh">Úrslit: ${esc(comp.name)}</div>
-      <div class="podium">${res.slice(0, 3).map((r, i) => `<div class="pod p${i + 1}"><span>${["🥇", "🥈", "🥉"][i]}</span><b>${esc(dispName(r.name))}</b><small>${r.pts} stig</small></div>`).join("")}</div>
-      ${res.length >= 2 && res[res.length - 1].poop && m ? `<p class="note" style="text-align:center">💩 Rjúpnakúkur ársins: <b>${esc(dispName(res[res.length - 1].name))}</b></p>` : ""}
-      ${comp.prize ? `<p class="note" style="text-align:center">Keppt var um: ${esc(comp.prize)}</p>` : ""}
-      <button class="btn wide" type="button" data-c="new">Stofna nýja keppni</button></div></div>`;
+    if (isOwner()) publishReveal(false);
+    const rev = getReveal();
+    if (!rev && !isOwner()){
+      loadArchives(true);
+      box.innerHTML = `<div class="group"><div class="ginner"><div class="jh">${esc(comp.name)} er lokið</div>
+        <p class="note">Bíð eftir að keppnisstjórinn opinberi úrslitin. Þau birtast hér um leið og hann opnar appið.</p></div></div>`;
+    } else {
+      archiveIfEnded();
+      const people = competitors(), all = scoreAll(people, true);
+      const res = people.map(p => ({id:p.id, name:p.name, pts:all.tot[p.id].pts, poop:all.tot[p.id].badges.includes("spoop")})).sort((a, b) => b.pts - a.pts);
+      const nm = id => { const p = people.find(x => x.id === id); return p ? dispName(p.name) : "?"; };
+      const leg = all.legends || {}, quotes = (rev || {}).quotes || [];
+      box.innerHTML = `<div class="group"><div class="ginner">
+        <div class="jh">Úrslit: ${esc(comp.name)}</div>
+        <div class="podium">${res.slice(0, 3).map((r, i) => `<div class="pod p${i + 1}"><span>${["🥇", "🥈", "🥉"][i]}</span><b>${esc(dispName(r.name))}</b><small>${r.pts} stig</small></div>`).join("")}</div>
+        ${res.length >= 2 && res[res.length - 1].poop && m ? `<p class="note" style="text-align:center">💩 Rjúpnakúkur ársins: <b>${esc(dispName(res[res.length - 1].name))}</b></p>` : ""}
+        ${comp.prize ? `<p class="note" style="text-align:center">Keppt var um: ${esc(comp.prize)}</p>` : ""}
+        <div class="sect" style="margin:6px 0 0">🎖️ Legendary Awards</div>
+        <ul class="blist">${LEGENDS.filter(l => leg[l.k]).map(l => `<li><span class="be">${l.e}</span><b>${esc(l.n)}</b> ${esc(leg[l.k].map(nm).join(" og "))}</li>`).join("") || "<li>Engin gögn</li>"}</ul>
+        ${quotes.length ? `<div class="sect" style="margin:6px 0 0">🙈 Hall of Shame</div><ul class="blist">${quotes.slice(0, 15).map(q => `<li><span class="be">🗨️</span><span><b>${esc(nm(q.id))}</b> ${fmtD(q.day)}: „${esc(q.txt)}“ <i>${esc(q.kind || "")}</i></span></li>`).join("")}</ul>` : ""}
+        <button class="btn wide" type="button" data-c="new">Stofna nýja keppni</button></div></div>`;
+    }
   } else if (!joined()){
     box.innerHTML = `<div class="group"><div class="ginner">
       <div class="jh">Ertu til í ${esc(comp.name)}? 🦃</div>
       <ul class="rules">${compRulesHtml(comp)}</ul>
       <button class="btn wide" type="button" data-c="join">Ég er til!</button></div></div>`;
   } else {
-    const people = competitors(), n = people.length, t = today();
-    const started = t >= comp.from;
-    const ch = started ? challengeFor(t) : null;
-    // Einvígi: áskorun til mín, eða mitt einvígi í dag
-    const me = myId(), dIn = Object.values(duels).find(d => d.day === t && d.b === me && d.st === "ask");
-    const dMine = myDuelToday();
-    let duelHtml = "";
+    const people = competitors(), n = people.length, t = today(), me = myId();
+    const started = t >= comp.from, ch = started ? challengeFor(t) : null;
+    const dIn = Object.values(duels).find(d => d.day === t && d.b === me && d.st === "ask"), dMine = myDuelToday();
+    let extra = "";
     if (duelOn() && dIn){
       const who = board[dIn.a] ? dispName(board[dIn.a].name) : "Félagi";
-      duelHtml = `<div class="duelbox"><b>⚔️ ${esc(who)} skorar á þig í einvígi í dag!</b><span>Sá sem fær fleiri rjúpur tekur 1 stig af hinum.</span>
+      extra += `<div class="duelbox"><b>⚔️ ${esc(who)} skorar á þig í einvígi í dag!</b><span>Sá sem fær fleiri rjúpur tekur 1 stig af hinum.</span>
         <div class="row"><button class="btn sec" type="button" data-c="dno">${m ? "Nauts" : "Nei takk"}</button><button class="btn" type="button" data-c="dyes">${m ? "Skál 🍺" : "Samþykkja"}</button></div></div>`;
     } else if (duelOn() && dMine){
       const other = dMine.a === me ? dMine.b : dMine.a, nm = board[other] ? dispName(board[other].name) : "félaga";
-      const mine = myKillsOn(t).length, theirs = (() => { const o = people.find(p => p.id === other); return o && o.days[t] ? counted(o.days[t]) : 0; })();
-      duelHtml = `<p class="note"><b>⚔️ Einvígi við ${esc(nm)}:</b> ${dMine.st === "ask" ? "bíður svars" : `${counted(myDays()[t] || EMPTY)} – ${theirs}`}</p>`;
+      const o = people.find(p => p.id === other), theirs = o && o.days[t] ? counted(o.days[t]) : 0;
+      extra += `<p class="note"><b>⚔️ Einvígi við ${esc(nm)}:</b> ${dMine.st === "ask" ? "bíður svars" : `${counted(myDays()[t] || EMPTY)} – ${theirs}`}</p>`;
     }
-    // Kvöldkosning
-    const bd = ballotDay();
-    let voteHtml = "";
-    if (bd && n >= 2 && compVotes().length){
-      const done = votes[bd] && Object.keys(votes[bd]).length, nv = people.filter(p => p.v && p.v[bd] && Object.keys(p.v[bd]).length).length;
-      voteHtml = `<div class="votebox"><b>🗳️ Kvöldkosningin ${bd === t ? "er hafin" : "frá í gær"}</b><span>${nv} af ${n} hafa kosið${done ? " · þú hefur kosið" : ""}</span>
+    for (const c of cursesNow()){
+      const nm = c.to === me ? "Þú ert" : `${dispName((people.find(p => p.id === c.to) || {}).name || "?")} er`;
+      extra += `<p class="note"><b>🧙 ${esc(nm)} undir bölvun ${esc(dispName(c.by.name))}:</b> sænskur hreimur í ${c.left} mín í viðbót 😂</p>`;
+    }
+    const bd = ballotOpen();
+    if (bd && n >= 2){
+      const done = !!vbEnc[bd], voters = people.filter(p => !p.guest), nv = voters.filter(p => (p.vbDays || []).includes(bd)).length;
+      extra += `<div class="votebox"><b>🗳️ Kvöldkosningin er hafin</b><span>${nv} af ${voters.length} hafa kosið${done ? " · þú hefur kosið" : ""} · leynileg</span>
         <button class="btn${done ? " sec" : ""}" type="button" data-c="vote">${done ? "Breyta atkvæðum" : "Kjósa"}</button></div>`;
     }
+    const w = weekKey(t), left = cardsOn() ? dealt(me, w).filter(k => !myCards.some(c => c.w === w && c.c === k)).length : 0;
     box.innerHTML = `<div class="group"><div class="ginner">
       <div class="jrow"><div class="t"><b>🏆 ${esc(comp.name)}</b><span>${!started ? `Hefst ${fmtD(comp.from)} · ` : ""}${fmtD(comp.from)}–${fmtD(comp.to)} · ${n} ${n === 1 ? "keppandi" : "keppendur"}${comp.prize ? " · " + esc(comp.prize) : ""}</span></div></div>
       ${ch ? `<p class="note">🎲 <b>Áskorun dagsins:</b> ${esc(ch.t)}</p>` : ""}
-      ${duelHtml}${voteHtml}
+      ${extra}
+      ${isOwner() ? `<button class="btn" type="button" data-c="judge">⚖️ Dómarinn</button>` : ""}
       <div class="row"><button class="btn sec" type="button" data-c="rules">Reglur og merki</button><button class="btn sec" type="button" data-c="invite">Bjóða</button></div>
-      <div class="row">${duelOn() && !dMine && started && n >= 2 ? `<button class="btn sec" type="button" data-c="duel">⚔️ Einvígi</button>` : ""}<button class="btn sec" type="button" data-c="brag">📣 Mont</button></div></div></div>`;
+      <div class="row">${duelOn() && !dMine && started && n >= 2 ? `<button class="btn sec" type="button" data-c="duel">⚔️ Einvígi</button>` : ""}${cardsOn() && started ? `<button class="btn sec" type="button" data-c="cards">🃏 Spilin (${left})</button>` : ""}<button class="btn sec" type="button" data-c="brag">📣 Mont</button></div></div></div>`;
   }
   box.querySelectorAll("[data-c]").forEach(b => b.onclick = () => {
     const a = b.dataset.c;
@@ -3208,6 +3468,8 @@ function renderComp(){
     else if (a === "duel") openDuel();
     else if (a === "dyes" || a === "dno") answerDuel(a === "dyes");
     else if (a === "brag") openBrag();
+    else if (a === "cards") openCards();
+    else if (a === "judge") openJudge();
     else openInvite();
   });
 }
@@ -3215,22 +3477,22 @@ function joinComp(){
   const m = isMasson();
   askDialog(`Heit keppandans`, `<li>Ég skrái bara rjúpur sem ég felli sjálfur, á staðnum.</li>
     <li>Ég ber titilinn <b>Rjúpnakúkur ársins</b> með reisn ef ég enda neðstur.</li>
+    <li>Keppnisstjórinn er dómari. Hann getur skráð fyrir mig og breytt stigum, og orð hans eru lög.</li>
     <li>Stigin mín, merkin og ferðirnar mínar (km og hækkun) sjást hjá öðrum keppendum.</li>`,
     m ? "Skál 🍺" : "Ég er til", m ? "Nauts" : "Hætta við", () => {
       LS.set("compJoin", comp.id); groupSend("join"); renderBoard();
       toast(m ? `Skál! Þú ert með í ${comp.name} 🦃` : `Þú ert með í ${comp.name}`);
     });
 }
-function finalResults(){
-  const people = competitors(), t = scoreAll(people).tot;
-  return people.map(p => ({id:p.id, name:p.name, pts:t[p.id].pts, poop:t[p.id].badges.includes("spoop")})).sort((a, b) => b.pts - a.pts);
-}
 function archiveIfEnded(){
-  if (!comp || !compEnded()) return;
+  if (!comp || !compEnded() || !getReveal()) return;
   const hall = LS.get("hall", []);
   if (hall.some(h => h.id === comp.id)) return;
-  const res = finalResults(); if (!res.length) return;
-  hall.unshift({id:comp.id, name:comp.name, to:comp.to, champ:res[0].name, pts:res[0].pts, poop:res.length >= 2 && res[res.length - 1].poop ? res[res.length - 1].name : ""});
+  const people = competitors(), all = scoreAll(people, true);
+  const res = people.map(p => ({name:p.name, pts:all.tot[p.id].pts, poop:all.tot[p.id].badges.includes("spoop")})).sort((a, b) => b.pts - a.pts);
+  if (!res.length) return;
+  hall.unshift({id:comp.id, name:comp.name, to:comp.to, champ:res[0].name, pts:res[0].pts, poop:res.length >= 2 && res[res.length - 1].poop ? res[res.length - 1].name : "",
+                all:res.map(r => ({name:r.name, pts:r.pts}))});
   LS.set("hall", hall.slice(0, 30));
   const title = `🏆 ${comp.name}: ${dispName(res[0].name)} er Másson ársins!`;
   const body = res.length >= 2 && res[res.length - 1].poop && isMasson() ? `💩 Rjúpnakúkur ársins: ${dispName(res[res.length - 1].name)}` : `${res[0].pts} stig`;
@@ -3240,11 +3502,14 @@ function renderHall(){
   const hall = LS.get("hall", []), box = document.getElementById("hall");
   box.hidden = !hall.length;
   if (!hall.length) return;
-  box.innerHTML = `<div class="sect">Heiðurshöll</div><div class="group">${hall.map(h => `<div class="ptrow" style="cursor:default"><span class="rank lead">🏆</span>
+  const past = {}; hall.forEach(h => (h.all || []).forEach(a => { past[a.name] = (past[a.name] || 0) + a.pts; }));
+  const legend = Object.keys(past).sort((a, b) => past[b] - past[a])[0];
+  box.innerHTML = `<div class="sect">Heiðurshöll</div><div class="group">${legend ? `<div class="ptrow" style="cursor:default"><span class="rank lead">🐦</span>
+    <div class="t"><b>${esc(dispName(legend))}</b><span>Legend of the Mountain · ${past[legend]} stig í öllum keppnum</span></div></div>` : ""}${hall.map(h => `<div class="ptrow" style="cursor:default"><span class="rank lead">🏆</span>
     <div class="t"><b>${esc(dispName(h.champ))}</b><span>${esc(h.name)} · ${h.pts} stig${h.poop && isMasson() ? ` · 💩 ${esc(dispName(h.poop))}` : ""}</span></div></div>`).join("")}</div>`;
 }
 
-/* Stofna og breyta keppni (keppnisstjóri) */
+/* Stofna og breyta keppni */
 const compSheet = document.getElementById("compSheet");
 function togList(boxId, items, sel, extra){
   const box = document.getElementById(boxId); box.innerHTML = "";
@@ -3259,7 +3524,7 @@ let compIsNew = true;
 function openCompEdit(isNew){
   compIsNew = isNew || !comp;
   const y = new Date().getFullYear();
-  const c = compIsNew ? {name:`Másson-bikarinn ${y}`, from:today(), to:`${y}-12-31`, prize:"", cap:0, onlyTrip:false, bonus:[], votes:VOTES.map(v => v.k), duel:true} : comp;
+  const c = compIsNew ? {name:`Másson-bikarinn ${y}`, from:today(), to:`${y}-12-31`, prize:"", cap:0, onlyTrip:false, bonus:[], votes:DEF_VOTES, duel:true, cards:true, bounty:3} : comp;
   document.getElementById("compTitle").textContent = compIsNew ? "Stofna keppni" : "Breyta keppni";
   document.getElementById("cName").value = c.name;
   document.getElementById("cFrom").value = c.from;
@@ -3270,43 +3535,48 @@ function openCompEdit(isNew){
   document.getElementById("cCapRow").hidden = !(c.cap > 0);
   document.getElementById("cTrip").checked = !!c.onlyTrip;
   document.getElementById("cDuel").checked = c.duel !== false;
-  togList("cVotes", VOTES.map(v => ({...v, d:""})), Array.isArray(c.votes) ? c.votes : VOTES.map(v => v.k), false);
-  togList("cBonus", [...DAY_BADGES, ...VOTES.map(v => ({k:"v_" + v.k, e:v.e, n:v.n, d:"Sigur í kvöldkosningu"})), ...GAMES].filter(b => !b.nobonus), c.bonus || [], true);
+  document.getElementById("cCards").checked = c.cards !== false;
+  document.getElementById("cBounty").value = String(c.bounty ?? 3);
+  togList("cVotes", VOTES, Array.isArray(c.votes) ? c.votes : DEF_VOTES, false);
+  togList("cBonus", [...DAY_BADGES, ...VB, ...GAMES].filter(b => !b.nobonus), c.bonus || [], true);
   document.getElementById("cSave").textContent = compIsNew ? "Stofna keppni" : "Vista breytingar";
   document.getElementById("cMsg").textContent = "";
   openPanel(compSheet);
 }
 document.getElementById("cCapOn").onchange = e => { document.getElementById("cCapRow").hidden = !e.target.checked; };
-document.getElementById("cSave").onclick = () => {
+document.getElementById("cSave").onclick = async () => {
   const name = document.getElementById("cName").value.trim() || "Másson-keppnin";
   const from = document.getElementById("cFrom").value, to = document.getElementById("cTo").value;
   const msg = document.getElementById("cMsg"); msg.className = "msg err";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to) || to < from){ msg.textContent = "Veldu tímabil: lokadagur má ekki vera á undan upphafsdegi."; return; }
-  const c = {
+  let pub = null; try{ pub = await judgeKey(); }catch(e){}
+  const c = Object.assign({}, compIsNew ? {} : comp, {
     id: compIsNew ? "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5) : comp.id,
     name, from, to, prize:document.getElementById("cPrize").value.trim().slice(0, 80),
     cap: document.getElementById("cCapOn").checked ? Math.max(1, parseInt(document.getElementById("cCap").value, 10) || 5) : 0,
     onlyTrip: document.getElementById("cTrip").checked,
     duel: document.getElementById("cDuel").checked,
+    cards: document.getElementById("cCards").checked,
+    bounty: +document.getElementById("cBounty").value,
     votes: [...document.querySelectorAll("#cVotes input:checked")].map(x => x.dataset.k),
     bonus: [...document.querySelectorAll("#cBonus input:checked")].map(x => x.dataset.k),
-    owner: myId(), ownerName: LS.get("me", "") || "Ég",
-    created: compIsNew ? Date.now() : (comp.created || Date.now()), ts: Date.now()
-  };
+    owner: myId(), ownerName: LS.get("me", "") || "Ég", pub: pub || (comp && comp.pub) || null,
+    created: compIsNew ? Date.now() : (comp.created || Date.now()), ts: Date.now(), rev: compIsNew ? 1 : (comp.rev || 0) + 1
+  });
+  if (compIsNew){ delete c.bal; delete c.ended; delete c.chal; delete c.guests; }
   const finish = () => {
-    comp = c; saveComp(); LS.set("compJoin", c.id); closeSheet(); groupSend("comp"); renderBoard();
-    if (compIsNew) openInvite(); else toast("Keppninni breytt. Hinir fá breytingarnar sjálfkrafa.");
+    comp = c; saveComp(); revealCache = null; LS.set("compJoin", c.id); closeSheet(); groupSend("comp"); renderBoard();
+    if (compIsNew){ judge = {adj:[], quotes:[], ballots:{}, px:[]}; saveJudge(); openInvite(); } else toast("Keppninni breytt. Hinir fá breytingarnar sjálfkrafa.");
   };
-  if (compIsNew){ closeSheet(); comp = c; joinCompThen(finish); } else finish();
+  if (compIsNew){ closeSheet(); const prev = comp; comp = c; joinCompThen(finish, () => { comp = prev; }); } else finish();
 };
-function joinCompThen(fn){
+function joinCompThen(fn, cancel){
   const m = isMasson();
   askDialog("Heit keppnisstjórans", `<li>Ég skrái bara rjúpur sem ég felli sjálfur, á staðnum.</li>
     <li>Ég ber titilinn <b>Rjúpnakúkur ársins</b> með reisn ef ég enda neðstur.</li>
-    <li>Reglurnar sjást hjá öllum. Ef ég breyti þeim sjá hinir það.</li>`, m ? "Skál 🍺" : "Stofna", m ? "Nauts" : "Hætta við", fn,
-    () => { comp = LS.get("comp", null); });
+    <li>Ég er dómarinn: ég sendi út kvöldkosninguna, sé atkvæðin og get breytt stigum. Ég fer vel með valdið (svona nokkurn veginn).</li>`, m ? "Skál 🍺" : "Stofna", m ? "Nauts" : "Hætta við", fn, cancel);
 }
-// Reglur og merki
+function bumpComp(){ comp.ts = Date.now(); comp.rev = (comp.rev || 0) + 1; saveComp(); groupSend("comp"); }
 const rulesSheet = document.getElementById("rulesSheet");
 function openRules(){
   if (!comp) return;
@@ -3315,12 +3585,13 @@ function openRules(){
   document.getElementById("rName").textContent = comp.name;
   document.getElementById("rList").innerHTML = compRulesHtml(comp);
   document.getElementById("rDay").innerHTML = DAY_BADGES.filter(b => m || !b.masson).map(li).join("");
-  document.getElementById("rVote").innerHTML = compVotes().map(v => li({k:"v_" + v.k, e:v.e, n:v.n, d:""})).join("") || "<li>Engin kosning í þessari keppni.</li>";
-  document.getElementById("rGames").innerHTML = GAMES.filter(g => duelOn() || !g.k.startsWith("duel")).map(li).join("") +
+  document.getElementById("rVote").innerHTML = VB.filter(v => compVoteKeys().includes(v.k.slice(2))).map(li).join("") || "<li>Engin kosning í þessari keppni.</li>";
+  document.getElementById("rGames").innerHTML = GAMES.filter(g => duelOn() || !g.k.startsWith("duel")).filter(g => bountyVal() > 0 || g.k !== "bounty").map(li).join("") +
+    (cardsOn() ? CARDS.map(c => `<li><span class="be">🃏</span><b>${c.e} ${esc(c.n)}</b> ${esc(c.d)}</li>`).join("") : "") +
     `<li><span class="be">🎲</span><span>Áskoranir: ${CHALLENGES.map(c => esc(c.t)).join(" · ")}</span></li>`;
-  document.getElementById("rSeason").innerHTML = SEASON_BADGES.filter(b => m || !b.masson).map(li).join("");
-  document.getElementById("rEdit").hidden = comp.owner !== myId();
-  document.getElementById("rLeave").hidden = !joined();
+  document.getElementById("rSeason").innerHTML = [...SEASON_BADGES.filter(b => m || !b.masson), ...LEGENDS].map(li).join("");
+  document.getElementById("rEdit").hidden = !isOwner();
+  document.getElementById("rLeave").hidden = !joined() || isOwner();
   document.getElementById("rLeave").textContent = "Draga mig úr keppni";
   document.getElementById("rLeave").dataset.armed = "";
   openPanel(rulesSheet);
@@ -3334,24 +3605,77 @@ document.getElementById("rLeave").onclick = e => {
 function takeComp(msg){
   const c = msg.comp;
   if (!c || !c.id || c.owner !== msg.id || !c.from || !c.to) return;
-  if (comp && comp.id === c.id){ if ((c.ts || 0) > (comp.ts || 0)){ comp = c; saveComp(); } return; }
+  if (comp && comp.id === c.id){ if ((c.rev || 0) > (comp.rev || 0) || ((c.rev || 0) === (comp.rev || 0) && (c.ts || 0) > (comp.ts || 0))){ comp = c; saveComp(); } return; }
   const replace = !comp || compEnded() || ((c.created || 0) < (comp.created || 0) && today() <= c.to);
   if (!replace) return;
-  comp = c; saveComp();
+  comp = c; saveComp(); revealCache = null;
   if (document.visibilityState === "visible") toast(`${dispName(c.ownerName)} stofnaði ${c.name}. Ertu til? Sjá Hópinn.`, 7000);
 }
 
-/* Kvöldkosningin */
+/* Dulkóðun: hóplykill (AES-GCM, sá sami og í Java) og lykill keppnisstjórans (ECDH) */
+const te = new TextEncoder(), tdc = new TextDecoder();
+const b64e = u => { let s = ""; const a = new Uint8Array(u); for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s); };
+const b64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+let gkCache = null, gkFor = "";
+async function groupAes(){
+  const g = groupCode(); if (g.length < 4) throw new Error("enginn hópkóði");
+  if (gkCache && gkFor === g) return gkCache;
+  const base = await crypto.subtle.importKey("raw", te.encode(g), "PBKDF2", false, ["deriveKey"]);
+  gkCache = await crypto.subtle.deriveKey({name:"PBKDF2", salt:te.encode("rjupnakort-v1"), iterations:20000, hash:"SHA-1"}, base, {name:"AES-GCM", length:256}, false, ["encrypt", "decrypt"]);
+  gkFor = g; return gkCache;
+}
+async function aesEnc(key, obj){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, te.encode(typeof obj === "string" ? obj : JSON.stringify(obj))));
+  const a = new Uint8Array(12 + ct.length); a.set(iv); a.set(ct, 12); return b64e(a);
+}
+async function aesDec(key, s){ const a = b64d(s); return tdc.decode(await crypto.subtle.decrypt({name:"AES-GCM", iv:a.slice(0, 12)}, key, a.slice(12))); }
+const hex12 = async s => [...new Uint8Array(await crypto.subtle.digest("SHA-256", te.encode(s))).slice(0, 12)].map(b => b.toString(16).padStart(2, "0")).join("");
+async function judgeKey(){
+  let k = LS.get("judgeKey", null);
+  if (k && k.pub && k.priv) return k.pub;
+  const kp = await crypto.subtle.generateKey({name:"ECDH", namedCurve:"P-256"}, true, ["deriveKey"]);
+  const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+  k = {pub:{kty:pub.kty, crv:pub.crv, x:pub.x, y:pub.y}, priv:await crypto.subtle.exportKey("jwk", kp.privateKey)};
+  LS.set("judgeKey", k); return k.pub;
+}
+async function sealBallot(obj){
+  if (!comp || !comp.pub) throw new Error("enginn lykill");
+  const pub = await crypto.subtle.importKey("jwk", Object.assign({ext:true}, comp.pub), {name:"ECDH", namedCurve:"P-256"}, false, []);
+  const eph = await crypto.subtle.generateKey({name:"ECDH", namedCurve:"P-256"}, true, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({name:"ECDH", public:pub}, eph.privateKey, {name:"AES-GCM", length:256}, false, ["encrypt"]);
+  const epk = await crypto.subtle.exportKey("jwk", eph.publicKey);
+  return {epk:{x:epk.x, y:epk.y}, ct:await aesEnc(key, obj)};
+}
+async function openBallot(sealed){
+  const k = LS.get("judgeKey", null); if (!k || !sealed || !sealed.epk) throw new Error("ekki hægt");
+  const priv = await crypto.subtle.importKey("jwk", k.priv, {name:"ECDH", namedCurve:"P-256"}, false, ["deriveKey"]);
+  const epk = await crypto.subtle.importKey("jwk", {kty:"EC", crv:"P-256", x:sealed.epk.x, y:sealed.epk.y, ext:true}, {name:"ECDH", namedCurve:"P-256"}, false, []);
+  const key = await crypto.subtle.deriveKey({name:"ECDH", public:epk}, priv, {name:"AES-GCM", length:256}, false, ["decrypt"]);
+  return JSON.parse(await aesDec(key, sealed.ct));
+}
+async function collectBallots(msg){
+  if (!isOwner() || !msg.vb) return;
+  let ch = false;
+  for (const d in msg.vb){
+    try{ const v = await openBallot(msg.vb[d]); judge.ballots[d] = judge.ballots[d] || {}; judge.ballots[d][msg.id] = v; ch = true; }catch(e){}
+  }
+  if (ch){ saveJudge(); renderBoard(); }
+}
+
+/* Kvöldkosningin (leynileg) */
 const voteSheet = document.getElementById("voteSheet");
 let voteDay = null, voteDraft = {};
 function openVote(){
-  voteDay = ballotDay(); if (!voteDay) return;
+  voteDay = ballotOpen(); if (!voteDay) return;
   const others = competitors().filter(p => !p.me);
+  const cats = (comp.bal[voteDay].cats || compVoteKeys()).map(k => VOTES.find(v => v.k === k)).filter(Boolean);
   voteDraft = Object.assign({}, votes[voteDay] || {});
-  document.getElementById("voteH").textContent = voteDay === today() ? "Kvöldkosning" : "Kosning gærdagsins";
+  document.getElementById("voteH").textContent = voteDay === today() ? "Kvöldkosning" : "Kosning gærkvöldsins";
   const box = document.getElementById("voteList"); box.innerHTML = "";
-  for (const v of compVotes()){
+  for (const v of cats){
     const h = document.createElement("h3"); h.textContent = `${v.e} ${v.n}`; box.appendChild(h);
+    if (v.d){ const p = document.createElement("p"); p.className = "note"; p.textContent = v.d; box.appendChild(p); }
     const seg = document.createElement("div"); seg.className = "seg";
     others.forEach(p => {
       const b = document.createElement("button"); b.type = "button"; b.textContent = dispName(p.name);
@@ -3364,13 +3688,126 @@ function openVote(){
   }
   openPanel(voteSheet);
 }
-document.getElementById("voteSave").onclick = () => {
+document.getElementById("voteSave").onclick = async () => {
   if (!voteDay) return;
   if (!Object.keys(voteDraft).length){ toast("Veldu að minnsta kosti einn."); return; }
   votes[voteDay] = voteDraft; LS.set("votes", votes);
+  if (isOwner()){ judge.ballots[voteDay] = judge.ballots[voteDay] || {}; judge.ballots[voteDay][myId()] = voteDraft; saveJudge(); vbEnc[voteDay] = {mine:1}; }
+  else {
+    try{ vbEnc[voteDay] = await sealBallot(voteDraft); }
+    catch(e){ toast("Gat ekki dulkóðað atkvæðin. Keppnisstjórinn þarf að vista keppnina aftur í nýjustu útgáfu.", 8000); return; }
+  }
+  LS.set("vbEnc", vbEnc);
   closeSheet(); groupSend("vote"); renderBoard();
-  toast(isMasson() ? "Atkvæði greidd. Skál 🍺" : "Atkvæði greidd.");
+  toast(isMasson() ? "Atkvæði greidd í leyni. Skál 🍺" : "Atkvæði greidd í leyni.");
 };
+
+/* Dómarinn (keppnisstjórinn einn) */
+const judgeSheet = document.getElementById("judgeSheet");
+const personOptions = () => competitors().map(p => `<option value="${esc(p.id)}">${esc(dispName(p.name))}${p.guest ? " (gestur)" : ""}</option>`).join("");
+function openJudge(){
+  if (!isOwner()) return;
+  const t = today(), b = comp.bal && comp.bal[t];
+  const people = competitors(), voters = people.filter(p => !p.guest);
+  const got = judge.ballots[t] || {}, nv = Object.keys(got).length;
+  document.getElementById("jBallot").innerHTML = !b || !b.open
+    ? `<p class="note">${Date.now() >= beerTime(t) ? "🍺 Bjórtími! " : ""}Veldu flokkana í kvöld og sendu kosninguna út. Allir fá tilkynningu.</p>
+       <div id="jCats"></div><button class="btn wide" type="button" id="jSendBallot">🗳️ Senda út kvöldkosninguna</button>`
+    : b.closed ? `<p class="note">Kosningu kvöldsins er lokað. ${nv} af ${voters.length} kusu.</p>`
+    : `<p class="note"><b>Kosning í gangi:</b> ${nv} af ${voters.length} hafa kosið (${voters.filter(p => got[p.id]).map(p => esc(dispName(p.name))).join(", ") || "enginn enn"}).</p>
+       <button class="btn sec wide" type="button" id="jCloseBallot">Loka kosningunni</button>`;
+  if (!b || !b.open) togList("jCats", VOTES.filter(v => compVoteKeys().includes(v.k)), compVoteKeys(), false);
+  ["jPxWho", "jAdjWho", "jQWho"].forEach(id => document.getElementById(id).innerHTML = personOptions());
+  ["jPxDay", "jAdjDay", "jQDay"].forEach(id => document.getElementById(id).value = t);
+  document.getElementById("jChal").innerHTML = `<option value="">Appið dregur</option>` + CHALLENGES.map((c, i) => `<option value="${i}"${comp.chal && comp.chal[t] === i ? " selected" : ""}>${esc(c.t)}</option>`).join("");
+  document.getElementById("jGhTok").value = LS.get("ghToken", "") ? "••••••••" : "";
+  const gs = LS.get("ghSaved:" + comp.id, 0); document.getElementById("jGhStat").textContent = gs ? `Síðast vistað ${ago(gs)}` : "Ekki vistað enn";
+  renderJudgeLog();
+  const sb = document.getElementById("jSendBallot"); if (sb) sb.onclick = () => {
+    const cats = [...document.querySelectorAll("#jCats input:checked")].map(x => x.dataset.k);
+    if (!cats.length){ toast("Veldu að minnsta kosti einn flokk."); return; }
+    comp.bal = comp.bal || {}; comp.bal[t] = {cats, open:true, closed:false, ts:Date.now()};
+    comp.ts = Date.now(); comp.rev = (comp.rev || 0) + 1; saveComp();
+    groupSend("ballot", {nt:{title:"🗳️ Kvöldkosningin er hafin!", body:`${cats.map(k => (VOTES.find(v => v.k === k) || {}).n).join(", ")}. Opnaðu Hópinn og kjóstu í leyni.`}});
+    closeSheet(); renderBoard(); toast("Kvöldkosningin send út 🗳️");
+  };
+  const cb = document.getElementById("jCloseBallot"); if (cb) cb.onclick = () => { comp.bal[t].closed = true; bumpComp(); openJudge(); renderBoard(); };
+  openPanel(judgeSheet);
+}
+function renderJudgeLog(){
+  const nm = id => { const p = competitors().find(x => x.id === id); return p ? dispName(p.name) : id; };
+  const rows = [
+    ...judge.px.map(p => ({t:p.ts, h:`📝 <b>${esc(nm(p.id))}</b> ${fmtD(p.day)}: ${p.k ? `${p.k} 🦃` : ""}${p.s ? ` ${p.s} 💥` : ""} <small>(sést strax)</small>`, del:() => { judge.px = judge.px.filter(x => x !== p); }})),
+    ...judge.adj.map(a => ({t:a.ts, h:`⚖️ <b>${esc(nm(a.id))}</b> ${fmtD(a.day)}: ${a.pts > 0 ? "+" : ""}${a.pts} · ${esc(a.why || "")} <small>(falið)</small>`, del:() => { judge.adj = judge.adj.filter(x => x !== a); }})),
+    ...judge.quotes.map(q => ({t:q.ts, h:`🗨️ <b>${esc(nm(q.id))}</b> ${fmtD(q.day)}: „${esc(q.txt)}“ <i>${esc(q.kind)}</i> <small>(falið)</small>`, del:() => { judge.quotes = judge.quotes.filter(x => x !== q); }}))
+  ].sort((a, b) => b.t - a.t);
+  const box = document.getElementById("jLog"); box.innerHTML = rows.length ? "" : '<div class="empty">Ekkert skráð enn.</div>';
+  rows.forEach(r => {
+    const row = document.createElement("div"); row.className = "ptrow"; row.style.cursor = "default";
+    row.innerHTML = `<div class="t"><span style="color:var(--fg);font-size:13.5px">${r.h}</span></div>`;
+    const del = document.createElement("button"); del.className = "del"; del.type = "button"; del.textContent = "✕";
+    del.onclick = () => { if (del.dataset.armed !== "1"){ del.dataset.armed = "1"; del.textContent = "Eyða?"; return; } r.del(); saveJudge(); groupSend("score"); renderJudgeLog(); renderBoard(); };
+    row.appendChild(del); box.appendChild(row);
+  });
+}
+document.getElementById("jPxAdd").onclick = () => {
+  const k = parseInt(document.getElementById("jPxK").value, 10) || 0, s = parseInt(document.getElementById("jPxS").value, 10) || 0;
+  if (!k && !s){ toast("Skráðu rjúpur eða skot."); return; }
+  judge.px.push({pid:"x" + Date.now().toString(36), id:document.getElementById("jPxWho").value, day:document.getElementById("jPxDay").value || today(), k, s, ts:Date.now()});
+  saveJudge(); groupSend("score"); renderJudgeLog(); renderBoard(); toast("Skráð 📝");
+  document.getElementById("jPxK").value = ""; document.getElementById("jPxS").value = "";
+};
+document.getElementById("jAdjAdd").onclick = () => {
+  const p = parseInt(document.getElementById("jAdjPts").value, 10);
+  if (!p){ toast("Settu inn stig, t.d. -1 eða 2."); return; }
+  judge.adj.push({id:document.getElementById("jAdjWho").value, day:document.getElementById("jAdjDay").value || today(), pts:p, why:document.getElementById("jAdjWhy").value.trim().slice(0, 80), ts:Date.now()});
+  saveJudge(); renderJudgeLog(); renderBoard(); toast("Stigabreyting skráð í leyni ⚖️");
+  document.getElementById("jAdjPts").value = ""; document.getElementById("jAdjWhy").value = "";
+};
+document.getElementById("jQAdd").onclick = () => {
+  const txt = document.getElementById("jQTxt").value.trim(); if (!txt){ toast("Skrifaðu hvað var sagt."); return; }
+  judge.quotes.push({id:document.getElementById("jQWho").value, day:document.getElementById("jQDay").value || today(), txt:txt.slice(0, 160), kind:document.getElementById("jQKind").value, ts:Date.now()});
+  saveJudge(); renderJudgeLog(); toast("Tilvitnun skráð í leyni 🗨️");
+  document.getElementById("jQTxt").value = "";
+};
+document.getElementById("jGuestAdd").onclick = () => {
+  const n = document.getElementById("jGuest").value.trim(); if (!n) return;
+  comp.guests = comp.guests || []; comp.guests.push({id:"g" + Date.now().toString(36), name:n.slice(0, 24)}); bumpComp();
+  document.getElementById("jGuest").value = ""; openJudge(); renderBoard(); toast(`${n} er gestakeppandi`);
+};
+document.getElementById("jChal").onchange = e => {
+  comp.chal = comp.chal || {}; if (e.target.value === "") delete comp.chal[today()]; else comp.chal[today()] = +e.target.value;
+  bumpComp(); renderBoard(); toast("Áskorun dagsins uppfærð");
+};
+document.getElementById("jEnd").onclick = () => {
+  askDialog("Ljúka keppni?", `<li>Úrslitin, kosningin, faldar stigabreytingar og tilvitnanir verða opinber hjá öllum.</li><li>Verðlaunaafhendingin birtist og keppnin fer í heiðurshöllina.</li><li>Ekki hægt að afturkalla.</li>`,
+    isMasson() ? "Skál 🍺 Ljúka" : "Ljúka keppni", "Hætta við", () => {
+      comp.ended = true; if (comp.to > today()) comp.to = today(); bumpComp(); closeSheet();
+      publishReveal(true); renderBoard();
+    });
+};
+// Opinberun: leyndu gögnin send til allra í bútum (ntfy tekur ~4 KB)
+function publishReveal(force){
+  if (!isOwner() || !compEnded()) return;
+  let r = getReveal();
+  if (!r){ r = {cid:comp.id, votes:tallyVotes(judge.ballots, competitors()), adj:judge.adj, quotes:judge.quotes, ts:Date.now()};
+    LS.set("reveal:" + comp.id, r); revealCache = r; }
+  if (!force && LS.get("revealSent:" + comp.id, "") === today()) return;
+  LS.set("revealSent:" + comp.id, today());
+  const s = JSON.stringify(r), size = 1500, n = Math.max(1, Math.ceil(s.length / size));
+  for (let i = 0; i < n; i++) setTimeout(() => groupSend("reveal", Object.assign({rv:{cid:comp.id, i, n, ts:r.ts, part:s.slice(i * size, (i + 1) * size)}, h:[]},
+    i === n - 1 ? {nt:{title:`🏆 ${comp.name} er lokið!`, body:"Úrslitin, kosningin og Hall of Shame eru komin. Opnaðu Hópinn."}} : {})), i * 800);
+  archiveGithub(r).catch(() => {});
+}
+const revealParts = {};
+function takeReveal(msg){
+  const rv = msg.rv; if (!rv || !comp || rv.cid !== comp.id || msg.id !== comp.owner || getReveal()) return;
+  const k = rv.cid + "|" + rv.ts; revealParts[k] = revealParts[k] || [];
+  revealParts[k][rv.i] = rv.part;
+  if (revealParts[k].filter(x => x != null).length === rv.n){
+    try{ const r = JSON.parse(revealParts[k].join("")); LS.set("reveal:" + comp.id, r); revealCache = r; renderBoard(); }catch(e){}
+  }
+}
 
 /* Einvígi */
 const duelSheet = document.getElementById("duelSheet");
@@ -3378,7 +3815,7 @@ const duelKey = d => `${d.day}|${d.a}|${d.b}`;
 function putDuel(d){ const k = duelKey(d), p = duels[k]; if (!p || (d.ts || 0) > (p.ts || 0)){ duels[k] = d; return true; } return false; }
 function openDuel(){
   const box = document.getElementById("duelList"); box.innerHTML = "";
-  competitors().filter(p => !p.me).forEach(p => {
+  competitors().filter(p => !p.me && !p.guest).forEach(p => {
     const row = document.createElement("div"); row.className = "ptrow"; row.setAttribute("role", "button"); row.tabIndex = 0;
     row.innerHTML = `<span class="dotp" style="background:#9a3c0b;font-size:16px">⚔️</span><div class="t"><b>${esc(dispName(p.name))}</b><span>Skora á í dag</span></div>`;
     row.onclick = () => {
@@ -3387,7 +3824,8 @@ function openDuel(){
       askDialog(`Einvígi við ${dispName(p.name)}?`, `<li>Sá sem fær fleiri rjúpur í dag tekur 1 stig af hinum.</li><li>Jafntefli: ekkert gerist.</li><li>${esc(dispName(p.name))} þarf að samþykkja.</li>`,
         m ? "Skál 🍺" : "Skora á", m ? "Nauts" : "Hætta við", () => {
           putDuel({day:today(), a:myId(), b:p.id, st:"ask", ts:Date.now()}); LS.set("duels", duels);
-          groupSend("duel"); renderBoard(); toast(`Áskorun send á ${dispName(p.name)} ⚔️`);
+          groupSend("duel", {nt:{to:p.id, title:`⚔️ ${LS.get("me", "")} skorar á þig í einvígi!`, body:"Sá sem fær fleiri rjúpur í dag tekur 1 stig af hinum. Opnaðu Hópinn til að svara."}});
+          renderBoard(); toast(`Áskorun send á ${dispName(p.name)} ⚔️`);
         });
     };
     box.appendChild(row);
@@ -3397,8 +3835,41 @@ function openDuel(){
 function answerDuel(yes){
   const d = Object.values(duels).find(x => x.day === today() && x.b === myId() && x.st === "ask"); if (!d) return;
   putDuel({...d, st:yes ? "ok" : "no", ts:Date.now()}); LS.set("duels", duels);
-  groupSend("duel"); renderBoard();
+  groupSend("duel", {nt:{to:d.a, title:yes ? `⚔️ ${LS.get("me", "")} tók áskoruninni!` : `${LS.get("me", "")} hafnaði einvíginu`, body:yes ? "Einvígið er hafið. Úrslit á bjórtíma." : "Kjúklingur 🐔"}});
+  renderBoard();
   toast(yes ? (isMasson() ? "Einvígið er hafið. Skál ⚔️" : "Einvígið er hafið ⚔️") : "Áskorun hafnað.");
+}
+
+/* Hunting Cards */
+const cardsSheet = document.getElementById("cardsSheet");
+function openCards(){
+  const w = weekKey(today()), box = document.getElementById("cardList"); box.innerHTML = "";
+  dealt(myId(), w).forEach(k => {
+    const c = cardOf(k), used = myCards.find(x => x.w === w && x.c === k);
+    const el = document.createElement("div"); el.className = "hcard" + (used ? " used" : "");
+    el.innerHTML = `<div class="hc-e">${c.e}</div><div class="t"><b>${esc(c.n)}</b><span>${esc(c.d)}</span>${used ? `<span class="hc-u">Spilað ${fmtD(used.day)}${used.to ? " á " + esc(dispName((competitors().find(p => p.id === used.to) || {}).name || "?")) : ""}</span>` : ""}</div>`;
+    if (!used){ const b = document.createElement("button"); b.className = "btn"; b.type = "button"; b.textContent = "Spila"; b.onclick = () => playCard(k); el.appendChild(b); }
+    box.appendChild(el);
+  });
+  openPanel(cardsSheet);
+}
+function playCard(k){
+  const c = cardOf(k), m = isMasson(), w = weekKey(today());
+  const go = to => askDialog(`Spila ${c.n}?`, `<li>${esc(c.d)}</li>${to ? `<li>Á: <b>${esc(dispName(to.name))}</b></li>` : ""}<li>Hvert spil er bara hægt að spila einu sinni í viku.</li>`,
+    m ? "Skál 🍺 Spila" : "Spila", m ? "Nauts" : "Hætta við", () => {
+      myCards.push({w, c:k, day:today(), to:to ? to.id : null, ts:Date.now()}); LS.set("cards", myCards);
+      const me = LS.get("me", "");
+      const nt = k === "curse" ? {to:to.id, title:`🧙 ${me} bölvaði þér!`, body:"Sænskur hreimur næstu 15 mínúturnar 😂"}
+        : k === "thief" ? {to:to.id, title:`🦹 ${me} stal stigi af þér!`, body:"The Thief. Hefndin er sæt."}
+        : {title:`🃏 ${me} spilaði ${c.n}`, body:c.d};
+      groupSend("card", {nt}); closeSheet(); renderBoard(); toast(`${c.e} ${c.n} spilað!`);
+    });
+  if (!c.target){ closeSheet(); go(null); return; }
+  const box = document.getElementById("cardList"); box.innerHTML = `<p class="note">Á hvern spilarðu ${esc(c.n)}?</p>`;
+  competitors().filter(p => !p.me && !p.guest).forEach(p => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "bragbtn"; b.textContent = dispName(p.name);
+    b.onclick = () => { closeSheet(); go(p); }; box.appendChild(b);
+  });
 }
 
 /* Montveggurinn */
@@ -3416,9 +3887,8 @@ function openBrag(){
 }
 function sendBrag(t){
   t = String(t || "").trim().slice(0, 120); if (!t) return;
-  const me = myId();
-  wall.unshift({id:me, name:LS.get("me", "") || "Ég", txt:t, ts:Date.now()}); wall = wall.slice(0, 30); LS.set("wall", wall);
-  groupSend("brag", {txt:t}); closeSheet(); renderWall(); toast("📣 Sent á hópinn");
+  wall.unshift({id:myId(), name:LS.get("me", "") || "Ég", txt:t, ts:Date.now()}); wall = wall.slice(0, 30); LS.set("wall", wall);
+  groupSend("brag", {txt:t, nt:{title:`${LS.get("me", "")} 📣`, body:t}}); closeSheet(); renderWall(); toast("📣 Sent á hópinn");
 }
 document.getElementById("bragSend").onclick = () => {
   const t = document.getElementById("bragIn").value.trim(); if (!t) return;
@@ -3438,7 +3908,7 @@ function renderWall(){
 /* Skotateljari */
 document.getElementById("btnShot").onclick = () => {
   const ts = Date.now(); shots.push(ts); LS.set("shots", shots);
-  const n = shots.filter(t => dayKey(t) === today()).length + myKillsOn(today()).length;
+  const n = shots.filter(t => dayKey(t) === today()).length + kills.filter(k => dayKey(k.ts) === today() && !k.same).length;
   showUndo(`💥 Skot skráð · ${n} í dag`, () => { shots = shots.filter(t => t !== ts); LS.set("shots", shots); refreshAll(); toast("Afturkallað"); });
   try{ S.vib && navigator.vibrate && navigator.vibrate(30); }catch(e){}
   refreshAll();
@@ -3466,7 +3936,6 @@ function registerPoop(lat, lon){
   showUndo(`💩 Kúkur skráður${alt != null ? ` í ${alt} m hæð` : ""}`, () => { poops = poops.filter(x => x.id !== p.id); LS.set("poops", poops); refreshAll(); toast("Afturkallað"); });
   groupSend("poop"); refreshAll();
 }
-// Sjónarvottur: var ég innan 200 m þegar félagi kúkaði?
 function myPosAt(ts){
   if (pos && Math.abs((pos.t || 0) - ts) < 10 * 60000) return pos;
   let best = null, bd = 10 * 60000;
@@ -3481,7 +3950,7 @@ function checkWitness(msg){
     if (me && distM(me.lat, me.lon, q[1], q[2]) <= 200){
       wit.push([msg.id, q[0]]); LS.set("wit", wit);
       if (document.visibilityState === "visible") toast(`📸 Þú stóðst ${dispName(msg.name)} að verki!`, 6000);
-      setTimeout(() => groupSend("wit"), 500);
+      setTimeout(() => groupSend("wit", {nt:{to:msg.id, title:"📸 Staðinn að verki!", body:`${LS.get("me", "")} sá þig kúka 💩`}}), 500);
     }
   }
 }
@@ -3489,20 +3958,147 @@ window.__onFind = phone => {
   const d = today(), k = last7(phone); if (!k) return;
   finds[d] = finds[d] || {}; finds[d][k] = (finds[d][k] || 0) + 1; LS.set("finds", finds);
 };
-// Rafhlaðan: lægsta gildi dagsins á meðan ferð er í gangi
 function trackBattery(){
   if (!hunt || typeof batt === "undefined" || !batt) return;
   const d = today(), pct = Math.round(batt.level * 100);
   if (batmin[d] == null || pct < batmin[d]){ batmin[d] = pct; LS.set("batmin", batmin); }
 }
-// Bjórtími: kvöldkosningin hefst og úrslit einvígja
+// Bjórtími: áminning til keppnisstjórans um að senda út kvöldkosninguna
 function beerCheck(){
-  if (!comp || !joined() || compEnded() || LS.get("ballotDay", "") === today() || Date.now() < beerTime(today())) return;
-  if (today() < comp.from || competitors().length < 2) return;
-  LS.set("ballotDay", today());
-  const title = "🗳️ Kvöldkosningin er hafin", body = "Flottasta skotið, klúður dagsins og fleira. Opnaðu Hópinn og kjóstu.";
-  if (document.visibilityState !== "visible" && window.__notify) window.__notify(title, body); else toast(title, 7000);
-  renderBoard();
+  if (!comp || !isOwner() || compEnded() || LS.get("ballotRemind", "") === today() || Date.now() < beerTime(today())) return;
+  if (today() < comp.from || competitors().length < 2 || (comp.bal && comp.bal[today()])) return;
+  LS.set("ballotRemind", today());
+  const title = "🍺 Bjórtími", body = "Senda út kvöldkosninguna? Opnaðu Hópinn → Dómarinn.";
+  if (document.visibilityState !== "visible" && window.__notify) window.__notify(title, body); else toast(`${title}. ${body}`, 8000);
+}
+
+/* Vistun: GitHub og afrit */
+const GH_REPO = "Gombiman/rjupnakort";
+async function archiveGithub(rev){
+  const tok = LS.get("ghToken", ""); if (!tok || !isOwner() || !comp) return false;
+  const people = competitors();
+  const data = {v:1, comp, reveal:rev || getReveal(), people:people.map(p => ({id:p.id, name:p.name, guest:!!p.guest, h:encDays(p.days)})),
+                px:judge.px, hall:LS.get("hall", []).filter(h => h.id === comp.id), saved:Date.now()};
+  const enc = await aesEnc(await groupAes(), data);
+  const url = `https://api.github.com/repos/${GH_REPO}/contents/seasons/${comp.id}.json`;
+  const hdr = {"Authorization":"Bearer " + tok, "Accept":"application/vnd.github+json"};
+  let sha; try{ const r = await fetch(url, {headers:hdr}); if (r.ok) sha = (await r.json()).sha; }catch(e){}
+  const body = Object.assign({message:`Tímabil: ${comp.name}`, content:b64e(te.encode(JSON.stringify({v:1, enc})))}, sha ? {sha} : {});
+  const r = await fetch(url, {method:"PUT", headers:Object.assign({"Content-Type":"application/json"}, hdr), body:JSON.stringify(body)});
+  if (!r.ok) throw new Error("GitHub svaraði " + r.status);
+  LS.set("ghSaved:" + comp.id, Date.now());
+  return true;
+}
+// Fyrri tímabil á GitHub (sem passa við hópkóðann) fara í heiðurshöllina
+async function loadArchives(force){
+  if (!groupReady() || (!force && LS.get("archLoaded", "") === today())) return;
+  if (force && Date.now() - (loadArchives.at || 0) < 10 * 60000) return;
+  loadArchives.at = Date.now(); LS.set("archLoaded", today());
+  try{
+    const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/seasons`); if (!r.ok) return;
+    const list = await r.json(), hall = LS.get("hall", []); let ch = false;
+    for (const f of list.filter(x => /\.json$/.test(x.name))){
+      const id = f.name.replace(/\.json$/, "");
+      if (hall.some(h => h.id === id && h.all) && !(comp && comp.id === id && !getReveal())) continue;
+      try{
+        const raw = await (await fetch(f.download_url)).json();
+        const data = JSON.parse(await aesDec(await groupAes(), raw.enc));
+        if (data.hall && data.hall[0] && !hall.some(h => h.id === id)){ hall.push(data.hall[0]); ch = true; }
+        if (comp && data.comp && data.comp.id === comp.id && data.reveal && !getReveal()){ LS.set("reveal:" + comp.id, data.reveal); revealCache = data.reveal; ch = true; }
+      }catch(e){ /* annar hópur */ }
+    }
+    if (ch){ LS.set("hall", hall.slice(0, 30)); renderBoard(); }
+  }catch(e){}
+}
+document.getElementById("jGhSave").onclick = async () => {
+  const v = document.getElementById("jGhTok").value.trim();
+  if (v && !v.startsWith("•")) LS.set("ghToken", v);
+  if (!LS.get("ghToken", "")){ toast("Settu inn GitHub-lykil fyrst."); return; }
+  try{ await archiveGithub(); toast("Tímabilið vistað á GitHub 💾"); openJudge(); }catch(e){ toast("Vistun mistókst: " + e.message, 7000); }
+};
+const BACKUP_KEYS = ["kills", "trips", "pts", "shots", "poops", "votes", "vbEnc", "finds", "wit", "batmin", "duels", "wall", "cards", "comp", "compJoin",
+  "board", "hall", "judge", "judgeKey", "nicks", "set", "me", "myPhone", "group", "kvoti", "friends", "autoReply", "offAreas"];
+document.getElementById("bkCopy").onclick = e => {
+  const o = {v:1, at:Date.now()}; BACKUP_KEYS.forEach(k => { const v = LS.get(k, undefined); if (v !== undefined) o[k] = v; });
+  copyText("SMASSON-AFRIT:" + b64e(te.encode(JSON.stringify(o))), e.currentTarget, "Afrita öll gögn");
+};
+document.getElementById("bkLoad").onclick = () => {
+  const t = document.getElementById("bkIn").value.trim().replace(/^SMASSON-AFRIT:/, "");
+  try{
+    const o = JSON.parse(tdc.decode(b64d(t))); if (!o || o.v !== 1) throw 0;
+    askDialog("Flytja inn afrit?", `<li>Afrit frá ${new Date(o.at).toLocaleString("is-IS")}.</li><li>Gögnin í þessum síma verða skrifuð yfir.</li>`, "Flytja inn", "Hætta við", () => {
+      BACKUP_KEYS.forEach(k => { if (o[k] !== undefined) LS.set(k, o[k]); });
+      toast("Afrit flutt inn. Endurræsi…"); setTimeout(() => location.reload(), 1200);
+    });
+  }catch(e){ toast("Þetta er ekki gilt afrit."); }
+};
+
+/* Hóprásin í vafra (iPhone): sama dulkóðun og Android appið */
+function renderWebFriends(){
+  const box = document.getElementById("friendsWeb");
+  if (!window.__webGroup || !groupReady()) return;
+  const list = Object.values(board).filter(r => r && r.id && r.phone && r.id !== myId());
+  box.innerHTML = `<div class="group">${list.length ? list.map(r => `<div class="ptrow" style="cursor:default"><span class="dotp" style="width:40px;height:40px;background:#E4EEF8;color:#1F5F9E;font-weight:700;font-size:16px">${esc((dispName(r.name) || "?").charAt(0).toUpperCase())}</span>
+    <div class="t"><b>${esc(dispName(r.name))}</b><span>${r.ts ? "síðast " + ago(r.ts) : ""}</span></div><button class="btn" type="button" data-wf="${esc(r.id)}" style="padding:9px 18px;border-radius:20px;flex:none">Finna</button></div>`).join("")
+    : '<div class="empty">Félagarnir birtast hér þegar þeir eru komnir í hópinn.</div>'}</div>
+    <p class="note" style="margin:8px 4px 0">Á iPhone svarar síminn þinn bara „Finna“ á meðan síðan er opin.</p>`;
+  box.querySelectorAll("[data-wf]").forEach(b => b.onclick = () => { const r = board[b.dataset.wf]; if (r && window.__findByPhone) window.__findByPhone(r.phone, r.name); });
+}
+if (!window.RK_APP && window.crypto && crypto.subtle){
+  const gTopic = async () => "rk_g_" + await hex12("group|" + groupCode());
+  const pTopic = async phone => "rk_" + await hex12("topic|" + groupCode() + "|" + last7(phone));
+  const pub = async (topic, obj) => (await fetch("https://ntfy.sh/" + topic, {method:"POST", body:await aesEnc(await groupAes(), obj)})).ok;
+  async function pollTopic(topic, since){
+    const r = await fetch(`https://ntfy.sh/${topic}/json?poll=1&since=${encodeURIComponent(since)}`);
+    if (!r.ok) throw new Error("ntfy " + r.status);
+    const items = []; let last = null;
+    for (const line of (await r.text()).split("\n")){
+      if (!line.trim()) continue; let ev; try{ ev = JSON.parse(line); }catch(e){ continue; }
+      if (ev.event !== "message") continue; last = ev.id;
+      try{ items.push(JSON.parse(await aesDec(await groupAes(), ev.message))); }catch(e){}
+    }
+    return {items, last};
+  }
+  window.__webGroup = true;
+  window.__groupSend = async msg => { try{ await pub(await gTopic(), msg); }catch(e){} };
+  window.__groupFetch = async since => { const r = await pollTopic(await gTopic(), since); answerRequests(); return r; };
+  // Finna Android-félaga: beiðni á rásina hans, svar kemur á mína rás
+  window.__findByPhone = async (phone, name) => {
+    const me = LS.get("myPhone", ""); if (!last7(me)) { toast("Skráðu þig í hópinn fyrst."); return; }
+    const since = Math.floor(Date.now() / 1000) - 5;
+    try{ await pub(await pTopic(phone), {t:"req", from:last7(me), name:LS.get("me", ""), ts:Math.floor(Date.now() / 1000)}); }
+    catch(e){ toast("Náði ekki sambandi."); return; }
+    if (window.__onFind) window.__onFind(phone);
+    toast(`Spyr ${dispName(name)} um netið…`, 5000);
+    const my = await pTopic(me);
+    for (let i = 0; i < 12; i++){
+      await new Promise(r => setTimeout(r, 4000));
+      try{
+        const r = await pollTopic(my, String(since));
+        const loc = r.items.find(m => m.t === "loc" && last7(m.from) === last7(phone));
+        if (loc){ const p = addRemotePoint({lat:loc.lat, lon:loc.lon, acc:loc.acc, ts:loc.ts * 1000, type:"ping", from:loc.name || name}); setTab("map"); showRemote(p, false); return; }
+      }catch(e){}
+    }
+    toast(`${dispName(name)} svaraði ekki. Síminn gæti verið utan sambands.`, 6000);
+  };
+  // Svara „Finna“ frá félögum á meðan síðan er opin
+  const answered = new Set();
+  async function answerRequests(){
+    const me = LS.get("myPhone", ""); if (!last7(me) || LS.get("autoReply", true) === false) return;
+    try{
+      const my = await pTopic(me), since = LS.get("pSince", String(Math.floor(Date.now() / 1000) - 600));
+      const r = await pollTopic(my, since); if (r.last) LS.set("pSince", r.last);
+      for (const m of r.items){
+        if (m.t !== "req" || !m.from || answered.has(m.from + m.ts) || Date.now() / 1000 - m.ts > 900) continue;
+        if (!Object.values(board).some(b => b.id === last7(m.from))) continue;   // bara félagar í hópnum
+        answered.add(m.from + m.ts);
+        if (!pos){ toast(`${m.name || "Félagi"} er að leita að þér. Kveiktu á GPS til að svara.`, 7000); continue; }
+        await pub(await pTopic(m.from), {t:"loc", from:last7(me), name:LS.get("me", ""), lat:pos.lat, lon:pos.lon, acc:Math.round(pos.acc || 0), ts:Math.floor((pos.t || Date.now()) / 1000)});
+        toast(`${dispName(m.name || "Félagi")} fékk staðsetninguna þína`, 5000);
+      }
+    }catch(e){}
+  }
+  setInterval(() => { if (document.visibilityState === "visible" && groupReady()) answerRequests(); }, 20000);
 }
 
 /* ---------- Hóprás (dulkóðuð í appinu, um ntfy.sh) ---------- */
@@ -3527,20 +4123,30 @@ function onGroupMsg(msg, live){
   if (Array.isArray(msg.h)) msg.h.forEach(x => { if (Array.isArray(x) && x[0]) hmap[x[0]] = x; });
   const wits = ((prev && prev.wit) || []).slice(); (Array.isArray(msg.wit) ? msg.wit : []).forEach(w => { if (!wits.some(x => x[0] === w[0] && x[1] === w[1])) wits.push(w); });
   const pps = ((prev && prev.pp) || []).slice(); (Array.isArray(msg.pp) ? msg.pp : []).forEach(q => { if (!pps.some(x => x[0] === q[0])) pps.push(q); });
+  const cds = ((prev && prev.cdAll) || []).slice(); (Array.isArray(msg.cd) ? msg.cd : []).forEach(c => { if (!cds.some(x => x.ts === c.ts && x.c === c.c)) cds.push(c); });
+  const pcut = addDays(today(), -3);
+  const pxs = Array.isArray(msg.px) ? [...((prev && prev.pxAll) || []).filter(x => x.day < pcut), ...msg.px] : ((prev && prev.pxAll) || []);
   const newer = !prev || (msg.ts || 0) >= (prev.ts || 0);
   const base = newer ? {id:msg.id, name:msg.name, day:msg.day, today:msg.today, season:msg.season, first:msg.first, km:msg.km, ts:msg.ts,
                         cid:msg.cid || null, joined:!!msg.joined} : Object.assign({}, prev);
   delete base.h;
-  board[msg.id] = Object.assign(base, {hm:hmap, v:Object.assign({}, (prev && prev.v) || {}, msg.v || {}), fd:Object.assign({}, (prev && prev.fd) || {}, msg.fd || {}),
-                                       wit:wits.slice(-60), pp:pps.slice(-80)});
+  delete base.v;
+  board[msg.id] = Object.assign(base, {hm:hmap, fd:Object.assign({}, (prev && prev.fd) || {}, msg.fd || {}), phone:msg.phone || (prev && prev.phone) || "",
+                                       vbDays:[...new Set([...((prev && prev.vbDays) || []), ...Object.keys(msg.vb || {})])].slice(-30),
+                                       wit:wits.slice(-60), pp:pps.slice(-80), cdAll:cds.slice(-60), pxAll:pxs.slice(-200)});
   LS.set("board", board);
   if (Array.isArray(msg.du)){ let ch = false; msg.du.forEach(d => { if (d && d.day && d.a && d.b && putDuel(d)) ch = true; }); if (ch) LS.set("duels", duels);
-    const ask = msg.du.find(d => d.b === myId() && d.st === "ask" && d.day === today());
-    if (ask && live && document.visibilityState === "visible" && !announced.has("duel|" + duelKey(ask))){ announced.add("duel|" + duelKey(ask)); toast(`⚔️ ${dispName(msg.name)} skorar á þig í einvígi! Sjá Hópinn.`, 7000); } }
+ }
   checkWitness(msg);
   if (msg.t === "brag" && msg.txt && !wall.some(w => w.id === msg.id && w.ts === msg.ts)){
     wall.unshift({id:msg.id, name:msg.name, txt:String(msg.txt).slice(0, 120), ts:msg.ts}); wall.sort((x, y) => y.ts - x.ts); wall = wall.slice(0, 30); LS.set("wall", wall);
-    if (document.visibilityState === "visible" && Date.now() - msg.ts < 20 * 60000) toast(`📣 ${dispName(msg.name)}: ${msg.txt}`, 6000);
+  }
+  collectBallots(msg); takeReveal(msg);
+  // Tilkynningar sem sendandinn biður um (kosning, einvígi, spil, WANTED, mont…)
+  if (msg.nt && msg.nt.title && (!msg.nt.to || msg.nt.to === myId()) && Date.now() - (msg.ts || 0) < 20 * 60000 && (live || msg.ts > lastPollAt - 90000)){
+    const key = "nt|" + msg.id + "|" + msg.ts;
+    if (!announced.has(key) && document.visibilityState === "visible") toast(`${String(msg.nt.title).replace(msg.name, dispName(msg.name))} ${msg.nt.body || ""}`, 7000);
+    announced.add(key);
   }
   const key = `${msg.id}|${msg.day}|${msg.today}`;
   const fresh = msg.t === "kill" && msg.day === today() && Date.now() - msg.ts < 20 * 60000 && (live || msg.ts > lastPollAt - 90000);
@@ -3581,7 +4187,21 @@ function crownCheck(){
   if (document.visibilityState !== "visible" && window.__notify) window.__notify(title, body);
   else toast(`${title} · ${body}`, 9000);
 }
-setInterval(() => { if (document.visibilityState === "visible") groupPoll(); crownCheck(); beerCheck(); trackBattery(); }, 60000);
+setInterval(() => { if (document.visibilityState === "visible") groupPoll(); crownCheck(); beerCheck(); trackBattery(); }, window.RK_APP ? 60000 : 30000);
+// Hópurinn heldur áfram að láta vita til miðnættis á keppnisdögum, líka með appið lokað
+// (þjónustan er ræst á meðan appið er opið; Android leyfir það ekki eftir að það fer í bakgrunn)
+function hopListen(){
+  if (!window.__listenUntil) return;
+  const on = S.hoplisten !== false && comp && joined() && !compEnded() && today() >= comp.from;
+  const key = on ? today() : "off";
+  if (LS.get("hopListen", "") === key) return;
+  LS.set("hopListen", key);
+  const mid = new Date(); mid.setHours(23, 59, 0, 0);
+  window.__listenUntil(on ? mid.getTime() : 0);
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") hopListen(); });
+setTimeout(hopListen, 3000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") loadArchives(false); });
 // Í ferð: senda stöðu (km o.fl.) á um 10 mín fresti, líka með slökktan skjá (GPS vekur kóðann)
 const prevPosExtra2 = window.__onPosExtra;
 window.__onPosExtra = () => {
@@ -3891,7 +4511,7 @@ function massonApply(){
   if (lastMode !== m){ lastMode = m; if (window.__onMasson) window.__onMasson(m); }
 }
 const _prevApply = window.__applyAll;
-window.__applyAll = () => { if (_prevApply) _prevApply(); massonApply(); };
+window.__applyAll = () => { if (_prevApply) _prevApply(); massonApply(); hopListen(); };
 setInterval(() => { if (isMasson() && !document.hidden) updateCar(); }, 60000);   // Bíll → Bjórinn kl. 16
 massonApply();
 setTimeout(() => { groupPoll().then(() => { if (Date.now() - LS.get("gLastSent", 0) > 3600e3){ LS.set("gLastSent", Date.now()); groupSend("score"); } }); }, 1500);

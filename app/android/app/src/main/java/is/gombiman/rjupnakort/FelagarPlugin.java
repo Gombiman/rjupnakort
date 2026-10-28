@@ -81,6 +81,13 @@ public class FelagarPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void listenUntil(PluginCall call) {
+        Long until = call.getLong("until", 0L);
+        HopurService.start(getContext(), until == null ? 0 : until);
+        call.resolve();
+    }
+
+    @PluginMethod
     public void groupSend(PluginCall call) {
         final String msg = call.getString("msg", "");
         Felagar.IO.execute(() -> {

@@ -151,6 +151,7 @@
   // Sameiginleg stigatafla: dulkóðað á hóprás (Java sér um dulkóðun og tilkynningar í bakgrunni)
   window.__groupSend = msg => F.groupSend({ msg: JSON.stringify(msg) }).catch(() => {});
   window.__groupFetch = since => F.groupFetch({ since });
+  window.__listenUntil = until => F.listenUntil({ until }).catch(() => {});
   F.addListener("group", m => { if (window.__onGroupMsg) window.__onGroupMsg(m, true); }).catch(() => {});
   const fstate = {};   // síðustu 7 tölustafir -> {state, t}
   const last7 = p => { const d = String(p || "").replace(/[^0-9]/g, ""); return d.length <= 7 ? d : d.slice(-7); };

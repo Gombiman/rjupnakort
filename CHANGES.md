@@ -2,6 +2,19 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Dómarinn, Hunting Cards og WANTED 💀
+- ⚖️ Keppnisstjórinn er dómari: sendir út kvöldkosninguna, skráir rjúpur fyrir aðra, bætir við gestum, velur áskorun dagsins og skráir falin stig og orð dagsins
+- 🗳️ Kvöldkosningin er leynileg: bara keppnisstjórinn sér atkvæðin og úrslitin birtast þegar keppni lýkur
+- 🏁 „Ljúka keppni“ opinberar allt: verðlaunapall, Legendary Awards og Hall of Shame
+- 🃏 Hunting Cards: Double or Nothing, The Thief, Immunity, The Gambler og The Curse (3 spil á viku)
+- 💀 WANTED: sá sem leiðir er eftirlýstur og bounty fæst fyrir að fara fram úr honum
+- 💥 Double og ☄️ Triple Kill (＋ sama skot), 🕴️ John Wick, 🦾 One Man Army, 🐦 Bird Watcher, 👻 Invisible Hunter, ✈️ Air Traffic Controller og 🪖 Stormtrooper
+- Ný nöfn: Sofa King, Forrest Gump, Marco Polo, Everest, Sniperinn, Slow Motion, Google Maps Offline, Hot Streak og 🍀 Lukkurjúpan
+- Fleiri flokkar í kosninguna: Pinocchio, The Podcast, MVP, The Professor, Gordon Ramsay, Drama Queen, Captain Obvious, The Golden Excuse, Lucky Bastard o.fl.
+- 📱 iPhone getur verið með í gegnum vefsíðuna
+- 🔔 Tilkynningar frá hópnum berast til miðnættis á keppnisdögum, líka með appið lokað
+- 💾 Afrit af öllum gögnum í Stillingum og vistun tímabils á GitHub
+
 ## Kvöldkosning, einvígi og kúkadeildin 💩
 - 🗳️ Kvöldkosning á bjórtíma: Flottasta skotið, Klúður dagsins, Röflari dagsins, Hetja dagsins, Veiðisaga dagsins og Heilinn. Enginn kýs sjálfan sig
 - 💥 Skotateljari á kortinu: 🔭 Leyniskyttan, 🔫 Rambó og 🧨 Púðurkerlingin

@@ -92,19 +92,14 @@ final class Hopur {
             boolean masson = Felagar.prefs(c).getBoolean("masson", true);
             String who = masson ? nick(c, m.optString("name", "Félagi")) : m.optString("name", "Félagi");
             boolean fresh = System.currentTimeMillis() - ts < 30 * 60 * 1000L;
-            // Montveggurinn
-            if (!visible && fresh && "brag".equals(m.optString("t")) && m.optString("txt").length() > 0)
-                Felagar.notify(c, 3600 + Math.abs(m.optString("id").hashCode() % 300), who + " 📣", m.optString("txt"));
-            // Áskorun í einvígi
-            if (!visible && fresh && "duel".equals(m.optString("t"))) {
-                String me = Felagar.last7(Felagar.myPhone(c));
-                org.json.JSONArray du = m.optJSONArray("du");
-                if (du != null) for (int i = 0; i < du.length(); i++) {
-                    org.json.JSONObject d = du.optJSONObject(i);
-                    if (d != null && me.equals(d.optString("b")) && "ask".equals(d.optString("st")) && System.currentTimeMillis() - d.optLong("ts", 0) < 30 * 60 * 1000L) {
-                        Felagar.notify(c, 3900, "⚔️ " + who + " skorar á þig í einvígi!", "Sá sem fær fleiri rjúpur í dag tekur 1 stig af hinum. Opnaðu Hópinn til að svara.");
-                        break;
-                    }
+            // Tilkynning sem sendandinn biður um: kvöldkosning, einvígi, spil, WANTED, mont, úrslit
+            org.json.JSONObject nt = m.optJSONObject("nt");
+            if (!visible && fresh && nt != null && nt.optString("title").length() > 0) {
+                String to = nt.optString("to", "");
+                if (to.isEmpty() || to.equals(Felagar.last7(Felagar.myPhone(c)))) {
+                    String title = nt.optString("title");
+                    if (masson) title = title.replace(m.optString("name", "\u0000"), who);
+                    Felagar.notify(c, 3600 + Math.abs((m.optString("id") + m.optString("t")).hashCode() % 300), title, nt.optString("body", ""));
                 }
             }
         } catch (Exception e) { Log.i(Felagar.TAG, "hópur: gat ekki lesið"); }
