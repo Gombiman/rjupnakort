@@ -2,6 +2,15 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Nýtt útlit og rjúpan sem tákn 🦃
+- Nýtt app-tákn: rjúpan með hæðarlínum og staðsetningarnál
+- Hlýtt og ljóst útlit með dökkgrænni flipaslá. Dökkt útlit fylgir enn stillingu símans
+- Stóri appelsínuguli Rjúpa-hnappurinn í miðri flipaslánni skráir rjúpu í einu ýti
+- Stillingar eru nú listi með flokkum og Másson-hamur er efst
+- Dagbókin sýnir hvern veiðidag sem spjald með tímalínu dagsins
+- Keppnin fær borða með rjúpumyndinni, aðgerðirnar eru flísar og stigataflan sýnir upphafsstafi
+- Grunnkortin eru valin með smámyndum
+
 ## Dómarinn, Hunting Cards og WANTED 💀
 - ⚖️ Keppnisstjórinn er dómari: sendir út kvöldkosninguna, skráir rjúpur fyrir aðra, bætir við gestum, velur áskorun dagsins og skráir falin stig og orð dagsins
 - 🗳️ Kvöldkosningin er leynileg: bara keppnisstjórinn sér atkvæðin og úrslitin birtast þegar keppni lýkur
