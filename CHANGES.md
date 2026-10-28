@@ -2,6 +2,14 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Haltu fingri á kortinu 👆 og nýtt glerútlit
+- Haltu fingri á kortinu: menu í boga með Rjúpu, Skoti, Kúk, Bílnum, Punkti og Sækja kort. Renndu á táknið og slepptu, allt skráist þar sem GPS-ið er
+- Staldraðu við á Rjúpu: ×2 Double Kill og ×3 Triple Kill
+- Eftir hverja rjúpu: Skot notuð − 1 +, ＋ sama skot og Afturkalla
+- Færri hnappar á kortinu: bara Lög og GPS. Leit og Kort án nets eru efst í Lög-spjaldinu
+- Glerútlit: mattir glerhnappar, fljótandi flipaslá og glóandi Rjúpu-hnappur
+- Sparnaðarhamur lætur GPS mæla sjaldnar (á um 40 m fresti) og sparar rafhlöðu
+
 ## Pása og Ljúka ferð úr tilkynningunni ⏸
 - Dragðu niður Másson-tilkynninguna: Pása, Halda áfram og Ljúka ferð án þess að opna appið
 - Í pásu skráist slóðin ekki og keyrslan á milli staða telst ekki í kílómetrana. Viðvaranir um bannsvæði virka áfram

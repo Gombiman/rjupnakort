@@ -19,7 +19,12 @@
   --accent:#E8590C;            /* veiðiappelsínugulur */ --on:#1E3A2B; --accent-soft:#FDE9DC; --accent-ink:#9A3A08;
   --bann:#d62f25; --leyfi:#e39400; --athuga:#7b4fc4; --info:#2577c4; --ok:#2b8a4b; --heimilt:#2f9e4f; --sos:#c62a20;
   --shadow:0 4px 16px rgba(27,31,28,.13); --shadow-s:0 1px 2px rgba(27,31,28,.05);
-  --tabh:68px;
+  --tabh:84px;
+  --glass:linear-gradient(160deg,rgba(255,255,255,.84),rgba(246,243,236,.68));
+  --glass-line:rgba(255,255,255,.78); --glass-hi:inset 0 1px 0 rgba(255,255,255,.9);
+  --glass-dark:linear-gradient(160deg,rgba(34,48,40,.82),rgba(14,22,18,.76));
+  --orb:radial-gradient(circle at 32% 28%,#FFB27A 0%,#FF7A2E 32%,#E8590C 62%,#B9400A 100%);
+  --gshadow:0 12px 32px rgba(18,28,22,.16);
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
@@ -27,11 +32,15 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#101512; --panel:#1A211D; --fg:#ECEDE6; --muted:#9BA59D; --line:#2C3530; --soft:#222A25;
   --forest:#15281E; --forest-fg:#ECEDE6; --forest-mute:#8FA597; --forest-line:#2A3C32; --accent-soft:#3A2416; --accent-ink:#FFB27A; --on:#4C9A68;
+  --glass:linear-gradient(160deg,rgba(40,50,44,.80),rgba(22,28,25,.70)); --glass-line:rgba(255,255,255,.12); --glass-hi:inset 0 1px 0 rgba(255,255,255,.08);
+  --gshadow:0 12px 32px rgba(0,0,0,.45);
   --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#b58cf0; --info:#5aa8f0; --ok:#4cc47a; --heimilt:#4cc47a; --sos:#e0352b;
   --shadow:0 2px 14px rgba(0,0,0,.5); --shadow-s:0 1px 3px rgba(0,0,0,.4); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#101512; --panel:#1A211D; --fg:#ECEDE6; --muted:#9BA59D; --line:#2C3530; --soft:#222A25;
   --forest:#15281E; --forest-fg:#ECEDE6; --forest-mute:#8FA597; --forest-line:#2A3C32; --accent-soft:#3A2416; --accent-ink:#FFB27A; --on:#4C9A68;
+  --glass:linear-gradient(160deg,rgba(40,50,44,.80),rgba(22,28,25,.70)); --glass-line:rgba(255,255,255,.12); --glass-hi:inset 0 1px 0 rgba(255,255,255,.08);
+  --gshadow:0 12px 32px rgba(0,0,0,.45);
   --accent:#ff7a2e; --bann:#ff5247; --leyfi:#ffb020; --athuga:#b58cf0; --info:#5aa8f0; --ok:#4cc47a; --heimilt:#4cc47a; --sos:#e0352b;
   --shadow:0 2px 14px rgba(0,0,0,.5); --shadow-s:0 1px 3px rgba(0,0,0,.4); color-scheme:dark}
 [hidden]{display:none!important}
@@ -40,21 +49,21 @@ html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font:15px/1.4 var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-#map{position:fixed;left:0;right:0;top:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) - 26px);background:var(--bg)}
+#map{position:fixed;inset:0;background:var(--bg)}
 
 /* Efsta lína: stillingar · staða · NEYÐ (á öllum síðum) */
-#topbar{position:fixed;z-index:1000;left:0;right:0;top:0;display:flex;align-items:center;gap:8px;pointer-events:none;
-  padding:calc(env(safe-area-inset-top,0px) + 12px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px))}
+#topbar{position:fixed;z-index:1000;left:0;right:0;top:0;display:flex;align-items:center;gap:10px;pointer-events:none;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px))}
 #topbar > *{pointer-events:auto}
-.rbtn{width:44px;height:44px;flex:none;border:none;border-radius:50%;background:var(--panel);box-shadow:var(--shadow);display:grid;place-items:center}
-.rbtn svg{width:22px;height:22px;fill:none;stroke:var(--fg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-#status{flex:1;min-width:0;min-height:44px;box-sizing:border-box;border-radius:22px;padding:5px 14px;display:flex;align-items:center;gap:10px;
-  background:var(--panel);color:var(--fg);box-shadow:var(--shadow);border:1px solid transparent;transition:background .25s,color .25s}
-#status .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+.rbtn{width:50px;height:50px;flex:none;box-sizing:border-box;border:1px solid var(--glass-line);border-radius:50%;background:var(--glass);box-shadow:var(--gshadow),var(--glass-hi);-webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5);display:grid;place-items:center}
+.rbtn svg{width:22px;height:22px;fill:none;stroke:var(--fg);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#status{flex:1;min-width:0;min-height:50px;box-sizing:border-box;border-radius:25px;padding:5px 16px;display:flex;align-items:center;gap:11px;
+  background:var(--glass);color:var(--fg);box-shadow:var(--gshadow),var(--glass-hi);border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5);transition:background .25s,color .25s}
+#status .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
 #status .txt{min-width:0;flex:1;line-height:1.15}
 #stTitle{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #stSub{font-size:11.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#status.s-ok .dot{background:var(--ok)}
+#status.s-ok .dot{background:var(--ok);box-shadow:0 0 10px var(--ok)}
 #status.s-heimilt{background:#e6f4ea;border-color:#8cc59d;color:#123b1f} #status.s-heimilt .dot{background:var(--heimilt)}
 #status.s-info .dot{background:var(--info)}
 #status.s-near,#status.s-leyfi{background:#fff4da;border-color:#e8b44a;color:#3b2c06} #status.s-near .dot,#status.s-leyfi .dot{background:#d98a00}
@@ -62,51 +71,51 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 #status.s-bann{background:var(--bann);color:#fff} #status.s-bann .dot{background:#fff;animation:pulse 1s infinite}
 @keyframes pulse{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){#status.s-bann .dot,.hdot.on{animation:none}}
-.sosbtn{height:44px;flex:none;border:none;border-radius:22px;padding:0 14px;background:var(--sos);color:#fff;font-weight:700;font-size:13px;letter-spacing:.06em;box-shadow:var(--shadow)}
+.sosbtn{height:50px;flex:none;box-sizing:border-box;border:1px solid rgba(255,255,255,.25);border-radius:25px;padding:0 16px;background:linear-gradient(180deg,#D7362B,#B5221A);color:#fff;font-weight:700;font-size:12.5px;letter-spacing:.16em;box-shadow:0 10px 26px rgba(181,34,26,.4),inset 0 1px 0 rgba(255,255,255,.25)}
 
 /* Hægri dálkur á kortinu: lög og lítill áttaviti */
-#mapside{position:fixed;z-index:900;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 68px);
+#mapside{position:fixed;z-index:900;right:max(14px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 76px);
   display:flex;flex-direction:column;align-items:center;gap:12px}
 .mini{border:none;background:transparent;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px}
-.mini .dial{width:56px;height:56px;border-radius:50%;background:var(--panel);box-shadow:var(--shadow);display:grid;place-items:center;position:relative}
+.mini .dial{width:50px;height:50px;box-sizing:border-box;border-radius:50%;background:var(--glass);border:1px solid var(--glass-line);box-shadow:var(--gshadow),var(--glass-hi);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);display:grid;place-items:center;position:relative}
 .mini .dial .n{position:absolute;top:3px;font-size:9px;font-weight:700;color:var(--muted)}
 .mini svg{width:26px;height:26px;transition:transform .15s linear}
 .mini svg path{fill:var(--info)}
-.mini .tx{background:var(--panel);border-radius:8px;padding:2px 7px;font-size:11.5px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow-s);font-variant-numeric:tabular-nums}
+.mini .tx{background:var(--glass);border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:9px;padding:2px 8px;font-size:11px;font-weight:600;letter-spacing:.03em;white-space:nowrap;box-shadow:var(--gshadow);font-variant-numeric:tabular-nums}
 .mini .tx small{display:none}
 
 /* Takkar og veiðihamsspjald neðst á kortinu */
-#mapfabs{position:fixed;z-index:900;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 116px);display:flex;flex-direction:column;gap:12px}
-.fab{width:52px;height:52px;border-radius:50%;border:none;background:var(--panel);box-shadow:var(--shadow);display:grid;place-items:center}
+#mapfabs{position:fixed;z-index:900;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 98px);display:flex;flex-direction:column;gap:12px}
+.fab{width:50px;height:50px;box-sizing:border-box;border-radius:50%;border:1px solid var(--glass-line);background:var(--glass);box-shadow:var(--gshadow),var(--glass-hi);-webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5);display:grid;place-items:center}
 .fab svg{width:24px;height:24px;fill:none;stroke:var(--fg);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#btnGps.on{background:var(--accent)} #btnGps.on svg{stroke:#fff}
+#btnGps svg{stroke:var(--accent);stroke-width:1.8} #btnGps.on{background:var(--orb);border-color:rgba(255,255,255,.35);box-shadow:0 10px 26px rgba(232,89,12,.45),inset 0 1px 0 rgba(255,255,255,.4)} #btnGps.on svg{stroke:#fff}
 #btnGps.follow svg circle.c{fill:#fff}
 #huntCard{position:fixed;z-index:900;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));
-  bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 36px);min-height:66px;box-sizing:border-box;border-radius:22px;background:var(--panel);
-  box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;padding:8px 14px 8px 16px}
+  bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 16px);min-height:64px;box-sizing:border-box;border-radius:22px;background:var(--glass);border:1px solid var(--glass-line);
+  -webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5);box-shadow:var(--gshadow),var(--glass-hi);display:flex;align-items:center;gap:10px;padding:8px 10px 8px 18px}
 .hdot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
 .hdot.on{background:var(--ok);box-shadow:0 0 0 4px rgba(43,138,75,.2);animation:pulse 1.8s infinite}
 .hdot.on.paused{background:var(--muted);box-shadow:none;animation:none}
-#huntPause{width:44px;height:44px;border:none;border-radius:50%;background:var(--soft);display:grid;place-items:center;flex:none;padding:0}
+#huntPause{width:44px;height:44px;border:1px solid rgba(27,31,28,.06);border-radius:50%;background:rgba(27,31,28,.06);display:grid;place-items:center;flex:none;padding:0}
 #huntPause svg{width:20px;height:20px;fill:var(--fg)}
 #huntCard .t{flex:1;min-width:0;line-height:1.2}
-#huntCard .h{font:700 17px var(--f-display);letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#huntTx{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#huntCard .h{font:700 10px var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#huntTx{font:600 17px/1.15 var(--f-display);letter-spacing:.02em;color:var(--fg);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tog{appearance:none;width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;margin:0;cursor:pointer;transition:background .2s}
 .tog::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .tog:checked{background:var(--on)} .tog:checked::after{transform:translateX(18px)}
 .tog.big{width:54px;height:32px;border-radius:16px} .tog.big::after{width:26px;height:26px}
-.tog.big:checked{background:var(--accent)} .tog.big:checked::after{transform:translateX(22px)}
+.tog.big:checked{background:linear-gradient(180deg,#FF7A2E,#E8590C);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)} .tog.big:checked::after{transform:translateX(22px)}
 
 /* Rammi fyrir kort án nets */
 #capFrame{overflow:visible;position:fixed;z-index:880;left:max(28px,env(safe-area-inset-left,0px));right:max(28px,env(safe-area-inset-right,0px));
-  top:calc(env(safe-area-inset-top,0px) + 76px);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 276px);
+  top:calc(env(safe-area-inset-top,0px) + 76px);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 250px);
   border:2px dashed #fff;border-radius:14px;box-shadow:0 0 0 9999px rgba(10,16,14,.45);pointer-events:none}
 .capdim{position:absolute;background:rgba(10,16,14,.78);color:#fff;font:700 13px var(--f-display);letter-spacing:.03em;padding:3px 9px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
 #capW{top:-12px;left:50%;transform:translateX(-50%)}
 #capH{left:-10px;top:50%;transform:translate(-50%,-50%) rotate(-90deg)}
 #capPanel{position:fixed;z-index:905;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));
-  bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 36px);background:var(--panel);border-radius:22px;box-shadow:var(--shadow);
+  bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 16px);background:var(--panel);border-radius:22px;box-shadow:var(--shadow);
   padding:14px 16px;display:grid;gap:8px}
 #capPanel .cp-h{font:700 17px var(--f-display);letter-spacing:.03em;text-transform:uppercase}
 #capPanel .cp-row{display:flex;gap:8px}
@@ -117,25 +126,25 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 body.capture #huntCard,body.capture #mapfabs,body.capture #carChip,body.capture #mapside{display:none}
 
 /* Flipaslá */
-#tabbar{position:fixed;z-index:1000;left:0;right:0;bottom:0;height:calc(var(--tabh) + env(safe-area-inset-bottom,0px));box-sizing:border-box;
-  padding:0 max(4px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(4px,env(safe-area-inset-left,0px));
-  background:var(--forest);border-radius:24px 24px 0 0;box-shadow:0 -4px 18px rgba(27,31,28,.16);display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
-#tabbar button[data-tab]{border:none;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:600;color:var(--forest-mute)}
-#tabbar button[data-tab] svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-#tabbar button[data-tab][aria-current="page"]{color:var(--forest-fg);font-weight:700}
-#tabbar button[data-tab][aria-current="page"] svg{stroke:#FFB27A;stroke-width:2}
-.killslot{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:12px;font-size:12px;font-weight:700;color:var(--forest-fg);pointer-events:none}
-#btnKill{pointer-events:auto;position:absolute;top:-26px;left:50%;transform:translateX(-50%);width:68px;height:68px;box-sizing:border-box;border-radius:50%;border:5px solid var(--bg);
-  background:var(--accent);box-shadow:0 8px 20px rgba(232,89,12,.42);display:grid;place-items:center;padding:0;transition:transform .12s}
-#btnKill:active{transform:translateX(-50%) scale(.94)}
-#btnKill svg{width:34px;height:34px}
+#tabbar{position:fixed;z-index:1000;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 12px);height:72px;box-sizing:border-box;
+  padding:0 6px;border-radius:36px;background:var(--glass-dark);border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
+  box-shadow:0 16px 40px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.12);display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+#tabbar button[data-tab]{position:relative;border:none;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(251,250,246,.55)}
+#tabbar button[data-tab] svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#tabbar button[data-tab][aria-current="page"]{color:#FBFAF6}
+#tabbar button[data-tab][aria-current="page"]::after{content:"";position:absolute;bottom:6px;width:4px;height:4px;border-radius:50%;background:#FF8A3D;box-shadow:0 0 8px #FF8A3D}
+.killslot{display:flex;align-items:center;justify-content:center}
+#btnKill{width:62px;height:62px;box-sizing:border-box;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:var(--orb);
+  box-shadow:0 0 0 6px rgba(232,89,12,.16),0 12px 30px rgba(232,89,12,.55),inset 0 1px 0 rgba(255,255,255,.45);display:grid;place-items:center;padding:0;transition:transform .12s}
+#btnKill:active{transform:scale(.94)}
+#btnKill svg{width:32px;height:32px}
 #btnKill .b{fill:#fff}
-#btnKill .w{fill:none;stroke:var(--accent);stroke-width:1.4;stroke-linecap:round}
-#btnKill .e{fill:var(--accent)}
+#btnKill .w{fill:none;stroke:#C2410C;stroke-width:1.3;stroke-linecap:round}
+#btnKill .e{fill:#C2410C}
 
 /* Síður */
-.page{position:fixed;z-index:950;left:0;right:0;top:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px));overflow-y:auto;background:var(--bg);
-  padding:calc(env(safe-area-inset-top,0px) + 72px) max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));box-sizing:border-box;
+.page{position:fixed;z-index:950;left:0;right:0;top:0;bottom:0;overflow-y:auto;background:var(--bg);
+  padding:calc(env(safe-area-inset-top,0px) + 76px) max(16px,env(safe-area-inset-right,0px)) calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 32px) max(16px,env(safe-area-inset-left,0px));box-sizing:border-box;
   overscroll-behavior:contain}
 .page h1{font:700 30px/1.1 var(--f-body);margin:6px 4px 14px}
 .sect{font:700 12.5px var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:18px 4px 8px}
@@ -221,7 +230,7 @@ details.group[open] > summary::after{transform:rotate(90deg)}
 .sw2{width:12px;height:12px;border-radius:3px;flex:none}
 
 /* Spjöld (lög, nýr punktur, ping) */
-#toast{position:fixed;z-index:1300;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 116px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:var(--shadow);max-width:calc(100% - 40px);text-align:center}
+#toast{position:fixed;z-index:1300;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 96px);background:var(--glass-dark);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.14);color:#FBFAF6;padding:11px 16px;border-radius:16px;font-size:14px;box-shadow:var(--shadow);max-width:calc(100% - 40px);text-align:center}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:1100;max-height:82%;overflow:auto;background:var(--panel);
   border-radius:26px 26px 0 0;box-shadow:0 -6px 30px rgba(0,0,0,.25);
   padding:6px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 20px) max(16px,env(safe-area-inset-left,0px))}
@@ -263,9 +272,9 @@ a.btn{text-decoration:none;text-align:center;display:block}
 .links{display:grid;gap:6px;font-size:14px}
 
 /* Másson */
-#huntKills{border:none;background:var(--soft);color:var(--fg);border-radius:999px;padding:7px 11px;font:700 16px var(--f-display);font-variant-numeric:tabular-nums;flex:none}
-#undoBar{position:fixed;z-index:1310;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 116px);
-  background:var(--fg);color:var(--bg);border-radius:12px;display:flex;align-items:center;gap:6px;padding:4px 4px 4px 16px;box-shadow:var(--shadow);
+#huntKills{border:1px solid rgba(27,31,28,.06);background:rgba(27,31,28,.06);color:var(--fg);border-radius:999px;padding:7px 11px;font:700 16px var(--f-display);font-variant-numeric:tabular-nums;flex:none}
+#undoBar{position:fixed;z-index:1310;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 96px);
+  background:var(--glass-dark);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.14);color:#FBFAF6;border-radius:16px;display:flex;align-items:center;gap:6px;padding:4px 4px 4px 16px;box-shadow:var(--shadow);
   width:max-content;max-width:calc(100% - 40px);font-size:14px;font-weight:600}
 #undoBar[hidden]{display:none}
 #undoBtn{border:none;background:transparent;color:inherit;font:inherit;text-decoration:underline;padding:10px 12px;flex:none}
@@ -311,8 +320,8 @@ ul.blist b{font-weight:700}
 .pod.p1{order:2;padding-top:18px;background:color-mix(in srgb,var(--accent) 12%,var(--bg))}
 .pod.p2{order:1} .pod.p3{order:3}
 input[type=date]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box;min-width:0}
-#updBar{position:fixed;z-index:960;left:max(12px,env(safe-area-inset-left,0px));right:calc(max(12px,env(safe-area-inset-right,0px)) + 66px);
-  top:calc(env(safe-area-inset-top,0px) + 68px);background:var(--fg);color:var(--bg);border-radius:14px;box-shadow:var(--shadow);
+#updBar{position:fixed;z-index:960;left:max(14px,env(safe-area-inset-left,0px));right:calc(max(14px,env(safe-area-inset-right,0px)) + 64px);
+  top:calc(env(safe-area-inset-top,0px) + 76px);background:var(--fg);color:var(--bg);border-radius:14px;box-shadow:var(--shadow);
   display:flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;font-size:14px;font-weight:600}
 #updBar[hidden]{display:none}
 #updBar span{flex:1;min-width:0}
@@ -389,6 +398,64 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 .ctiles button{border:1px solid var(--line);background:var(--bg);border-radius:16px;min-height:76px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12.5px;font-weight:600;color:var(--fg);text-align:center;line-height:1.2}
 .ctiles button span{font-size:24px;line-height:1}
 
+/* Menu þegar haldið er á kortinu */
+#rmenu{position:fixed;inset:0;z-index:1250;touch-action:none;-webkit-user-select:none;user-select:none}
+.rm-scrim{position:absolute;inset:0;background:radial-gradient(circle at var(--cx) calc(var(--cy) - 60px),rgba(10,16,13,.32) 0%,rgba(10,16,13,.62) 55%,rgba(10,16,13,.74) 100%);
+  -webkit-backdrop-filter:blur(3px) saturate(.8);backdrop-filter:blur(3px) saturate(.8);animation:rmfade .16s ease-out}
+.rm-arc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.rm-it{position:absolute;width:62px;height:62px;margin:-31px 0 0 -31px;box-sizing:border-box;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:var(--glass-dark);
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 16px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);
+  display:grid;place-items:center;padding:0;color:#FBFAF6;transition:transform .14s ease,opacity .14s,box-shadow .14s;animation:rmpop .2s cubic-bezier(.2,.9,.3,1.3) both}
+.rm-it svg{width:22px;height:22px;fill:none;stroke:#FBFAF6;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.rm-it .em{font-size:24px;line-height:1}
+.rm-it .lb{position:absolute;top:67px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(251,250,246,.88);text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.rm-it.core{width:80px;height:80px;margin:-40px 0 0 -40px;background:var(--orb);border-color:rgba(255,255,255,.35);
+  box-shadow:0 0 0 6px rgba(232,89,12,.16),0 14px 36px rgba(232,89,12,.55),inset 0 1px 0 rgba(255,255,255,.45)}
+.rm-it.core .lb{top:86px;color:#FFB27A}
+.rm-it.core svg{width:36px;height:36px;stroke:none}
+.rm-it.core .b{fill:#fff} .rm-it.core .e{fill:#C2410C}
+.rm-it.kx{width:66px;height:66px;margin:-33px 0 0 -33px;border-color:rgba(255,178,122,.55);font:600 26px var(--f-display);color:#fff;box-shadow:0 0 22px rgba(232,89,12,.35),inset 0 1px 0 rgba(255,255,255,.12)}
+.rm-it.on{transform:scale(1.14);border-color:rgba(255,178,122,.9);box-shadow:0 0 0 3px rgba(255,178,122,.35),0 16px 40px rgba(0,0,0,.4)}
+.rm-it.core.on{box-shadow:0 0 0 10px rgba(232,89,12,.16),0 0 0 22px rgba(232,89,12,.08),0 18px 48px rgba(232,89,12,.65)}
+#rmenu.dwell .rm-it:not(.core):not(.kx){opacity:.28}
+.rm-finger{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,.08) 70%);border:1px solid rgba(255,255,255,.7);box-shadow:0 0 0 12px rgba(255,178,122,.1),0 0 24px rgba(255,178,122,.5);pointer-events:none}
+@keyframes rmfade{from{opacity:0}}
+@keyframes rmpop{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.4)}}
+@media (prefers-reduced-motion:reduce){.rm-it,.rm-scrim{animation:none}}
+
+/* Skotaspjald eftir rjúpu */
+#shotCard{position:fixed;z-index:1315;left:max(14px,env(safe-area-inset-left,0px));right:max(14px,env(safe-area-inset-right,0px));bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 16px);
+  border-radius:26px;background:var(--glass-dark);border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
+  box-shadow:0 16px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);color:#FBFAF6;padding:16px 16px 14px 18px;display:grid;gap:14px;max-width:560px;margin:0 auto;animation:scin .22s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes scin{from{opacity:0;transform:translateY(16px)}}
+.sc-top{display:flex;align-items:center;gap:12px}
+.sc-orb{width:40px;height:40px;flex:none;border-radius:50%;background:var(--orb);border:1px solid rgba(255,255,255,.35);display:grid;place-items:center;box-shadow:0 8px 20px rgba(232,89,12,.45)}
+.sc-orb svg{width:22px;height:22px} .sc-orb .b{fill:#fff} .sc-orb .e{fill:#C2410C}
+.sc-t{flex:1;min-width:0;display:grid;gap:2px}
+.sc-k{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#FFB27A}
+.sc-k:empty{display:none}
+.sc-t b{font-weight:600;font-size:16px}
+#scSub{font-size:12.5px;color:rgba(251,250,246,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#scUndo,#scSame{border:none;background:transparent;color:rgba(251,250,246,.75);font-size:13px;font-weight:600;letter-spacing:.02em;padding:10px 4px;flex:none}
+#scSame{color:#FFB27A}
+#scSame[hidden]{display:none}
+.sc-row{display:flex;align-items:center;gap:10px}
+.sc-lbl{flex:1;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(251,250,246,.6)}
+.sc-step{display:flex;align-items:center;gap:4px;padding:4px;border-radius:22px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+.sc-step button{width:54px;height:54px;border:none;border-radius:18px;background:transparent;color:#FBFAF6;font-size:28px;font-weight:300;line-height:1;padding:0}
+#scPlus{background:var(--orb);border:1px solid rgba(255,255,255,.3);color:#fff}
+#scMinus:disabled{opacity:.3}
+#scN{width:44px;text-align:center;font:600 34px var(--f-display);font-variant-numeric:tabular-nums}
+.sc-bar{height:2px;border-radius:1px;background:rgba(255,255,255,.1);overflow:hidden}
+.sc-bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#E8590C,#FFB27A);box-shadow:0 0 10px #FF8A3D;transform-origin:left}
+.sheetacts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.sheetacts button{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 14px;border:1px solid var(--line);border-radius:16px;background:var(--bg);font-weight:600;text-align:left}
+.sheetacts svg{width:20px;height:20px;flex:none;fill:none;stroke:var(--fg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .rbtn,.fab,#status,#huntCard,.mini .dial,.mini .tx{background:var(--panel)}
+  #tabbar,#shotCard,#toast,#undoBar,.rm-it{background:#1C2721}
+}
+
 /* Neyðarskjár: ein föst ásýnd, óháð þema */
 #sos{position:fixed;inset:0;z-index:1400;background:#141414;color:#fff;overflow:auto;
   padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) max(16px,env(safe-area-inset-left,0px))}
@@ -410,7 +477,7 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 .leaflet-track-pane,.leaflet-track-pane canvas,.leaflet-track-pane svg{pointer-events:none!important}
 .leaflet-bottom.leaflet-left{display:none}
 .leaflet-control-attribution{font-size:10px}
-.leaflet-bottom.leaflet-right{bottom:132px}
+.leaflet-bottom.leaflet-right{bottom:calc(var(--tabh) + 84px)}
 .pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45);display:grid;place-items:center;box-sizing:border-box}
 .pin svg{transform:rotate(45deg);width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
 .pop .pb{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
@@ -447,15 +514,15 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
   <button class="sosbtn" id="btnSos" type="button">NEYÐ</button>
 </div>
 
+<div id="legacyBtns" hidden>
+  <button id="btnSearch" type="button" tabindex="-1">Leita</button>
+  <button id="btnOffline" type="button" tabindex="-1">Kort án nets</button>
+  <button id="btnShot" type="button" tabindex="-1">Skot</button>
+  <button id="btnMark" type="button" tabindex="-1">Merkja</button>
+</div>
 <div id="mapside">
-  <button class="rbtn" id="btnSearch" type="button" aria-label="Leita">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
-  </button>
-  <button class="rbtn" id="btnLayers" type="button" aria-label="Lög og grunnkort">
+  <button class="rbtn" id="btnLayers" type="button" aria-label="Lög, grunnkort og leit">
     <svg viewBox="0 0 24 24"><path d="M12 3 2 8.5 12 14l10-5.5z"/><path d="m2 13 10 5.5L22 13"/></svg>
-  </button>
-  <button class="rbtn" id="btnOffline" type="button" aria-label="Vista kort án nets">
-    <svg viewBox="0 0 24 24"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
   </button>
   <button class="mini" id="carChip" type="button" hidden aria-label="Opna áttavita">
     <span class="dial"><span class="n">N</span><svg viewBox="0 0 24 24" id="carArrow"><path d="M12 2 18 20 12 16 6 20Z"/></svg></span>
@@ -485,10 +552,6 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 </div>
 
 <div id="mapfabs">
-  <button class="fab" id="btnShot" type="button" aria-label="Skrá skot" title="Skot">💥</button>
-  <button class="fab" id="btnMark" type="button" aria-label="Merkja punkt">
-    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-  </button>
   <button class="fab" id="btnGps" type="button" aria-label="Staðsetning">
     <svg viewBox="0 0 24 24"><circle class="c" cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7.5"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg>
   </button>
@@ -767,7 +830,6 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
     <button id="btnKill" type="button" aria-label="Rjúpa felld">
       <svg viewBox="0 0 24 24"><path class="b" d="M3.2 16.4c0-4 3.6-6.6 7.8-6.3.9-1.8 1.6-3.7 3.2-4.7 1.6-1 3.8-.6 4.6 1l2.3.8-1.9.9c-.2 1.3-1 2.3-1.4 3.3-.4 1-.2 2-.8 3.4-1 2.4-3.6 3.9-7 3.9H6.1c-1.7 0-2.9-1-2.9-2.3z"/><path class="w" d="M6.5 15.2c2.3.2 4.6-.3 6.4-1.8"/><circle class="e" cx="16.6" cy="7.4" r=".95"/></svg>
     </button>
-    <span aria-hidden="true">Rjúpa</span>
   </div>
   <button type="button" data-tab="friends">
     <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c2.8 0 5 1.8 5 4.6"/></svg><span id="tabFriendsLbl">Hópurinn</span>
@@ -781,6 +843,10 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 <section id="sheet" class="sheet" hidden aria-label="Lög og grunnkort">
   <div class="grab"></div>
   <div class="sh-head"><h2>Lög og grunnkort</h2><button class="x" id="btnClose" type="button" aria-label="Loka">×</button></div>
+  <div class="sheetacts">
+    <button type="button" id="shSearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>Leita að stað</button>
+    <button type="button" id="shOffline"><svg viewBox="0 0 24 24"><path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Kort án nets</button>
+  </div>
 
   <h3>Grunnkort</h3>
   <div class="bases" id="baseSeg"></div>
@@ -1050,6 +1116,20 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 </div>
 <div id="updBar" hidden role="status"><span id="updTx">Ný útgáfa komin</span><button type="button" id="updNews" class="updnews">Hvað er nýtt?</button><a id="updGo" href="https://github.com/Gombiman/rjupnakort/releases/download/app/rjupnakort.apk" target="_blank" rel="noopener">Sækja</a><button type="button" id="updX" aria-label="Seinna">×</button></div>
 <div id="toast" hidden role="status"></div>
+<div id="rmenu" hidden aria-label="Skrá á kortinu"><div class="rm-scrim"></div><svg class="rm-arc" aria-hidden="true"></svg><div class="rm-items"></div></div>
+<section id="shotCard" hidden role="status" aria-live="polite">
+  <div class="sc-top">
+    <span class="sc-orb" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="b" d="M3.2 16.4c0-4 3.6-6.6 7.8-6.3.9-1.8 1.6-3.7 3.2-4.7 1.6-1 3.8-.6 4.6 1l2.3.8-1.9.9c-.2 1.3-1 2.3-1.4 3.3-.4 1-.2 2-.8 3.4-1 2.4-3.6 3.9-7 3.9H6.1c-1.7 0-2.9-1-2.9-2.3z"/><circle class="e" cx="16.6" cy="7.4" r=".95"/></svg></span>
+    <div class="sc-t"><span class="sc-k" id="scKind"></span><b id="scTitle"></b><span id="scSub"></span></div>
+    <button type="button" id="scUndo">Afturkalla</button>
+  </div>
+  <div class="sc-row">
+    <span class="sc-lbl">Skot notuð</span>
+    <button type="button" id="scSame">＋ sama skot</button>
+    <span class="sc-step"><button type="button" id="scMinus" aria-label="Færri skot">−</button><output id="scN">1</output><button type="button" id="scPlus" aria-label="Fleiri skot">+</button></span>
+  </div>
+  <span class="sc-bar" aria-hidden="true"><i id="scBar"></i></span>
+</section>
 <div id="undoBar" hidden role="status"><span id="undoTx"></span><button type="button" id="undoSame" hidden>＋ sama skot</button><button type="button" id="undoBtn">Afturkalla</button></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -1694,7 +1774,7 @@ const SETTINGS = [
   ["carline",   "Lína að bíl eða punkti", "Brotin lína frá þér að skotmarkinu.", true],
   ["battery",   "Rafhlöðuvakt", "Varar við þegar rafhlaðan fer undir 30% og 15%.", true],
   ["autosaver", "Sparnaður sjálfvirkt undir 20%", "Kveikir á sparnaðarham þegar rafhlaðan er lág og síminn ekki í hleðslu.", true],
-  ["saver",     "Sparnaðarhamur", "Skjárinn má slökkva á sér, áttavitinn slökktur og GPS mælir sjaldnar.", false],
+  ["saver",     "Sparnaðarhamur", "Skjárinn má slokkna, áttavitinn slekkur á sér og GPS mælir sjaldnar (á um 40 m fresti í stað 15). Slóðin verður grófari en viðvaranir virka áfram.", false],
   ["masson",    "Másson-hamur", "Másson-stig, gælunöfn og bjórtími. Slökktu til að fá venjulegt viðmót (Tracking).", true],
   ["poopmap",   "Kúkakortið", "Sýnir kúkaafrek tímabilsins á kortinu 💩", true],
   ["hoplisten", "Tilkynningar frá hópnum til miðnættis", "Kvöldkosning, einvígi, mont og spil berast líka með appið lokað, á keppnisdögum. Lítil tilkynning sést á meðan.", true],
@@ -1719,9 +1799,11 @@ for (const [k, title, desc] of SETTINGS){
 /* ---------- Spjald ---------- */
 const sheet = document.getElementById("sheet"), scrim = document.getElementById("scrim");
 const closeSheet = () => { document.querySelectorAll(".sheet,#sos").forEach(x => x.hidden = true); scrim.hidden = true; };
-const openPanel = el => { closeSheet(); document.getElementById("toast").hidden = true; el.hidden = false; if (el.classList.contains("sheet")) scrim.hidden = false; };
+const openPanel = el => { closeSheet(); if (window.__hideShot) window.__hideShot(); document.getElementById("toast").hidden = true; el.hidden = false; if (el.classList.contains("sheet")) scrim.hidden = false; };
 const openSheet = () => { openPanel(sheet); renderList(); };
 document.getElementById("btnLayers").onclick = openSheet;
+document.getElementById("shSearch").onclick = () => document.getElementById("btnSearch").click();
+document.getElementById("shOffline").onclick = () => openCapture();
 document.getElementById("btnClose").onclick = closeSheet;
 document.querySelectorAll("[data-close]").forEach(b => b.onclick = closeSheet);
 scrim.onclick = closeSheet;
@@ -2241,25 +2323,8 @@ document.getElementById("btnMark").onclick = () => {
   const c = map.getCenter();
   openMark(c.lat, c.lng, 0, "Ekkert GPS — merki miðju kortsins");
 };
-/* Halda fingri á kortinu */
-(() => {
-  const mc = map.getContainer(); let tm = null, st = null, fired = 0;
-  const clear = () => { clearTimeout(tm); tm = null; };
-  mc.addEventListener("touchstart", e => {
-    if (e.touches.length !== 1) return clear();
-    const t = e.touches[0]; st = [t.clientX, t.clientY]; clear();
-    tm = setTimeout(() => {
-      fired = Date.now(); tm = null;
-      const r = mc.getBoundingClientRect(), ll = map.containerPointToLatLng([st[0]-r.left, st[1]-r.top]);
-      try{ navigator.vibrate && navigator.vibrate(30); }catch(e){}
-      openMark(ll.lat, ll.lng, 0, "Þar sem þú hélst fingri");
-    }, 650);
-  }, {passive:true});
-  mc.addEventListener("touchmove", e => { if (tm && st){ const t = e.touches[0]; if (Math.hypot(t.clientX-st[0], t.clientY-st[1]) > 10) clear(); } }, {passive:true});
-  mc.addEventListener("touchend", clear); mc.addEventListener("touchcancel", clear);
-  mc.addEventListener("contextmenu", e => e.preventDefault());
-  map.on("contextmenu", e => { if (Date.now()-fired < 1500) return; openMark(e.latlng.lat, e.latlng.lng, 0, "Þar sem þú smelltir"); });
-})();
+/* Halda fingri á kortinu: menu í boga fyrir ofan fingurinn (kóðinn í „Menu á kortinu“ neðar) */
+window.__openMark = openMark;
 
 /* ---------- Ping ---------- */
 const pingSheet = document.getElementById("pingSheet"), myName = document.getElementById("myName");
@@ -2512,7 +2577,8 @@ function applyPower(){
       navigator.geolocation.clearWatch(watchId);
       watchId = navigator.geolocation.watchPosition(onPos, onErr, gpsOpts());
     }
-    if (!first) toast(sv ? "Sparnaðarhamur virkur: skjárinn má slökkva á sér og áttavitinn er af." : "Sparnaðarhamur af.");
+    if (!first) toast(sv ? "Sparnaðarhamur virkur: skjárinn má slökkva á sér, áttavitinn er af og GPS mælir sjaldnar." : "Sparnaðarhamur af.");
+    if (window.__onSaver) window.__onSaver(sv);
   }
   if (watchId != null && wakeAllowed()) keepAwake(); else releaseWake();
   if (watchId != null && S.compass && !sv) startCompass(); else stopCompass();
@@ -2535,7 +2601,7 @@ let tab = "map";
 function setTab(t){
   if (!TABS.includes(t)) return;
   tab = t; document.body.dataset.tab = t;
-  closeSheet(); document.getElementById("toast").hidden = true;
+  closeSheet(); document.getElementById("toast").hidden = true; if (window.__hideShot && t !== "map") window.__hideShot();
   pgCompass.hidden = t !== "compass";
   pgFriends.hidden = t !== "friends";
   pgLog.hidden = t !== "log";
@@ -2658,6 +2724,8 @@ async function setHunt(on){
     if (watchId == null) startGps();
     else if (pos) addTrackPoint(pos);
     toast(window.RK_APP ? `${huntTitle(true)}. Slóðin skráist líka með slökktan skjá.` : `${huntTitle(true)}. Slóðin skráist á meðan kortið er opið.`, 6000);
+    const hc = +LS.get("rmHint", 0);
+    if (hc < 3){ LS.set("rmHint", hc + 1); setTimeout(() => toast("Haltu fingri á kortinu til að skrá rjúpu, skot, kúk eða bílinn 👆", 7000), 6500); }
   } else if (track){
     track.end = Date.now(); saveTrack(); drawTrack();
     const trips = LS.get("trips", []);
@@ -2893,7 +2961,7 @@ function showUndo(text, fn, same){
   clearTimeout(undoTimer); undoTimer = setTimeout(() => { undoBar.hidden = true; undoFn = null; }, 7000);
 }
 document.getElementById("undoBtn").onclick = () => { const f = undoFn; undoBar.hidden = true; undoFn = null; if (f) f(); };
-function registerKill(p, same){
+function registerKill(p, same, quiet){
   const car = pts.find(x => x.type === "bill");
   const k = {id:p.id, ts:p.ts, lat:p.lat, lon:p.lon, trip:!!hunt, car:car ? Math.round(distM(car.lat, car.lon, p.lat, p.lon)) : null};
   if (same) k.same = same;
@@ -2907,24 +2975,72 @@ function registerKill(p, same){
   if (joined() && today() < comp.from) text += ` · keppnin hefst ${fmtD(comp.from)}`;
   else if (joined() && comp.cap > 0 && n > comp.cap) text += ` · umfram hámark keppninnar`;
   else if (joined() && comp.onlyTrip && !hunt) text += ` · telst ekki í keppninni (engin ferð)`;
-  showUndo(text, () => {
-    kills = kills.filter(x => x.id !== k.id); saveKills();
-    pts = pts.filter(x => x.id !== p.id); LS.set("pts", pts); renderPts();
-    groupSend("score"); refreshAll();
-    toast("Afturkallað");
-  }, grp < 3 ? () => {
-    const p2 = {id:"k" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), lat:p.lat, lon:p.lon, acc:p.acc, type:"felld", name:"", ts:Date.now()};
-    pts.push(p2); LS.set("pts", pts); renderPts(); registerKill(p2, root);
-  } : null);
-  try{ S.vib && navigator.vibrate && navigator.vibrate(60); }catch(e){}
+  if (!quiet){ showShotCard(root, text); try{ S.vib && navigator.vibrate && navigator.vibrate(60); }catch(e){} }
   groupSend("kill"); refreshAll();
+  return {root, text};
 }
-document.getElementById("btnKill").onclick = () => {
-  if (!pos){ if (watchId == null) startGps(); toast("Bíð eftir GPS-staðsetningu…"); return; }
-  const p = {id:"k" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), lat:pos.lat, lon:pos.lon, acc:pos.acc, type:"felld", name:"", ts:Date.now()};
+const newKillPt = (lat, lon, acc) => ({id:"k" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), lat, lon, acc:acc || 0, type:"felld", name:"", ts:Date.now()});
+// n rjúpur í einu skoti á GPS-staðnum (1, 2 = Double Kill, 3 = Triple Kill)
+function killAtGps(n){
+  if (!pos){ if (watchId == null) startGps(); toast("Bíð eftir GPS-staðsetningu… reyndu aftur eftir augnablik."); return false; }
+  const p = newKillPt(pos.lat, pos.lon, pos.acc);
   pts.push(p); LS.set("pts", pts); renderPts();
-  registerKill(p);
+  let r = registerKill(p, null, true);
+  for (let i = 1; i < (n || 1); i++){ const q = newKillPt(pos.lat, pos.lon, pos.acc); pts.push(q); LS.set("pts", pts); r = registerKill(q, p.id, true); }
+  renderPts(); showShotCard(p.id, r.text);
+  try{ S.vib && navigator.vibrate && navigator.vibrate(n > 1 ? [60, 60, 60] : 60); }catch(e){}
+  return true;
+}
+/* Skotaspjaldið: hve mörg skot fóru í þessa rjúpu (sjálfgefið 1) */
+const shotCard = document.getElementById("shotCard");
+let sc = null, scTimer = null;
+function scGroup(){ return sc ? kills.filter(x => (x.same || x.id) === sc.root) : []; }
+function scRender(){
+  const g = scGroup(), n = g.length;
+  if (!n){ hideShotCard(); return; }
+  document.getElementById("scKind").textContent = n === 2 ? "Double Kill" : n >= 3 ? "Triple Kill" : "";
+  document.getElementById("scTitle").textContent = n === 1 ? (isMasson() ? "+1 Másson-stig" : "Rjúpa skráð") : `${n} rjúpur í einu skoti`;
+  document.getElementById("scSub").textContent = sc.text.replace(/^(\+1 Másson-stig! 🦃 |Rjúpa skráð · |💥 Double Kill! |☄️ Triple Kill! )/, "");
+  document.getElementById("scN").textContent = 1 + sc.extra.length;
+  document.getElementById("scMinus").disabled = !sc.extra.length;
+  document.getElementById("scSame").hidden = n >= 3;
+}
+function scArm(){
+  clearTimeout(scTimer);
+  const bar = document.getElementById("scBar");
+  bar.style.transition = "none"; bar.style.transform = "scaleX(1)"; void bar.offsetWidth;
+  bar.style.transition = "transform 7s linear"; bar.style.transform = "scaleX(0)";
+  scTimer = setTimeout(hideShotCard, 7000);
+}
+function showShotCard(root, text){
+  sc = {root, text, extra:[]};
+  undoBar.hidden = true; toastEl.hidden = true; shotCard.hidden = false;
+  scRender(); scArm();
+}
+function hideShotCard(){ clearTimeout(scTimer); shotCard.hidden = true; sc = null; }
+window.__hideShot = () => { if (!shotCard.hidden) hideShotCard(); };
+document.getElementById("scPlus").onclick = () => {
+  if (!sc) return; const t = Date.now() - 1000 * (sc.extra.length + 1);   // skot sem hittu ekki, rétt á undan
+  sc.extra.push(t); shots.push(t); LS.set("shots", shots); scRender(); scArm(); refreshAll();
 };
+document.getElementById("scMinus").onclick = () => {
+  if (!sc || !sc.extra.length) return; const t = sc.extra.pop();
+  shots = shots.filter(x => x !== t); LS.set("shots", shots); scRender(); scArm(); refreshAll();
+};
+document.getElementById("scSame").onclick = () => {
+  if (!sc) return; const first = kills.find(x => x.id === sc.root); if (!first) return;
+  const q = newKillPt(first.lat, first.lon, 0); pts.push(q); LS.set("pts", pts); renderPts();
+  const r = registerKill(q, sc.root, true); sc.text = r.text; scRender(); scArm();
+  try{ S.vib && navigator.vibrate && navigator.vibrate([60, 60, 60]); }catch(e){}
+};
+document.getElementById("scUndo").onclick = () => {
+  if (!sc) return; const ids = new Set(scGroup().map(x => x.id)), ex = new Set(sc.extra);
+  kills = kills.filter(x => !ids.has(x.id)); saveKills();
+  pts = pts.filter(x => !ids.has(x.id)); LS.set("pts", pts); renderPts();
+  shots = shots.filter(x => !ex.has(x)); LS.set("shots", shots);
+  hideShotCard(); groupSend("score"); refreshAll(); toast("Afturkallað");
+};
+document.getElementById("btnKill").onclick = () => killAtGps(1);
 // „Rjúpa felld“ úr + valmyndinni telst líka
 const _ptSaveOld = document.getElementById("ptSave").onclick;
 document.getElementById("ptSave").onclick = () => {
@@ -4703,6 +4819,131 @@ window.__applyAll = () => { if (_prevApply) _prevApply(); massonApply(); hopList
 setInterval(() => { if (isMasson() && !document.hidden) updateCar(); }, 60000);   // Bíll → Bjórinn kl. 16
 massonApply();
 setTimeout(() => { groupPoll().then(() => { if (Date.now() - LS.get("gLastSent", 0) > 3600e3){ LS.set("gLastSent", Date.now()); groupSend("score"); } }); }, 1500);
+
+/* ---------- Menu á kortinu: haltu fingri, renndu á táknið, slepptu ---------- */
+(() => {
+  const mc = map.getContainer(), rm = document.getElementById("rmenu"), box = rm.querySelector(".rm-items"), arcEl = rm.querySelector(".rm-arc");
+  const sv = d => `<svg viewBox="0 0 24 24">${d}</svg>`;
+  const BIRD = '<svg viewBox="0 0 24 24"><path class="b" d="M3.2 16.4c0-4 3.6-6.6 7.8-6.3.9-1.8 1.6-3.7 3.2-4.7 1.6-1 3.8-.6 4.6 1l2.3.8-1.9.9c-.2 1.3-1 2.3-1.4 3.3-.4 1-.2 2-.8 3.4-1 2.4-3.6 3.9-7 3.9H6.1c-1.7 0-2.9-1-2.9-2.3z"/><circle class="e" cx="16.6" cy="7.4" r=".95"/></svg>';
+  const ALL = [
+    {k:"pin",  a:194, h:sv('<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>'), lb:"Punktur"},
+    {k:"car",  a:154, h:sv('<path d="M4 15v-3l2-5h12l2 5v3z"/><circle cx="8" cy="15.5" r="1.6"/><circle cx="16" cy="15.5" r="1.6"/>'), lb:"Bíllinn"},
+    {k:"shot", a:122, h:'<span class="em">💥</span>', lb:"Skot"},
+    {k:"kill", a:90,  h:BIRD, lb:"Rjúpa", cls:"core"},
+    {k:"poop", a:60,  h:'<span class="em">💩</span>', lb:"Kúkur", masson:true},
+    {k:"dl",   a:22,  h:sv('<path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>'), lb:"Sækja kort"}
+  ];
+  let st = null;            // opið menu
+  let press = null;         // fingur sem gæti orðið langt ýti
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const buzz = ms => { try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
+  function place(it, x, y){
+    const el = document.createElement("button"); el.type = "button"; el.className = "rm-it" + (it.cls ? " " + it.cls : "");
+    el.innerHTML = `${it.h}<span class="lb">${it.lb}</span>`; el.setAttribute("aria-label", it.lb);
+    el.style.left = x + "px"; el.style.top = y + "px";
+    el.style.setProperty("--dx", (st.cx - x) + "px"); el.style.setProperty("--dy", (st.cy - y) + "px");
+    el.onclick = e => { e.stopPropagation(); choose(it.k); };
+    box.appendChild(el); st.els.push({k:it.k, el, x, y, r:it.cls === "core" ? 48 : 40});
+    return el;
+  }
+  function open(x, y, tap){
+    const W = innerWidth, H = innerHeight, R = Math.min(145, Math.max(100, (W - 100) / 2));
+    const cx = clamp(x, R + 40, W - R - 40), cy = clamp(y, R + 160, H - 70);
+    const r = mc.getBoundingClientRect(), ll = map.containerPointToLatLng([x - r.left, y - r.top]);
+    st = {x, y, cx, cy, R, ll, els:[], hot:null, kx:false, tap:!!tap, dwell:null};
+    box.innerHTML = ""; rm.classList.remove("dwell");
+    rm.style.setProperty("--cx", cx + "px"); rm.style.setProperty("--cy", cy + "px");
+    arcEl.innerHTML = `<defs><linearGradient id="rmg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#FFB27A" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+      <path d="M${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}" fill="none" stroke="url(#rmg)" stroke-width="1"/>`;
+    for (const it of ALL){
+      if (it.masson && !isMasson()) continue;
+      const a = it.a * Math.PI / 180;
+      place(it, Math.round(cx + R * Math.cos(a)), Math.round(cy - R * Math.sin(a)));
+    }
+    const f = document.createElement("span"); f.className = "rm-finger"; f.style.left = x + "px"; f.style.top = y + "px"; box.appendChild(f); st.finger = f;
+    if (tap) showKx();
+    if (window.__hideShot) window.__hideShot();
+    rm.hidden = false;
+    try{ map.dragging.disable(); }catch(e){}
+    buzz(25);
+  }
+  function close(){
+    if (!st) return;
+    clearTimeout(st.dwell); st = null; rm.hidden = true; box.innerHTML = "";
+    try{ map.dragging.enable(); }catch(e){}
+  }
+  function showKx(){
+    if (!st || st.kx) return; st.kx = true;
+    const core = st.els.find(e => e.k === "kill"); if (!core) return;
+    for (const [k, a, t] of [["k2", 136, "×2"], ["k3", 44, "×3"]]){
+      const x = Math.round(core.x + 108 * Math.cos(a * Math.PI / 180)), y = Math.round(core.y - 108 * Math.sin(a * Math.PI / 180));
+      const el = place({k, h:t, lb:k === "k2" ? "Double Kill" : "Triple Kill", cls:"kx"}, x, y);
+      el.style.setProperty("--dx", (core.x - x) + "px"); el.style.setProperty("--dy", (core.y - y) + "px");
+    }
+    if (!st.tap){ rm.classList.add("dwell"); buzz(15); }
+  }
+  function track(x, y){
+    if (!st) return;
+    st.finger.style.left = x + "px"; st.finger.style.top = y + "px";
+    let hot = null, best = 1e9;
+    for (const e of st.els){ const d = Math.hypot(e.x - x, e.y - y); if (d < e.r && d < best){ best = d; hot = e; } }
+    if ((hot && hot.k) === (st.hot && st.hot.k)) return;
+    st.els.forEach(e => e.el.classList.toggle("on", e === hot));
+    st.hot = hot; clearTimeout(st.dwell);
+    if (hot) buzz(8);
+    if (hot && hot.k === "kill" && !st.kx) st.dwell = setTimeout(showKx, 450);
+  }
+  function release(x, y){
+    if (!st) return;
+    if (st.hot) return choose(st.hot.k);
+    if (Math.hypot(x - st.x, y - st.y) < 24){ st.tap = true; showKx(); rm.classList.remove("dwell"); return; }   // stutt: menu-ið bíður eftir ýti
+    close();
+  }
+  function choose(k){
+    const ll = st && st.ll; close();
+    if (k === "kill" || k === "k2" || k === "k3") return killAtGps(k === "k3" ? 3 : k === "k2" ? 2 : 1);
+    if (k === "shot") return document.getElementById("btnShot").click();
+    if (k === "poop"){
+      if (!pos){ if (watchId == null) startGps(); toast("Bíð eftir GPS-staðsetningu… reyndu aftur eftir augnablik."); return; }
+      return registerPoop(pos.lat, pos.lon);
+    }
+    if (k === "car"){
+      const at = pos ? {lat:pos.lat, lon:pos.lon, acc:pos.acc} : {lat:ll.lat, lon:ll.lng, acc:0};
+      const prev = pts.find(p => p.type === "bill");
+      pts = pts.filter(p => p.type !== "bill");
+      const p = {id:"p" + Date.now().toString(36), lat:at.lat, lon:at.lon, acc:at.acc || 0, type:"bill", name:"", ts:Date.now()};
+      pts.push(p); savePts(); renderPts(); updateCar();
+      showUndo(pos ? "🚗 Bíllinn merktur hér" : "🚗 Bíllinn merktur þar sem þú hélst fingri", () => {
+        pts = pts.filter(x => x.id !== p.id); if (prev) pts.push(prev); savePts(); renderPts(); updateCar(); toast("Afturkallað");
+      });
+      return;
+    }
+    if (k === "pin") return window.__openMark(ll.lat, ll.lng, 0, "Þar sem þú hélst fingri");
+    if (k === "dl"){ map.setView(ll, Math.max(map.getZoom(), 13), {animate:false}); return openCapture(); }
+  }
+  // Snerting: langt ýti á kortið opnar menu-ið
+  mc.addEventListener("touchstart", e => {
+    if (st || capOn || e.touches.length !== 1){ if (press) clearTimeout(press.t); press = null; return; }
+    const t = e.touches[0]; if (press) clearTimeout(press.t);
+    press = {x:t.clientX, y:t.clientY, t:setTimeout(() => { const p = press; press = null; if (p) open(p.x, p.y, false); }, 450)};
+  }, {passive:true});
+  document.addEventListener("touchmove", e => {
+    const t = e.touches[0]; if (!t) return;
+    if (press && Math.hypot(t.clientX - press.x, t.clientY - press.y) > 10){ clearTimeout(press.t); press = null; }
+    if (st && !st.tap){ e.preventDefault(); track(t.clientX, t.clientY); }
+  }, {passive:false});
+  document.addEventListener("touchend", e => {
+    if (press){ clearTimeout(press.t); press = null; }
+    if (st && !st.tap){ const t = e.changedTouches[0]; e.preventDefault(); release(t.clientX, t.clientY); }
+  }, {passive:false});
+  document.addEventListener("touchcancel", () => { if (press){ clearTimeout(press.t); press = null; } if (st && !st.tap) close(); });
+  mc.addEventListener("contextmenu", e => e.preventDefault());
+  // Mús: hægri smellur opnar menu-ið (bíður eftir smelli)
+  map.on("contextmenu", e => { if (st || capOn) return; const o = e.originalEvent; if (o && o.pointerType === "touch") return; open(o.clientX, o.clientY, true); });
+  rm.querySelector(".rm-scrim").addEventListener("click", close);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+  window.__radial = {open, close, isOpen: () => !!st};
+})();
 
 /* Opið viðmót fyrir Android appið */
 window.RK = { startGps, stopGps, isGpsOn: () => watchId != null, toast, setHunt, setPause, isPaused: () => hunt && huntPaused, setTab, isHunting: () => hunt, getPos: () => pos, addRemotePoint, showRemote, openPanel, closeSheet, relFromMe, esc, fmtM, card, hhmm, ago, openPing: () => openPing(null), lastFrom: n => pts.filter(p => p.type === "ping" && p.from === n).sort((a, b) => b.ts - a.ts)[0] || null };

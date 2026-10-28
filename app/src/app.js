@@ -38,7 +38,7 @@
 
   /* ---------- Staðsetning: navigator.geolocation keyrir á GPS-þjónustu símans ---------- */
   const subs = new Map();
-  let nextId = 1, bgId = null, bgBusy = Promise.resolve(), endT = null;
+  let nextId = 1, bgId = null, bgBusy = Promise.resolve(), endT = null, bgSaver = false;
 
   function toPos(l) {
     return {
@@ -62,10 +62,13 @@
   function start() {
     bgBusy = bgBusy.then(async () => {
       if (bgId || !subs.size) return;
+      // Sparnaðarhamur: GPS mælir sjaldnar (á um 40 m fresti í ferð)
+      const saver = !!(window.__saverActive && window.__saverActive());
+      bgSaver = saver;
       const opts = hunt
         ? { backgroundTitle: masson() ? "Másson er virkur" : "Tracking virkt", backgroundMessage: "Fylgist með bannsvæðum. Ýttu til að opna kortið.",
-            requestPermissions: true, stale: false, distanceFilter: 15 }
-        : { requestPermissions: true, stale: false, distanceFilter: 5 };
+            requestPermissions: true, stale: false, distanceFilter: saver ? 40 : 15 }
+        : { requestPermissions: true, stale: false, distanceFilter: saver ? 25 : 5 };
       try { bgId = await BG.addWatcher(opts, onLoc); } catch (e) { bgId = null; }
     });
     return bgBusy;
@@ -79,6 +82,7 @@
     return bgBusy;
   }
   const restart = () => { stop(); zoneLast = ""; return start(); };
+  window.__onSaver = on => { if (bgId && !!on !== bgSaver) restart(); };
 
   const geo = navigator.geolocation || {};
   try {
