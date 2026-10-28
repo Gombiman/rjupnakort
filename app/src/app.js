@@ -124,7 +124,18 @@
   }
   window.__notify = (title, body) => notify(title, body, "almennt");
   // Kallað úr kortinu þegar staða breytist (0 öruggt … 5 innan bannsvæðis)
-  window.__onLevel = (level, prev, title, sub) => {
+  let zoneLast = "", zoneAt = 0;
+  window.__onLevel = (level, prev, title, sub, cls) => {
+    // Táknið og liturinn í Másson-tilkynningunni: grænt ✓, rautt ✕, gult ?
+    if (hunt && bgId) {
+      const kind = cls === "heimilt" ? "ok" : cls === "bann" ? "bann" : "q";
+      const icon = kind === "ok" ? "✅" : kind === "bann" ? "⛔" : (cls === "leyfi" || cls === "athuga" || cls === "near") ? "⚠️" : "❔";
+      const t = `${icon} ${title}`, key = kind + "|" + t + "|" + sub;
+      if (key !== zoneLast || Date.now() - zoneAt > 90000) {
+        zoneLast = key; zoneAt = Date.now();
+        try { F.zone({ kind, title: t, text: sub }).catch(() => {}); } catch (e) {}
+      }
+    }
     if (!hunt || prev == null) return;
     if (level > prev && level >= 2 && document.visibilityState !== "visible") notify(title, sub, "vidvaranir");
   };

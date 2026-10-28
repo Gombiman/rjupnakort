@@ -2,6 +2,12 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Rjúpan í tilkynningunni sýnir svæðið 🟢🔴🟡
+- Táknið við klukkuna er alltaf rjúpa: með haki á leyfðu svæði, X á bannsvæði og ? á eignarlandi, friðlýstu eða óvissu svæði
+- Másson-tilkynningin litast græn, rauð eða gul og fyrirsögnin segir hvar þú ert
+- Ný og skýrari rjúpa í öllum tilkynningum
+- Nýtt útlit og rjúpan sem app-tákn (síðasta útgáfa)
+
 ## Nýtt útlit og rjúpan sem tákn 🦃
 - Nýtt app-tákn: rjúpan með hæðarlínum og staðsetningarnál
 - Hlýtt og ljóst útlit með dökkgrænni flipaslá. Dökkt útlit fylgir enn stillingu símans

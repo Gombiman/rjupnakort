@@ -42,6 +42,14 @@ public class FelagarPlugin extends Plugin {
         if (p != null) p.notifyListeners(event, data, true);
     }
 
+    // Staða svæðis í Másson-tilkynningunni: táknið (rjúpa með haki, X eða ?) og litur.
+    // Uppfærir aðeins tilkynningu GPS-þjónustunnar ef hún er þegar á skjánum.
+    @PluginMethod
+    public void zone(PluginCall call) {
+        ZoneNotif.update(getContext(), call.getString("kind", "q"), call.getString("title", ""), call.getString("text", ""));
+        call.resolve();
+    }
+
     @PluginMethod
     public void configure(PluginCall call) {
         SharedPreferences.Editor e = Felagar.prefs(getContext()).edit();
