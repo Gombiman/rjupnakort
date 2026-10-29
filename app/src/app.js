@@ -18,6 +18,11 @@
     if (r.status < 200 || r.status >= 300) throw new Error("HTTP " + r.status);
     return typeof r.data === "string" ? JSON.parse(r.data) : r.data;
   };
+  window.__nativeText = async (url) => {
+    const r = await HTTP.get({ url, responseType: "text", connectTimeout: 30000, readTimeout: 60000 });
+    if (r.status < 200 || r.status >= 300) throw new Error("HTTP " + r.status);
+    return typeof r.data === "string" ? r.data : JSON.stringify(r.data);
+  };
   // Kortaflís sótt í gegnum síma (ef vafrahlutinn má það ekki)
   window.__nativeBlob = async (url) => {
     const r = await HTTP.get({ url, responseType: "blob", connectTimeout: 20000, readTimeout: 30000 });

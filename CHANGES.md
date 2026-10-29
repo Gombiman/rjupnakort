@@ -2,6 +2,13 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Örnefni, landslag og afréttir frá Náttúrufræðistofnun 🏔️
+- Örnefni úr IS 50V á kortinu þegar þú þysjar nær: fjöll, gil, skörð, heiðar og vötn
+- Örnefnin vistast í símanum og finnast í leitinni líka án netsambands. Þau sækjast líka þegar þú vistar kort án nets
+- Staðsetning frá félaga segir við hvaða örnefni hann er, t.d. „við Sótaskarð“
+- Skuggar landslags úr ÍslandsDEM ofan á kortið (rofi í Lög og grunnkort)
+- Afréttir bætast sjálfkrafa við lagalistann ef Náttúrufræðistofnun gefur þær út
+
 ## Áttaviti með einu ýti og nákvæmari hlunnindamerki 🧭
 - Ýttu á áttavitann (á kortinu eða stóra áttavitann) til að kveikja eða slökkva á honum. Slökktur er hann grár og sparar rafhlöðu
 - Hlunnindamerkin færast sjálfkrafa á bæinn eða kennileitið sem lýsing svæðisins miðar við (eftir OpenStreetMap) þegar netsamband er

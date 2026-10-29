@@ -489,6 +489,10 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 .pop .pb{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .pop .pb button,.pop .pb .pbl{border:1px solid #c9cfcf;background:#fff;color:#1b1f20;border-radius:999px;padding:6px 12px;font:600 13px var(--f-body);text-decoration:none}
 .pop a{color:#2577c4}
+.ornl{pointer-events:none;width:auto!important;height:auto!important}
+.ornl span{display:inline-block;transform:translate(-50%,-50%);white-space:nowrap;font:italic 600 11px/1 var(--f-body);color:#1d1b18;letter-spacing:.02em;
+  text-shadow:0 0 2px #fff,0 0 3px #fff,0 0 5px rgba(255,255,255,.9)}
+.leaflet-tile.demshade,.demshade{mix-blend-mode:multiply}
 .hlpin{width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #2f9e4f;box-shadow:0 2px 6px rgba(0,0,0,.35);display:grid;place-items:center;font-size:15px;line-height:1;box-sizing:border-box}
 .pop .dist{font:500 13px var(--f-mono);margin:4px 0}
 .me{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 0 0 2px var(--accent),0 2px 8px rgba(0,0,0,.4);box-sizing:border-box;position:relative}
@@ -866,6 +870,12 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 
   <h3>Svæði</h3>
   <div id="layerList"></div>
+  <label class="layer" for="ornTog"><span class="sw" style="color:#1d1b18;background:#1d1b1822;border-radius:50%"></span>
+    <div class="t"><div class="n">Örnefni (IS 50V)</div><div class="m" id="ornStat">Náttúrufræðistofnun · virka líka án nets þar sem þau hafa verið sótt</div></div>
+    <input type="checkbox" class="tog" id="ornTog"></label>
+  <label class="layer" for="demTog"><span class="sw" style="color:#6b6a63;background:#6b6a6333;border-radius:50%"></span>
+    <div class="t"><div class="n">Skuggar landslags (ÍslandsDEM)</div><div class="m">Hæðarlíkan Náttúrufræðistofnunar ofan á kortið · þarf net</div></div>
+    <input type="checkbox" class="tog" id="demTog"></label>
   <label class="layer" for="hlTog"><span class="sw" style="color:#2f9e4f;background:#2f9e4f33;border-radius:50%"></span>
     <div class="t"><div class="n">Veiðileyfi á hlunnindi.is</div><div class="m">18 staðir (21 svæði) þar sem leyfi eru seld · merkið er við aðkomuna, mörkin á hlunnindi.is</div></div>
     <input type="checkbox" class="tog" id="hlTog"></label>
@@ -1464,6 +1474,10 @@ async function fetchWfs(url, type){
 }
 const DATA_VER = 3;   // hækka til að sækja innbyggð gögn upp á nýtt
 async function loadBuiltin(l, force){
+  if (l.id === "b_afrett" && !BUILTIN.some(x => x.id === "b_afrett")){
+    const f = LS.get("disc2:b_afrett", null) || LS.get("afrettSrc", null);
+    BUILTIN.push({id:"b_afrett", name:"Afréttir", cat:"info", owner:"Óbyggðanefnd / NÁTT", wfs:f && f.srv ? f.types.map(t => [f.srv, t]) : [], wms:null});
+  }
   const b = BUILTIN.find(x => x.id === l.id);
   if (b.viewport) return loadLandCached(l);
   const cached = await IDB.get("gj:"+l.id);
@@ -2070,6 +2084,7 @@ capGo.onclick = async () => {
   if (!capStop && done > 0){
     offAreas.push({s:+b.getSouth().toFixed(4), w:+b.getWest().toFixed(4), n:+b.getNorth().toFixed(4), e:+b.getEast().toFixed(4), z:+capZoom.value, t:Date.now()});
     LS.set("offAreas", offAreas); drawOffAreas();
+    if (window.__ornLoadBounds && LS.get("orn", true)) window.__ornLoadBounds(b).catch(() => {});
   }
   toast(capStop ? `Stöðvað eftir ${done} flísar.` : failed ? `Vistað, en ${failed} flísar náðust ekki. Reyndu aftur á betra neti.` : "Svæðið er vistað. Kortið virkar þar án nets.", 7000);
   capStop = false; closeCapture(); refreshStat();
@@ -2445,7 +2460,8 @@ function showRemote(p, quiet){
     setTimeout(() => markers[p.id] && markers[p.id].openPopup(), 300);
   }
   const rel = relFromMe(p);
-  toast(`${p.type === "ping" ? "Ping" : "Punktur"}${p.from ? " frá " + dn(p.from) : ""} · ${ago(p.ts)}${rel ? " · " + rel.text : ""}`, 6000);
+  const on = window.__nearestOrn ? window.__nearestOrn(p.lat, p.lon, 2000) : null;
+  toast(`${p.type === "ping" ? "Ping" : "Punktur"}${p.from ? " frá " + dn(p.from) : ""}${on ? " við " + on.name : ""} · ${ago(p.ts)}${rel ? " · " + rel.text : ""}`, 6000);
 }
 window.addEventListener("hashchange", readHash);
 
@@ -2842,6 +2858,140 @@ function srchRow(r){
   return row;
 }
 
+/* ---------- Örnefni úr IS 50V (Náttúrufræðistofnun) ----------
+   Lagið finnst í lagalista landupplýsingaþjóns NÁTT. Nöfnin eru sótt fyrir svæðið á skjánum (og vistuð svæði)
+   og geymd í símanum, svo þau sjást og finnast í leit án nets. */
+const ORN = {servers:["https://gis.natt.is/geoserver/wfs", "https://gis.lmi.is/geoserver/wfs"], minZoom:11, labelZoom:12, max:60000};
+let ornList = [], ornBoxes = LS.get("ornBoxes", []), ornBusy = false, ornTimer = null;
+if (!Array.isArray(ornBoxes)) ornBoxes = [];
+const ornLayer = L.layerGroup();
+const ornTog = document.getElementById("ornTog"), ornStat = document.getElementById("ornStat");
+async function getTextAny(url){
+  if (window.__nativeText) return window.__nativeText(url);
+  const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 30000);
+  try{ const r = await fetch(url, {signal:ctl.signal}); if (!r.ok) throw new Error("HTTP " + r.status); return await r.text(); } finally { clearTimeout(tm); }
+}
+async function ornFind(){
+  const c = LS.get("ornSrc", null);
+  if (c && c.srv && Array.isArray(c.types) && c.types.length && Date.now() - (c.t || 0) < 30 * 864e5) return c;
+  for (const srv of ORN.servers){
+    try{
+      const x = new DOMParser().parseFromString(await getTextAny(`${srv}?service=WFS&version=1.1.0&request=GetCapabilities`), "application/xml");
+      const fts = [...x.getElementsByTagNameNS("*", "FeatureType")].map(ft => {
+        const g = t => { const e = ft.getElementsByTagNameNS("*", t)[0]; return e ? e.textContent.trim() : ""; };
+        return {name:g("Name"), title:g("Title")};
+      }).filter(f => /ornefni|örnefni/i.test(f.name + " " + f.title) && !/saga|eldri|old|leit|index/i.test(f.name));
+      if (!fts.length) continue;
+      // Punktar fyrst, svo línur og flákar
+      fts.sort((a, b) => (/punkt|point/i.test(b.name) ? 1 : 0) - (/punkt|point/i.test(a.name) ? 1 : 0));
+      const found = {srv, types:fts.slice(0, 3).map(f => f.name), t:Date.now()};
+      LS.set("ornSrc", found); return found;
+    }catch(e){}
+  }
+  return null;
+}
+const ornName = pr => {
+  for (const k of Object.keys(pr || {})) if (/^(nafn|ornefni|örnefni|name|heiti|texti|text)$/i.test(k) && typeof pr[k] === "string" && pr[k].trim()) return pr[k].trim();
+  for (const k of Object.keys(pr || {})) if (/nafn|ornefni|name|heiti/i.test(k) && typeof pr[k] === "string" && pr[k].trim() && pr[k].length < 60) return pr[k].trim();
+  return "";
+};
+const ornKind = pr => { for (const k of Object.keys(pr || {})) if (/flokk|tegund|gerd|kind|type|class/i.test(k) && typeof pr[k] === "string") return pr[k]; return ""; };
+function ornPoint(g){
+  if (!g) return null;
+  const c = g.coordinates;
+  if (g.type === "Point") return c;
+  if (g.type === "MultiPoint" || g.type === "LineString") return c[Math.floor(c.length / 2)];
+  if (g.type === "MultiLineString") return c[0][Math.floor(c[0].length / 2)];
+  if (g.type === "Polygon" || g.type === "MultiPolygon"){
+    const ring = g.type === "Polygon" ? c[0] : c[0][0]; let a = 1e9, b = 1e9, cc = -1e9, d = -1e9;
+    for (const [x, y] of ring){ a = Math.min(a, x); b = Math.min(b, y); cc = Math.max(cc, x); d = Math.max(d, y); }
+    return [(a + cc) / 2, (b + d) / 2];
+  }
+  return null;
+}
+async function ornLoadBox(box, quietFail){
+  const src = await ornFind();
+  if (!src){ ornStat.textContent = "Fann ekki örnefnalag hjá Náttúrufræðistofnun (reyni aftur seinna)"; return false; }
+  const seen = new Set(ornList.map(o => o[0] + "|" + o[1].toFixed(3) + "|" + o[2].toFixed(3)));
+  let got = 0, ok = false;
+  for (const type of src.types){
+    try{
+      const q = `${src.srv}?service=WFS&version=2.0.0&request=GetFeature&typeNames=${encodeURIComponent(type)}&outputFormat=application%2Fjson&srsName=EPSG:4326&count=5000&bbox=${box.join(",")},urn:ogc:def:crs:EPSG::4326`;
+      const gj = fixAxes(await getJsonAny(q)); ok = true;
+      for (const f of gj.features){
+        const n = ornName(f.properties), pt = ornPoint(f.geometry);
+        if (!n || !pt || !isFinite(pt[0]) || !isFinite(pt[1])) continue;
+        const key = n + "|" + (+pt[1]).toFixed(3) + "|" + (+pt[0]).toFixed(3);
+        if (seen.has(key)) continue; seen.add(key);
+        ornList.push([n, +(+pt[1]).toFixed(5), +(+pt[0]).toFixed(5), ornKind(f.properties)]); got++;
+      }
+    }catch(e){ console.warn("örnefni", type, e); }
+  }
+  if (!ok){ if (!quietFail) ornStat.textContent = "Náði ekki sambandi við Náttúrufræðistofnun"; return false; }
+  if (ornList.length > ORN.max) ornList.splice(0, ornList.length - ORN.max);
+  ornBoxes.push(box); while (ornBoxes.length > 120) ornBoxes.shift(); LS.set("ornBoxes", ornBoxes);
+  await IDB.set("orn:list", ornList);
+  ornStat.textContent = `${ornList.length.toLocaleString("is-IS")} örnefni í símanum · virka án nets`;
+  ornDraw();
+  return true;
+}
+async function ornView(){
+  if (!ornTog.checked || !navigator.onLine || ornBusy || map.getZoom() < ORN.minZoom) return;
+  const bb = map.getBounds().pad(0.3), box = [bb.getSouth(), bb.getWest(), bb.getNorth(), bb.getEast()].map(v => +v.toFixed(4));
+  if (ornBoxes.some(x => x[0] <= box[0] && x[1] <= box[1] && x[2] >= box[2] && x[3] >= box[3])) return;
+  ornBusy = true; try{ await ornLoadBox(box, true); } finally { ornBusy = false; }
+}
+function ornDraw(){
+  ornLayer.clearLayers();
+  if (!ornTog.checked || map.getZoom() < ORN.labelZoom) return;
+  const b = map.getBounds(), z = map.getZoom(), lim = z >= 14 ? 220 : z >= 13 ? 140 : 80;
+  let n = 0;
+  for (const o of ornList){
+    if (!b.contains([o[1], o[2]])) continue;
+    L.marker([o[1], o[2]], {icon:L.divIcon({className:"ornl", html:`<span>${esc(o[0])}</span>`, iconSize:null}), interactive:false, keyboard:false, pane:"zones"}).addTo(ornLayer);
+    if (++n >= lim) break;
+  }
+}
+// Næsta örnefni við punkt (t.d. „við Sótaskarð“)
+function nearestOrn(lat, lon, maxM){
+  let best = null, bd = maxM || 1500;
+  for (const o of ornList){
+    if (Math.abs(o[1] - lat) > 0.03 || Math.abs(o[2] - lon) > 0.07) continue;
+    const d = distM(lat, lon, o[1], o[2]); if (d < bd){ bd = d; best = o; }
+  }
+  return best ? {name:best[0], d:bd} : null;
+}
+window.__nearestOrn = nearestOrn;
+ornTog.checked = LS.get("orn", true);
+ornTog.onchange = () => { LS.set("orn", ornTog.checked); ornTog.checked ? ornLayer.addTo(map) : map.removeLayer(ornLayer); ornDraw(); ornView(); };
+IDB.get("orn:list").then(v => { if (Array.isArray(v)) ornList = v; if (ornList.length) ornStat.textContent = `${ornList.length.toLocaleString("is-IS")} örnefni í símanum · virka án nets`; if (ornTog.checked) ornLayer.addTo(map); ornDraw(); setTimeout(ornView, 3000); });
+map.on("moveend", () => { ornDraw(); clearTimeout(ornTimer); ornTimer = setTimeout(ornView, 900); });
+window.__ornLoadBounds = b => ornLoadBox([b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(v => +v.toFixed(4)), true);
+
+/* ---------- Skuggar landslags úr ÍslandsDEM (Náttúrufræðistofnun) ---------- */
+const DEM_WMS = "https://gis.natt.is/mapcache/web-mercator/wms";
+const demLayer = L.tileLayer.wms(DEM_WMS, {layers:"IslandsDEMDaylight", format:"image/png", transparent:true, version:"1.1.1", pane:"wms", opacity:.45, maxZoom:19,
+  attribution:"ÍslandsDEM © Náttúrufræðistofnun (CC BY 4.0)", className:"demshade"});
+const demTog = document.getElementById("demTog");
+demTog.checked = LS.get("dem", false);
+const demApply = () => { demTog.checked ? demLayer.addTo(map) : map.removeLayer(demLayer); };
+demTog.onchange = () => { LS.set("dem", demTog.checked); demApply(); };
+demApply();
+
+/* ---------- Afréttir: bætt við ef Náttúrufræðistofnun eða Óbyggðanefnd gefa þær út sem lag ---------- */
+setTimeout(async () => {
+  if (layers.some(l => l.id === "b_afrett") || !navigator.onLine) return;
+  const last = LS.get("afrettTry", 0); if (Date.now() - last < 7 * 864e5) return;
+  LS.set("afrettTry", Date.now());
+  const found = await discoverWfs({servers:ORN.servers.concat(["https://gis.ust.is/geoserver/wfs"]), re:/afr[eé]tt|afrettur|afrettir|afréttir/i, avoid:/kraf|kröf|krof|claim/i});
+  if (!found) return;
+  LS.set("afrettSrc", found);
+  BUILTIN.push({id:"b_afrett", name:"Afréttir", cat:"info", owner:"Óbyggðanefnd / NÁTT", wfs:found.types.map(t => [found.srv, t]), wms:null});
+  const l = {id:"b_afrett", name:"Afréttir", cat:"info", kind:"vector", src:"builtin", on:false};
+  layers.push(l); saveLayers(); renderList(); loadBuiltin(l, true);
+  toast("Nýtt lag: Afréttir frá Náttúrufræðistofnun. Kveiktu á því í Lög og grunnkort.", 7000);
+}, 12000);
+
 /* ---------- Veiðisvæði á hlunnindi.is (leyfi seld þar) ----------
    Staðsetning er u.þ.b. miðja svæðis eftir lýsingu á hlunnindi.is. Nákvæm mörk eru í kortasjá hlunnindi.is. */
 const HL = "https://hlunnindi.is";
@@ -2936,6 +3086,12 @@ function localSearch(q){
       out.push({name:f.name, kind:f.kind || CAT[f.cat].label, lat:(b + d) / 2, lon:(a + c) / 2, bounds:[[b, a], [d, c]], color:color(f.cat), icon:'<rect x="5" y="5" width="14" height="14" rx="2"/>'});
       if (out.length > 40) break;
     }
+  }
+  let on = 0;
+  for (const o of ornList){
+    if (on >= 15) break;
+    const t = norm(o[0]); if (!t.startsWith(n) && !(n.length >= 4 && t.includes(n))) continue;
+    out.push({name:o[0], kind:o[3] ? "Örnefni · " + o[3] : "Örnefni (IS 50V)", lat:o[1], lon:o[2], color:"#1d1b18", icon:'<path d="M5 19 12 5l7 14z"/>'}); on++;
   }
   for (const a of HLUNN) if (norm(a.n).includes(n) || norm(a.r).includes(n))
     out.push({name:a.n, kind:"Veiðileyfi á hlunnindi.is", where:a.r, lat:hlPos(a)[0], lon:hlPos(a)[1], color:"#2f9e4f", icon:'<circle cx="12" cy="12" r="6"/>'});
