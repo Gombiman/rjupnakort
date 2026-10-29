@@ -2,6 +2,10 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Boð fyrir iPhone 📱
+- „Bjóða félögum“ sendir nú bæði iPhone-hlekk og Android-app
+- iPhone-hlekkurinn opnar S. Másson í vafranum með hópkóðanum tilbúnum, bara skrá nafn og síma
+
 ## Örnefni af, fá eða öll · Leyfi merkt á svæðin 🎫
 - Örnefni: veldu Af, Fá eða Öll í Lög og grunnkort. „Fá“ sýnir helstu kennileiti (fjöll, gil, skörð, dali, vötn) og nöfnin lenda aldrei ofan í hvert annað
 - Ýttu á hlunnindamerki og „✓ Ég er með leyfi“: skráðu veiðidaga, fjölda leyfa og kvittunarnúmer

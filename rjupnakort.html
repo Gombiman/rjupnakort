@@ -2455,6 +2455,15 @@ document.getElementById("pingCopy").onclick = e => { if (pingText) copyText(ping
 function readHash(){
   if (!location.hash || location.hash.length < 4) return;
   const q = new URLSearchParams(location.hash.slice(1));
+  if (q.has("hop")){
+    // Boðshlekkur: #hop=hópkóði → opna skráningu með kóðanum
+    const code = String(q.get("hop") || "").trim().slice(0, 40);
+    try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
+    if (code.length < 4) return;
+    if (groupReady() && groupCode() === code){ toast("Þú ert þegar í hópnum 🦃"); return; }
+    setTimeout(() => { setTab("friends"); if (window.__openJoinWith) window.__openJoinWith(code); }, 600);
+    return;
+  }
   if (!q.has("p")) return;
   const [lat, lon] = q.get("p").split(",").map(Number);
   if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return;
@@ -4898,6 +4907,7 @@ function checkGroup(){
 }
 const joinSheet = document.getElementById("joinSheet"), inviteSheet = document.getElementById("inviteSheet");
 const APK_URL = "https://github.com/Gombiman/rjupnakort/releases/download/app/rjupnakort.apk";
+const WEB_URL = "https://gombiman.github.io/rjupnakort/rjupnakort.html";
 function newCode(){
   const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", r = new Uint32Array(8); crypto.getRandomValues(r);
   let c = "rjupa-"; r.forEach(v => c += abc[v % abc.length]); return c;
@@ -4947,6 +4957,7 @@ function openJoin(){
   openPanel(joinSheet);
 }
 document.getElementById("jCode").onchange = e => { e.target.value = pickCode(e.target.value); };
+window.__openJoinWith = code => { openJoin(); setJMode("join"); document.getElementById("jCode").value = code; document.getElementById("jMsg").textContent = "Hópkóðinn er kominn. Skrifaðu nafnið þitt og símanúmer."; document.getElementById("jMsg").className = "msg"; };
 document.getElementById("jPaste").onclick = async () => {
   try{ const t = await navigator.clipboard.readText(); if (t) document.getElementById("jCode").value = pickCode(t); else throw 0; }
   catch(e){ toast("Haltu fingri á reitnum og veldu Líma."); document.getElementById("jCode").focus(); }
@@ -4969,7 +4980,8 @@ document.getElementById("jSave").onclick = () => {
 let invText = "";
 function openInvite(){
   const m = isMasson();
-  invText = `${comp && !compEnded() ? `Komdu í ${comp.name} 🦃` : m ? "Komdu í Másson-hópinn 🦃" : "Komdu í hópinn í S. Másson appinu"}\n1. Sæktu appið: ${APK_URL}\n2. Opnaðu Hópinn og ýttu á ${m ? "Skrá Másson" : "Ganga í hóp"}\n3. Hópkóði: ${groupCode()}`;
+  const code = groupCode(), web = `${WEB_URL}#hop=${encodeURIComponent(code)}`;
+  invText = `${comp && !compEnded() ? `Komdu í ${comp.name} 🦃` : m ? "Komdu í Másson-hópinn 🦃" : "Komdu í hópinn í S. Másson"}\n\n📱 iPhone: opnaðu ${web}\nskráðu nafn og síma. Veldu svo Deila → Bæta á heimaskjá.\n\n🤖 Android: sæktu appið ${APK_URL}\nopnaðu Hópinn, ýttu á ${m ? "Skrá Másson" : "Ganga í hóp"} og límdu kóðann.\n\nHópkóði: ${code}`;
   document.getElementById("invPrev").textContent = invText;
   document.getElementById("invSms").href = "sms:?body=" + encodeURIComponent(invText);
   document.getElementById("invShare").hidden = !navigator.share;
