@@ -2,6 +2,13 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Spor og bæli deilast með hópnum 👣
+- Þegar einhver merkir spor eða bæli sjá allir í hópnum það á kortinu, með upphafsstaf þess sem merkti
+- Ýttu á merkið: hver, hvenær, við hvaða örnefni og hve langt frá þér
+- Ef félagi merkir spor innan 5 km frá þér kemur tilkynning á skjáinn
+- Spor og bæli hópsins birtast líka í tímalínunni í Dagbók
+- Virkar líka á iPhone í vefútgáfunni
+
 ## Spor og bæli 👣
 - Tvö ný tákn í menu-inu þegar haldið er fingri á kortinu: Spor og Bæli. Merkt þar sem þú stendur
 - Spor og bæli sjást á kortinu og í tímalínu dagsins í Dagbók

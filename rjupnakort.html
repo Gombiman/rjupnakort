@@ -500,6 +500,9 @@ details.tl li.obs i{background:#3d6b8c}
 .ornl span{display:inline-block;transform:translate(-50%,-50%);white-space:nowrap;font:italic 600 11px/1 var(--f-body);color:#1d1b18;letter-spacing:.02em;
   text-shadow:0 0 2px #fff,0 0 3px #fff,0 0 5px rgba(255,255,255,.9)}
 .leaflet-tile.demshade,.demshade{mix-blend-mode:multiply}
+.obpin{position:relative;width:28px;height:28px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:grid;place-items:center;box-sizing:border-box}
+.obpin svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.obpin b{position:absolute;right:-6px;bottom:-5px;min-width:15px;height:15px;border-radius:8px;background:#fff;color:#1b1f20;font:700 9.5px/15px var(--f-body);text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .hlpin.paid{width:34px;height:34px;background:#2f9e4f;color:#fff;font-size:18px;font-weight:800;border-color:#fff;box-shadow:0 0 0 3px rgba(47,158,79,.35),0 2px 8px rgba(0,0,0,.35)}
 .hlpin.soon{width:32px;height:32px;border-width:3px}
 .pop .pb .pbpaid{background:#2f9e4f;border-color:#2f9e4f;color:#fff}
@@ -3438,6 +3441,7 @@ document.getElementById("ptSave").onclick = () => {
   const before = pts.length; _ptSaveOld();
   const p = pts[pts.length - 1];
   if (pts.length > before && p && p.type === "felld") registerKill(p);
+  if (pts.length > before && p && (p.type === "spor" || p.type === "baeli")) groupSend("obs");
   // Kúkur fer í kúkadeildina, ekki sem venjulegur punktur
   if (pts.length > before && p && p.type === "kukur"){ pts = pts.filter(x => x.id !== p.id); LS.set("pts", pts); renderPts(); registerPoop(p.lat, p.lon); }
 };
@@ -3498,6 +3502,7 @@ function renderLog(){
     tk.forEach(k => { n++; ev.push({ts:k.ts, c:"kill", h:k.same ? `Rjúpa nr. ${n}, sama skot` : n === 1 ? "Fyrsta rjúpan" : `Rjúpa nr. ${n}`, s:k.same ? "Fleiri en ein í skoti" : ""}); });
     pts.filter(q => (q.type === "spor" || q.type === "baeli") && q.ts >= t.start && q.ts <= end)
       .forEach(q => ev.push({ts:q.ts, c:"obs", h:q.type === "spor" ? "Spor" : "Bæli", s:q.name || ""}));
+    try{ allObs().filter(q => q.ts >= t.start && q.ts <= end).forEach(q => ev.push({ts:q.ts, c:"obs", h:`${q.type === "spor" ? "Spor" : "Bæli"} · ${dispName(q.who)}`, s:""})); }catch(e){}
     ev.sort((a, b) => a.ts - b.ts);
     if (t.live) ev.push({ts:Date.now(), c:"live", h:"Ferðin er í gangi", s:fmtKm(t.dist || 0) + " hingað til"});
     else ev.push({ts:end, c:"end", h:isMasson() ? "Kominn í bjórinn" : "Ferð lokið", s:`${dur(end - t.start)}${isMasson() ? ` · ≈ ${fmtBeer(beersFor(t.dist || 0, t.gain || 0))} bjórar brenndir` : ""}`});
@@ -3648,12 +3653,14 @@ function mySnapshot(kind){
   o.vb = recentObj(vbEnc, 2); o.fd = recentObj(finds, 2);
   o.wit = wit.filter(w => w[1] >= Date.now() - 3 * 864e5);
   o.pp = poops.filter(p => p.ts >= Date.now() - 2 * 864e5).map(p => [p.ts, +p.lat.toFixed(5), +p.lon.toFixed(5), p.alt != null ? Math.round(p.alt) : null]);
+  o.ob = myObs().map(p => [p.ts, +p.lat.toFixed(5), +p.lon.toFixed(5), p.type === "baeli" ? 1 : 0]);
   o.du = Object.values(duels).filter(d => (d.a === me || d.b === me) && d.day >= addDays(today(), -2));
   o.cd = myCards.filter(c => c.day >= addDays(today(), -8));
   if (comp && comp.owner === me){ o.comp = comp; o.px = judge.px.filter(p => p.day >= addDays(today(), -3)); }
   if (hunt && S.shareloc === true && pos && Date.now() - (pos.t || 0) < 5 * 60000){ o.lat = +pos.lat.toFixed(5); o.lon = +pos.lon.toFixed(5); o.acc = Math.round(pos.acc || 0); o.pt = pos.t; }
   // ntfy tekur ~4 KB: elstu dagarnir detta út ef þarf (hinir geyma þá frá fyrri skilaboðum)
   while (JSON.stringify(o).length > 2700 && o.h.length > 1) o.h.shift();
+  while (JSON.stringify(o).length > 2900 && o.ob && o.ob.length > 4) o.ob.shift();
   return o;
 }
 
@@ -4045,7 +4052,7 @@ function renderBoard(){
   document.getElementById("boardNote").textContent = !window.__groupSend ? "Keppnin og stigataflan þurfa hópkóða."
     : show && today() < comp.from ? `Keppnin hefst ${fmtD(comp.from)}. Rjúpur fyrir þann dag gefa ekki stig.`
     : show ? "Stigin berast á milli símanna þegar netsamband er." : "";
-  renderHall(); renderPoops();
+  renderHall(); renderPoops(); try{ renderObs(); }catch(e){}
 }
 // Nýr WANTED: tilkynning til allra (send frá keppnisstjóra svo hún komi bara einu sinni)
 function wantedCheck(w, people){
@@ -4617,6 +4624,31 @@ function allPoops(){
   for (const r of Object.values(board)) for (const q of r.pp || []) out.push({ts:q[0], lat:q[1], lon:q[2], alt:q[3], who:r.name});
   const ss = compFrom(); return out.filter(p => p.ts >= ss);
 }
+
+/* ---------- Spor og bæli: deilt með hópnum ---------- */
+const OB_DAYS = 3;
+const myObs = () => pts.filter(p => (p.type === "spor" || p.type === "baeli") && p.ts >= Date.now() - OB_DAYS * 864e5).slice(-18);
+const obsLayer = L.layerGroup().addTo(map);
+function allObs(){
+  const out = [];
+  for (const r of Object.values(board)) for (const q of r.ob || []) out.push({ts:q[0], lat:q[1], lon:q[2], type:q[3] ? "baeli" : "spor", who:r.name, id:r.id});
+  return out;
+}
+function renderObs(){
+  obsLayer.clearLayers();
+  for (const o of allObs()){
+    if (Date.now() - o.ts > 14 * 864e5) continue;
+    const t = TYPES[o.type], ini = (dispName(o.who) || "?").charAt(0).toUpperCase();
+    const icon = L.divIcon({className:"", iconSize:[30,30], iconAnchor:[15,15], popupAnchor:[0,-14],
+      html:`<div class="obpin" style="--c:${t.color}"><svg viewBox="0 0 24 24">${SVG[o.type]}</svg><b>${esc(ini)}</b></div>`});
+    const on = window.__nearestOrn ? window.__nearestOrn(o.lat, o.lon, 1500) : null;
+    L.marker([o.lat, o.lon], {icon, keyboard:false}).bindPopup(() => {
+      const rel = relFromMe(o);
+      return `<div class="pop"><b>${o.type === "spor" ? "👣 Spor" : "🪹 Bæli"} · ${esc(dispName(o.who))}</b><div class="zkind">${ago(o.ts)}${on ? " · við " + esc(on.name) : ""}</div><div class="dist">${rel ? rel.text + " frá þér" : ""}</div></div>`;
+    }).addTo(obsLayer);
+  }
+}
+window.__renderObs = renderObs;
 function renderPoops(){
   poopLayer.clearLayers();
   if (!isMasson() || S.poopmap === false) return;
@@ -4818,6 +4850,9 @@ function onGroupMsg(msg, live){
   if (Array.isArray(msg.h)) msg.h.forEach(x => { if (Array.isArray(x) && x[0]) hmap[x[0]] = x; });
   const wits = ((prev && prev.wit) || []).slice(); (Array.isArray(msg.wit) ? msg.wit : []).forEach(w => { if (!wits.some(x => x[0] === w[0] && x[1] === w[1])) wits.push(w); });
   const pps = ((prev && prev.pp) || []).slice(); (Array.isArray(msg.pp) ? msg.pp : []).forEach(q => { if (!pps.some(x => x[0] === q[0])) pps.push(q); });
+  const obCut = Date.now() - OB_DAYS * 864e5;
+  const obs = Array.isArray(msg.ob) ? [...((prev && prev.ob) || []).filter(q => q[0] < obCut), ...msg.ob.filter(q => Array.isArray(q) && isFinite(q[1]) && isFinite(q[2]))] : ((prev && prev.ob) || []);
+  const newObs = live && Array.isArray(msg.ob) ? msg.ob.filter(q => !((prev && prev.ob) || []).some(x => x[0] === q[0])) : [];
   const cds = ((prev && prev.cdAll) || []).slice(); (Array.isArray(msg.cd) ? msg.cd : []).forEach(c => { if (!cds.some(x => x.ts === c.ts && x.c === c.c)) cds.push(c); });
   const pcut = addDays(today(), -3);
   const pxs = Array.isArray(msg.px) ? [...((prev && prev.pxAll) || []).filter(x => x.day < pcut), ...msg.px] : ((prev && prev.pxAll) || []);
@@ -4828,7 +4863,12 @@ function onGroupMsg(msg, live){
   delete base.v;
   board[msg.id] = Object.assign(base, {hm:hmap, fd:Object.assign({}, (prev && prev.fd) || {}, msg.fd || {}), phone:msg.phone || (prev && prev.phone) || "",
                                        vbDays:[...new Set([...((prev && prev.vbDays) || []), ...Object.keys(msg.vb || {})])].slice(-30),
-                                       wit:wits.slice(-60), pp:pps.slice(-80), cdAll:cds.slice(-60), pxAll:pxs.slice(-200)});
+                                       wit:wits.slice(-60), pp:pps.slice(-80), cdAll:cds.slice(-60), pxAll:pxs.slice(-200), ob:obs.filter(q => q[0] >= Date.now() - 14 * 864e5).slice(-120)});
+  // Nýtt spor eða bæli frá félaga í grennd: láta vita
+  if (newObs.length && pos && document.visibilityState === "visible"){
+    const q = newObs[newObs.length - 1], rel = relFromMe({lat:q[1], lon:q[2]});
+    if (rel && rel.d < 5000) toast(`${q[3] ? "🪹 " : "👣 "}${dispName(msg.name)} merkti ${q[3] ? "bæli" : "spor"} · ${rel.text}`, 6000);
+  }
   LS.set("board", board);
   if (Array.isArray(msg.du)){ let ch = false; msg.du.forEach(d => { if (d && d.day && d.a && d.b && putDuel(d)) ch = true; }); if (ch) LS.set("duels", duels);
  }
@@ -5323,7 +5363,8 @@ setTimeout(() => { groupPoll().then(() => { if (Date.now() - LS.get("gLastSent",
       const p = {id:"p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 4), lat:at.lat, lon:at.lon, acc:at.acc || 0, type:k, name:"", ts:Date.now()};
       pts.push(p); savePts(); renderPts();
       try{ S.vib && navigator.vibrate && navigator.vibrate(30); }catch(e){}
-      showUndo(`${k === "spor" ? "👣 Spor" : "🪹 Bæli"} merkt${pos ? "" : " þar sem þú hélst fingri"}`, () => { pts = pts.filter(x => x.id !== p.id); savePts(); renderPts(); toast("Afturkallað"); });
+      groupSend("obs");
+      showUndo(`${k === "spor" ? "👣 Spor" : "🪹 Bæli"} merkt${pos ? "" : " þar sem þú hélst fingri"} · hópurinn sér það`, () => { pts = pts.filter(x => x.id !== p.id); savePts(); renderPts(); groupSend("obs"); toast("Afturkallað"); });
       return;
     }
     if (k === "dl"){ map.setView(ll, Math.max(map.getZoom(), 13), {animate:false}); return openCapture(); }
