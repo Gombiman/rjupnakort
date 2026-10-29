@@ -415,6 +415,12 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 .rm-it svg{width:22px;height:22px;fill:none;stroke:#FBFAF6;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .rm-it .em{font-size:24px;line-height:1}
 .rm-it .lb{position:absolute;top:67px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(251,250,246,.88);text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.rm-it{width:58px;height:58px;margin:-29px 0 0 -29px}
+.rm-it .lb{top:64px}
+.rm-it.lb-r .lb{top:50%;left:66px;transform:translateY(-50%)}
+.rm-it.lb-l .lb{top:50%;left:auto;right:66px;transform:translateY(-50%)}
+.rm-it.lb-t .lb{top:auto;bottom:64px}
+details.tl li.obs i{background:#3d6b8c}
 .rm-it.core{width:80px;height:80px;margin:-40px 0 0 -40px;background:var(--orb);border-color:rgba(255,255,255,.35);
   box-shadow:0 0 0 6px rgba(232,89,12,.16),0 14px 36px rgba(232,89,12,.55),inset 0 1px 0 rgba(255,255,255,.45)}
 .rm-it.core .lb{top:86px;color:#FFB27A}
@@ -2135,6 +2141,8 @@ const SVG = {
   annad: '<circle cx="12" cy="12" r="3.5"/>',
   ping:  '<circle cx="12" cy="7.5" r="3"/><path d="M6 20c0-4 2.7-6.5 6-6.5s6 2.5 6 6.5"/>',
   felld: '<path d="M5 14c2-5 6-7 11-6l3-2-1 4c0 4-3 7-8 7H5z"/><path d="M4 4l4 4M8 4 4 8"/>',
+  spor:  '<path d="M8 17l-2.5-4.5M8 17v-5.5M8 17l2.5-4.5M8 17v3M16 10l-2.5-4.5M16 10V4.5M16 10l2.5-4.5M16 10v3"/>',
+  baeli: '<ellipse cx="12" cy="15" rx="7.5" ry="3.5"/><path d="M6.5 13.2C8 11 10 10 12 10s4 1 5.5 3.2"/><path d="M9 15h6"/>',
   kukur: '<path d="M6 18h12c1.5 0 2-1 2-2 0-1.5-1.5-2-2.5-2 .5-2-1-3-2.5-3 .3-2-1.2-3-3-3 .4 1.5-.8 2.5-2 2.5-1.8 0-3 1-2.5 3C6 13.5 4 14.5 4 16c0 1 .5 2 2 2z"/>'
 };
 const TYPES = {
@@ -2144,6 +2152,8 @@ const TYPES = {
   rjupa:  {label:"Rjúpa séð", color:"#5f7d2e"},
   felld:  {label:"Rjúpa felld", color:"#9a3c0b"},
   kukur:  {label:"Kúkur 💩", color:"#6b4a2b"},
+  spor:   {label:"Spor", color:"#3d6b8c"},
+  baeli:  {label:"Bæli", color:"#7a6a3a"},
   annad:  {label:"Annað",  color:"#55606a"},
   ping:   {label:"Ping",   color:"#9b4fc4"}
 };
@@ -2372,7 +2382,7 @@ function setTarget(id){ LS.set("target", id); updateCar(); if (!document.getElem
 /* Nýr punktur */
 const ptSheet = document.getElementById("ptSheet"), ptTypes = document.getElementById("ptTypes");
 let draft = null, draftType = "annad";
-for (const k of ["bill","felld","rjupa","skali","haetta","annad","kukur"]){
+for (const k of ["bill","felld","rjupa","spor","baeli","skali","haetta","annad","kukur"]){
   const b = document.createElement("button"); b.type = "button"; b.dataset.k = k; b.textContent = TYPES[k].label;
   b.onclick = () => { draftType = k; ptTypes.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
   ptTypes.appendChild(b);
@@ -3486,6 +3496,9 @@ function renderLog(){
     const ev = [{ts:t.start, c:"start", h:isMasson() ? "Másson activate" : "Lagt af stað", s:""}];
     let n = 0;
     tk.forEach(k => { n++; ev.push({ts:k.ts, c:"kill", h:k.same ? `Rjúpa nr. ${n}, sama skot` : n === 1 ? "Fyrsta rjúpan" : `Rjúpa nr. ${n}`, s:k.same ? "Fleiri en ein í skoti" : ""}); });
+    pts.filter(q => (q.type === "spor" || q.type === "baeli") && q.ts >= t.start && q.ts <= end)
+      .forEach(q => ev.push({ts:q.ts, c:"obs", h:q.type === "spor" ? "Spor" : "Bæli", s:q.name || ""}));
+    ev.sort((a, b) => a.ts - b.ts);
     if (t.live) ev.push({ts:Date.now(), c:"live", h:"Ferðin er í gangi", s:fmtKm(t.dist || 0) + " hingað til"});
     else ev.push({ts:end, c:"end", h:isMasson() ? "Kominn í bjórinn" : "Ferð lokið", s:`${dur(end - t.start)}${isMasson() ? ` · ≈ ${fmtBeer(beersFor(t.dist || 0, t.gain || 0))} bjórar brenndir` : ""}`});
     const det = document.createElement("details"); det.className = "tl"; det.open = idx === 0;
@@ -5210,19 +5223,21 @@ setTimeout(() => { groupPoll().then(() => { if (Date.now() - LS.get("gLastSent",
   const sv = d => `<svg viewBox="0 0 24 24">${d}</svg>`;
   const BIRD = '<svg viewBox="0 0 24 24"><path class="b" d="M3.2 16.4c0-4 3.6-6.6 7.8-6.3.9-1.8 1.6-3.7 3.2-4.7 1.6-1 3.8-.6 4.6 1l2.3.8-1.9.9c-.2 1.3-1 2.3-1.4 3.3-.4 1-.2 2-.8 3.4-1 2.4-3.6 3.9-7 3.9H6.1c-1.7 0-2.9-1-2.9-2.3z"/><circle class="e" cx="16.6" cy="7.4" r=".95"/></svg>';
   const ALL = [
-    {k:"pin",  a:194, h:sv('<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>'), lb:"Punktur"},
-    {k:"car",  a:154, h:sv('<path d="M4 15v-3l2-5h12l2 5v3z"/><circle cx="8" cy="15.5" r="1.6"/><circle cx="16" cy="15.5" r="1.6"/>'), lb:"Bíllinn"},
-    {k:"shot", a:122, h:'<span class="em">💥</span>', lb:"Skot"},
+    {k:"pin",  a:210, side:"r", h:sv('<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>'), lb:"Punktur"},
+    {k:"car",  a:180, side:"r", h:sv('<path d="M4 15v-3l2-5h12l2 5v3z"/><circle cx="8" cy="15.5" r="1.6"/><circle cx="16" cy="15.5" r="1.6"/>'), lb:"Bíllinn"},
+    {k:"baeli",a:152, side:"r", h:sv(SVG.baeli), lb:"Bæli"},
+    {k:"shot", a:123, side:"t", h:'<span class="em">💥</span>', lb:"Skot"},
     {k:"kill", a:90,  h:BIRD, lb:"Rjúpa", cls:"core"},
-    {k:"poop", a:60,  h:'<span class="em">💩</span>', lb:"Kúkur", masson:true},
-    {k:"dl",   a:22,  h:sv('<path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>'), lb:"Sækja kort"}
+    {k:"spor", a:57,  side:"t", h:sv(SVG.spor), lb:"Spor"},
+    {k:"poop", a:28,  side:"l", h:'<span class="em">💩</span>', lb:"Kúkur", masson:true},
+    {k:"dl",   a:0,   side:"l", h:sv('<path d="M12 4v10M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>'), lb:"Sækja kort"}
   ];
   let st = null;            // opið menu
   let press = null;         // fingur sem gæti orðið langt ýti
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const buzz = ms => { try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
   function place(it, x, y){
-    const el = document.createElement("button"); el.type = "button"; el.className = "rm-it" + (it.cls ? " " + it.cls : "");
+    const el = document.createElement("button"); el.type = "button"; el.className = "rm-it" + (it.cls ? " " + it.cls : "") + (it.side ? " lb-" + it.side : "");
     el.innerHTML = `${it.h}<span class="lb">${it.lb}</span>`; el.setAttribute("aria-label", it.lb);
     el.style.left = x + "px"; el.style.top = y + "px";
     el.style.setProperty("--dx", (st.cx - x) + "px"); el.style.setProperty("--dy", (st.cy - y) + "px");
@@ -5231,8 +5246,8 @@ setTimeout(() => { groupPoll().then(() => { if (Date.now() - LS.get("gLastSent",
     return el;
   }
   function open(x, y, tap){
-    const W = innerWidth, H = innerHeight, R = Math.min(145, Math.max(100, (W - 100) / 2));
-    const cx = clamp(x, R + 40, W - R - 40), cy = clamp(y, R + 160, H - 70);
+    const W = innerWidth, H = innerHeight, R = Math.min(150, Math.max(100, (W - 100) / 2));
+    const cx = clamp(x, R + 36, Math.max(R + 36, W - R - 36)), cy = clamp(y, R + 160, H - 110);
     const r = mc.getBoundingClientRect(), ll = map.containerPointToLatLng([x - r.left, y - r.top]);
     st = {x, y, cx, cy, R, ll, els:[], hot:null, kx:false, tap:!!tap, dwell:null};
     box.innerHTML = ""; rm.classList.remove("dwell");
@@ -5303,6 +5318,14 @@ setTimeout(() => { groupPoll().then(() => { if (Date.now() - LS.get("gLastSent",
       return;
     }
     if (k === "pin") return window.__openMark(ll.lat, ll.lng, 0, "Þar sem þú hélst fingri");
+    if (k === "spor" || k === "baeli"){
+      const at = pos ? {lat:pos.lat, lon:pos.lon, acc:pos.acc} : {lat:ll.lat, lon:ll.lng, acc:0};
+      const p = {id:"p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 4), lat:at.lat, lon:at.lon, acc:at.acc || 0, type:k, name:"", ts:Date.now()};
+      pts.push(p); savePts(); renderPts();
+      try{ S.vib && navigator.vibrate && navigator.vibrate(30); }catch(e){}
+      showUndo(`${k === "spor" ? "👣 Spor" : "🪹 Bæli"} merkt${pos ? "" : " þar sem þú hélst fingri"}`, () => { pts = pts.filter(x => x.id !== p.id); savePts(); renderPts(); toast("Afturkallað"); });
+      return;
+    }
     if (k === "dl"){ map.setView(ll, Math.max(map.getZoom(), 13), {animate:false}); return openCapture(); }
   }
   // Snerting: langt ýti á kortið opnar menu-ið

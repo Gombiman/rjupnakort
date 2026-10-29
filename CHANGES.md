@@ -2,6 +2,11 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Spor og bæli 👣
+- Tvö ný tákn í menu-inu þegar haldið er fingri á kortinu: Spor og Bæli. Merkt þar sem þú stendur
+- Spor og bæli sjást á kortinu og í tímalínu dagsins í Dagbók
+- Líka hægt að velja Spor eða Bæli sem tegund þegar punktur er merktur
+
 ## Boð fyrir iPhone 📱
 - „Bjóða félögum“ sendir nú bæði iPhone-hlekk og Android-app
 - iPhone-hlekkurinn opnar S. Másson í vafranum með hópkóðanum tilbúnum, bara skrá nafn og síma
