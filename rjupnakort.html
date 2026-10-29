@@ -481,7 +481,9 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 .pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45);display:grid;place-items:center;box-sizing:border-box}
 .pin svg{transform:rotate(45deg);width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
 .pop .pb{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.pop .pb button{border:1px solid #c9cfcf;background:#fff;color:#1b1f20;border-radius:8px;padding:6px 10px;font:600 13px var(--f-body)}
+.pop .pb button,.pop .pb .pbl{border:1px solid #c9cfcf;background:#fff;color:#1b1f20;border-radius:999px;padding:6px 12px;font:600 13px var(--f-body);text-decoration:none}
+.pop a{color:#2577c4}
+.hlpin{width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #2f9e4f;box-shadow:0 2px 6px rgba(0,0,0,.35);display:grid;place-items:center;font-size:15px;line-height:1;box-sizing:border-box}
 .pop .dist{font:500 13px var(--f-mono);margin:4px 0}
 .me{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 0 0 2px var(--accent),0 2px 8px rgba(0,0,0,.4);box-sizing:border-box;position:relative}
 .me .hd{position:absolute;left:50%;top:-15px;width:0;height:0;margin-left:-6px;border:6px solid transparent;border-bottom:10px solid var(--accent);transform-origin:6px 26px}
@@ -857,6 +859,9 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 
   <h3>Svæði</h3>
   <div id="layerList"></div>
+  <label class="layer" for="hlTog"><span class="sw" style="color:#2f9e4f;background:#2f9e4f33;border-radius:50%"></span>
+    <div class="t"><div class="n">Veiðileyfi á hlunnindi.is</div><div class="m">21 svæði þar sem leyfi eru seld · staðsetning u.þ.b., mörkin á hlunnindi.is</div></div>
+    <input type="checkbox" class="tog" id="hlTog"></label>
 
   <h3>Litir</h3>
   <div class="legend">
@@ -2805,6 +2810,58 @@ function srchRow(r){
   row.onclick = go; row.onkeydown = e => { if (e.key === "Enter"){ e.preventDefault(); go(); } };
   return row;
 }
+
+/* ---------- Veiðisvæði á hlunnindi.is (leyfi seld þar) ----------
+   Staðsetning er u.þ.b. miðja svæðis eftir lýsingu á hlunnindi.is. Nákvæm mörk eru í kortasjá hlunnindi.is. */
+const HL = "https://hlunnindi.is";
+const HLUNN = [
+  {id:6,  n:"Gilsárdalur – Hallormsstaðaháls", r:"Austurland", lat:65.055, lon:-14.70, ha:8500, c:"Þór Þorfinnsson", t:"8923535", x:"Ofan skógargirðingar á Hallormsstaðahálsi. Ekið inn við Buðlungavelli."},
+  {id:7,  n:"Heiðarlönd ofan Haukadalsskógar", r:"Suðurland", lat:64.385, lon:-20.275, ha:1200, c:"Trausti Jóhannsson", t:"8658770", x:"Á Haukadalsheiði. Bannað að veiða inni í skóginum og aka skógarslóða."},
+  {id:8,  n:"Bakkasel í Fnjóskadal", r:"Norðausturland", lat:65.55, lon:-17.83, c:"Rúnar Ísleifsson", t:"8963112", x:"Austan Fnjóskár, frá Belgsá suður að Bakka. Snjóflóðahætta í hlíðum."},
+  {id:10, n:"Melar og Skuggabjörg", r:"Norðausturland", lat:65.745, lon:-17.86, ha:1120, c:"Rúnar Ísleifsson", t:"8963112", x:"Afleggjari 834 að Draflastöðum, slóði 2,5 km að Melum. Oft ófær á vetrum."},
+  {id:11, n:"Jórvík í Breiðdal", r:"Austurland", lat:64.795, lon:-14.36, ha:600, c:"Þór Þorfinnsson", t:"8923535", x:"Innan girðingar ofan þjóðvegar 1. Hlið með skilti."},
+  {id:13, n:"Hof – Hofsborgartunga", r:"Austurland (Vopnafjörður)", lat:65.665, lon:-15.05, c:"Sigríður Bragadóttir", t:"8552174", x:"Milli Hofsár og Sunnudalsár. Hámark 10 fuglar á leyfi á dag."},
+  {id:14, n:"Hof – Hofsháls", r:"Austurland (Vopnafjörður)", lat:65.705, lon:-14.995, c:"Sigríður Bragadóttir", t:"8552174", x:"Hlíðin ofan vegar á landi Hofs. Aðkoma frá vegi 85."},
+  {id:17, n:"Þórðarstaðaskógur í Fnjóskadal", r:"Norðausturland", lat:65.585, lon:-17.835, ha:900, c:"Rúnar Ísleifsson", t:"8963112", x:"Lagt sunnan Þórðarstaða og gengið. Ekki aka inn í skóginn. Snjóflóðahætta."},
+  {id:18, n:"Vaglir í Hörgársveit", r:"Norðvesturland", lat:65.735, lon:-18.30, ha:800, c:"Rúnar Ísleifsson", t:"8963112", x:"Um 15 km vestan Akureyrar, ofan þjóðvegar 1. Bílastæði neðst á svæðinu."},
+  {id:19, n:"Sveinatunga og Gestsstaðir", r:"Vesturland", lat:64.83, lon:-21.36, ha:2000, c:"Yngvi Óttarsson", t:"", x:"Milli Sanddalsár og Norðurár. Ekki skjóta nær húsum en 500 m. Skila veiðitölum."},
+  {id:23, n:"Víðidalur á Fjöllum – Víðidalsfjöll", r:"Austurland", lat:65.44, lon:-15.52, c:"Þorlákur Páll Jónsson", t:"8947744", x:"Austan Víðidals, slóði upp í Sótaskarð. Brattlendi og gil."},
+  {id:24, n:"Víðidalur á Fjöllum – Þjóðfellsbungur", r:"Austurland", lat:65.48, lon:-15.70, c:"Þorlákur Páll Jónsson", t:"8947744", x:"Norðan og vestan Langadals, norðan Svartfells. Enginn slóði, góður gangur."},
+  {id:25, n:"Litluvellir í Bárðardal", r:"Norðausturland", lat:65.60, lon:-17.47, ha:913, c:"Kristján Jónsson", t:"8610006", x:"Ekki skjóta neðan bæjar eða nálægt vegi 842. Mörk við Lækjarvelli um Sexhólagil."},
+  {id:26, n:"Skógar í Fnjóskadal", r:"Norðausturland", lat:65.69, lon:-17.92, ha:930, c:"Bergljót Þorsteinsdóttir", t:"8469674", x:"Ofan girðingar upp að Vaðlaheiði. Lagt við bæinn."},
+  {id:27, n:"Draflastaðir í Fnjóskadal", r:"Norðausturland", lat:65.735, lon:-17.83, c:"Sigurður Arnar Jónsson", t:"8980444", x:"Ofan Draflastaða, norðan Víkurskarðsvegar. Vegur 834, lagt við bæinn."},
+  {id:29, n:"Þeistareykir – Svæði 1", r:"Norðausturland", lat:65.92, lon:-17.02, ha:4365, c:"Daði Lange", t:"8944215", x:"Veiðibann við Þeistareykjavirkjun og suður með Bæjarfjalli."},
+  {id:30, n:"Þeistareykir – Svæði 2", r:"Norðausturland", lat:65.93, lon:-16.92, c:"Daði Lange", t:"8944215", x:"Eitt af fjórum svæðum Þeistareykja. Veiðibann við virkjunina."},
+  {id:31, n:"Þeistareykir – Svæði 3", r:"Norðausturland", lat:65.84, lon:-17.03, c:"Daði Lange", t:"8944215", x:"Eitt af fjórum svæðum Þeistareykja. Veiðibann við virkjunina."},
+  {id:32, n:"Þeistareykir – Svæði 4", r:"Norðausturland", lat:65.84, lon:-16.90, c:"Daði Lange", t:"8944215", x:"Eitt af fjórum svæðum Þeistareykja. Veiðibann við virkjunina."},
+  {id:33, n:"Hlíðskógar í Bárðardal", r:"Norðausturland", lat:65.52, lon:-17.42, ha:1200, c:"Snædís Róbertsdóttir", t:"8207210", x:"Vallafjall og bakkar Skjálfandafljóts. Ekki skjóta nálægt húsum eða vegum."},
+  {id:34, n:"Hrappstaðir í Bárðardal", r:"Norðausturland", lat:65.585, lon:-17.39, ha:500, c:"Daði Lange", t:"8944215", x:"Vegur 844, næsti bær við Jarlsstaði. Íbúðarhús innan svæðis."}
+];
+// Spjöld á kortinu færa kortið svo þau lendi ekki undir stöðustikunni eða ferðaspjaldinu
+L.Popup.prototype.options.autoPanPaddingTopLeft = L.point(16, 96);
+L.Popup.prototype.options.autoPanPaddingBottomRight = L.point(70, 210);
+const hlLayer = L.layerGroup();
+const hlIcon = L.divIcon({className:"", iconSize:[30,30], iconAnchor:[15,15], popupAnchor:[0,-14], html:'<div class="hlpin" title="Veiðileyfi á hlunnindi.is">🎫</div>'});
+const hlPhone = t => t ? `${t.slice(0, 3)} ${t.slice(3)}` : "";
+function hlPopup(a){
+  const rel = typeof relFromMe === "function" ? relFromMe(a) : null;
+  return `<div class="pop"><b>${esc(a.n)}</b><span class="zbadge" style="--c:#2f9e4f">Leyfi á hlunnindi.is</span>
+    <div class="zkind">${esc(a.r)}${a.ha ? ` · um ${String(a.ha).replace(/\B(?=(\d{3})+(?!\d))/g, ".")} ha` : ""}${rel ? " · " + esc(rel.text) + " frá þér" : ""}</div>
+    <p class="ztxt">${esc(a.x)}</p>
+    <p class="ztxt">Tengiliður: ${esc(a.c)}${a.t ? ` · <a href="tel:${a.t}">${hlPhone(a.t)}</a>` : ""}</p>
+    <p class="ztxt" style="color:#5c6668">Staðsetning merkis er u.þ.b. Nákvæm mörk eru á kortinu hjá hlunnindi.is.</p>
+    <div class="pb"><a class="pbl" href="${HL}/mapview/index.html?areaid=${a.id}" target="_blank" rel="noopener">Mörk á korti</a><a class="pbl" href="${HL}/Area/Details/${a.id}" target="_blank" rel="noopener">Upplýsingar</a><a class="pbl" href="${HL}/SalesLine" target="_blank" rel="noopener">Kaupa leyfi</a></div></div>`;
+}
+for (const a of HLUNN){
+  const m = L.marker([a.lat, a.lon], {icon:hlIcon, keyboard:false}).addTo(hlLayer);
+  m.bindPopup(() => hlPopup(a), {maxWidth:280});
+}
+const hlTog = document.getElementById("hlTog");
+hlTog.checked = LS.get("hlunn", true);
+const hlApply = () => { hlTog.checked ? hlLayer.addTo(map) : map.removeLayer(hlLayer); };
+hlTog.onchange = () => { LS.set("hlunn", hlTog.checked); hlApply(); };
+hlApply();
+
 function localSearch(q){
   const n = norm(q), out = [];
   if (n.length < 2) return out;
@@ -2821,6 +2878,8 @@ function localSearch(q){
       if (out.length > 40) break;
     }
   }
+  for (const a of HLUNN) if (norm(a.n).includes(n) || norm(a.r).includes(n))
+    out.push({name:a.n, kind:"Veiðileyfi á hlunnindi.is", where:a.r, lat:a.lat, lon:a.lon, color:"#2f9e4f", icon:'<circle cx="12" cy="12" r="6"/>'});
   return out.slice(0, 25);
 }
 async function webSearch(q){

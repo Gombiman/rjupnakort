@@ -2,6 +2,13 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Veiðileyfi á hlunnindi.is 🎫
+- 21 veiðisvæði þar sem leyfi eru seld á hlunnindi.is eru merkt á kortið
+- Ýttu á merkið: lýsing, sérreglur (t.d. hámark á dag), stærð, tengiliður með símanúmeri og fjarlægð frá þér
+- Tenglar á mörkin í kortasjá hlunnindi.is, nánari upplýsingar og leyfiskaup
+- Svæðin finnast líka í leitinni og hægt er að fela þau í Lög og grunnkort
+- Merkin sýna u.þ.b. staðsetningu. Nákvæm mörk eru alltaf hjá hlunnindi.is
+
 ## Haltu fingri á kortinu 👆 og nýtt glerútlit
 - Haltu fingri á kortinu: menu í boga með Rjúpu, Skoti, Kúk, Bílnum, Punkti og Sækja kort. Renndu á táknið og slepptu, allt skráist þar sem GPS-ið er
 - Staldraðu við á Rjúpu: ×2 Double Kill og ×3 Triple Kill
