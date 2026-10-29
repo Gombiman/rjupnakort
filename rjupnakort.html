@@ -783,6 +783,12 @@ details.tl li.obs i{background:#3d6b8c}
         <textarea id="bkIn" rows="3" placeholder="SMASSON-AFRIT:…"></textarea>
         <button class="btn sec" type="button" id="bkLoad">Flytja inn</button>
       </div></div>
+      <div class="sect">Hreinsa tölfræði</div>
+      <div class="group"><div class="ginner">
+        <p class="note">Eyðir rjúpum, skotum, ferðum, kúkum, sporum og bælum til og með völdum degi, t.d. prófunum áður en alvöru veiðin hefst. Bíllinn og aðrir punktar haldast. Hópurinn fær hreinsuðu tölurnar.</p>
+        <label class="f">Hreinsa allt til og með<input type="date" id="clrUntil"></label>
+        <button class="btn sec" type="button" id="clrStats" style="color:var(--bann)">Hreinsa tölfræði</button>
+      </div></div>
     </div>
 
     <div class="setsub" data-sub="gogn" data-title="Svæði úr skrá og WMS" hidden>
@@ -3681,6 +3687,7 @@ function mySnapshot(kind){
   o.vb = recentObj(vbEnc, 2); o.fd = recentObj(finds, 2);
   o.wit = wit.filter(w => w[1] >= Date.now() - 3 * 864e5);
   o.pp = poops.filter(p => p.ts >= Date.now() - 2 * 864e5).map(p => [p.ts, +p.lat.toFixed(5), +p.lon.toFixed(5), p.alt != null ? Math.round(p.alt) : null]);
+  o.rs = LS.get("statReset", 0) || undefined;
   o.ob = myObs().map(p => [p.ts, +p.lat.toFixed(5), +p.lon.toFixed(5), p.type === "baeli" ? 1 : 0]);
   o.du = Object.values(duels).filter(d => (d.a === me || d.b === me) && d.day >= addDays(today(), -2));
   o.cd = myCards.filter(c => c.day >= addDays(today(), -8));
@@ -4760,13 +4767,51 @@ function openStats(id){
     ${n > 1 ? `<h3>Miðað við hópinn</h3><ul class="strec cmp">
       ${cmp("Rjúpur", "kills", v => Number.isInteger(v) ? v : dec1(v))}${cmp("Skotnýting", "acc", pct)}${cmp("Km gengnir", "km", v => dec1(v / 1000))}${cmp("Rjúpur á klst", "kph", dec1)}</ul>` : ""}
     ${shelf.length ? `<h3>Merkjasafnið</h3><div class="stshelf">${shelf.map(([k, c]) => { const b = badgeOf(k); return `<span title="${esc(b.n)}">${b.e}<b>${esc(b.n)}</b>${c > 1 ? `<i>×${c}</i>` : ""}</span>`; }).join("")}</div>` : ""}
-    ${p.me ? "" : `<p class="note" style="margin-top:12px">Tölur félaga byggja á því sem síminn þeirra hefur sent hópnum. Staðir þeirra sjást ekki.</p>`}`
+    ${p.me ? `<button class="lnk" type="button" id="stClear" style="margin-top:14px">Hreinsa tölfræðina…</button>` : `<p class="note" style="margin-top:12px">Tölur félaga byggja á því sem síminn þeirra hefur sent hópnum. Staðir þeirra sjást ekki.</p>`}`
     : `<div class="empty">Engar veiðitölur enn á tímabilinu.</div>`;
+  const sc = document.getElementById("stClear");
+  if (sc) sc.onclick = () => { closeSheet(); openSettings(); setSub("afrit"); setTimeout(() => document.getElementById("clrUntil").focus(), 200); };
   openPanel(document.getElementById("statSheet"));
 }
 window.__openStats = openStats;
 document.getElementById("logStats").onclick = () => openStats(myId());
 document.getElementById("logTiles").onclick = () => openStats(myId());
+
+/* ---------- Hreinsa tölfræði (t.d. prófanir) ---------- */
+document.getElementById("clrUntil").value = today();
+let clrArmed = 0;
+document.getElementById("clrStats").onclick = async e => {
+  const btn = e.currentTarget, day = document.getElementById("clrUntil").value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)){ toast("Veldu dag."); return; }
+  const cut = dayStart(day) + 864e5;
+  const liveStart = hunt && track ? track.start : Infinity;
+  const nK = kills.filter(k => k.ts < cut && k.ts < liveStart).length, nT = LS.get("trips", []).filter(t => t.start < cut).length;
+  if (Date.now() - clrArmed > 4000){
+    clrArmed = Date.now();
+    btn.textContent = `Ýttu aftur: eyða ${nK} ${nK === 1 ? "rjúpu" : "rjúpum"} og ${nT} ${nT === 1 ? "ferð" : "ferðum"} til og með ${fmtD(day)}`;
+    setTimeout(() => { if (Date.now() - clrArmed >= 4000) btn.textContent = "Hreinsa tölfræði"; }, 4200);
+    return;
+  }
+  clrArmed = 0; btn.textContent = "Hreinsa tölfræði";
+  const old = {kills:kills.slice(), shots:shots.slice(), trips:LS.get("trips", []), poops:poops.slice(), pts:pts.slice(), batmin:Object.assign({}, batmin)};
+  const keep = t => t >= cut || t >= liveStart;
+  kills = kills.filter(k => keep(k.ts)); saveKills();
+  shots = shots.filter(keep); LS.set("shots", shots);
+  poops = poops.filter(p => keep(p.ts)); LS.set("poops", poops);
+  const STAT = new Set(["felld", "spor", "baeli", "rjupa", "kukur"]);
+  pts = pts.filter(p => !STAT.has(p.type) || p.from || keep(p.ts)); LS.set("pts", pts); renderPts();
+  const gone = old.trips.filter(t => !keep(t.start)); LS.set("trips", old.trips.filter(t => keep(t.start)));
+  for (const d in batmin) if (dayStart(d) < cut) delete batmin[d]; LS.set("batmin", batmin);
+  LS.set("statReset", Date.now());
+  groupSend("score"); refreshAll(); if (window.__renderObs) window.__renderObs();
+  showUndo(`Tölfræðin hreinsuð til og með ${fmtD(day)}`, () => {
+    kills = old.kills; saveKills(); shots = old.shots; LS.set("shots", shots); poops = old.poops; LS.set("poops", poops);
+    pts = old.pts; LS.set("pts", pts); renderPts(); LS.set("trips", old.trips); batmin = old.batmin; LS.set("batmin", batmin);
+    LS.set("statReset", Date.now()); groupSend("score"); refreshAll(); toast("Afturkallað");
+  });
+  // Slóðir ferðanna fara ekki fyrr en ekki er hægt að afturkalla lengur
+  setTimeout(() => gone.forEach(t => { if (!LS.get("trips", []).some(x => x.start === t.start)) IDB.del("trip:" + t.start); }), 9000);
+};
 
 /* ---------- Spor og bæli: deilt með hópnum ---------- */
 const OB_DAYS = 3;
@@ -4988,11 +5033,12 @@ function onGroupMsg(msg, live){
   if (msg.comp) takeComp(msg);
   const prev = board[msg.id];
   // Saga hvers dags, atkvæði, leitir, sjónarvottar og kúkar safnast upp (ný skilaboð bera bara nýjustu dagana)
-  const hmap = Object.assign({}, (prev && prev.hm) || {});
-  if (prev && Array.isArray(prev.h)) prev.h.forEach(x => { if (Array.isArray(x) && !hmap[x[0]]) hmap[x[0]] = x; });
+  const reset = msg.rs && (!prev || (prev.rs || 0) < msg.rs);   // félagi hreinsaði tölfræðina sína
+  const hmap = reset ? {} : Object.assign({}, (prev && prev.hm) || {});
+  if (!reset && prev && Array.isArray(prev.h)) prev.h.forEach(x => { if (Array.isArray(x) && !hmap[x[0]]) hmap[x[0]] = x; });
   if (Array.isArray(msg.h)) msg.h.forEach(x => { if (Array.isArray(x) && x[0]) hmap[x[0]] = x; });
   const wits = ((prev && prev.wit) || []).slice(); (Array.isArray(msg.wit) ? msg.wit : []).forEach(w => { if (!wits.some(x => x[0] === w[0] && x[1] === w[1])) wits.push(w); });
-  const pps = ((prev && prev.pp) || []).slice(); (Array.isArray(msg.pp) ? msg.pp : []).forEach(q => { if (!pps.some(x => x[0] === q[0])) pps.push(q); });
+  const pps = reset ? [] : ((prev && prev.pp) || []).slice(); (Array.isArray(msg.pp) ? msg.pp : []).forEach(q => { if (!pps.some(x => x[0] === q[0])) pps.push(q); });
   const obCut = Date.now() - OB_DAYS * 864e5;
   const obs = Array.isArray(msg.ob) ? [...((prev && prev.ob) || []).filter(q => q[0] < obCut), ...msg.ob.filter(q => Array.isArray(q) && isFinite(q[1]) && isFinite(q[2]))] : ((prev && prev.ob) || []);
   const newObs = live && Array.isArray(msg.ob) ? msg.ob.filter(q => !((prev && prev.ob) || []).some(x => x[0] === q[0])) : [];
@@ -5006,6 +5052,7 @@ function onGroupMsg(msg, live){
   delete base.v;
   board[msg.id] = Object.assign(base, {hm:hmap, fd:Object.assign({}, (prev && prev.fd) || {}, msg.fd || {}), phone:msg.phone || (prev && prev.phone) || "",
                                        vbDays:[...new Set([...((prev && prev.vbDays) || []), ...Object.keys(msg.vb || {})])].slice(-30),
+                                       rs:Math.max(msg.rs || 0, (prev && prev.rs) || 0) || undefined,
                                        wit:wits.slice(-60), pp:pps.slice(-80), cdAll:cds.slice(-60), pxAll:pxs.slice(-200), ob:obs.filter(q => q[0] >= Date.now() - 14 * 864e5).slice(-120)});
   // Nýtt spor eða bæli frá félaga í grennd: láta vita
   if (newObs.length && pos && document.visibilityState === "visible"){

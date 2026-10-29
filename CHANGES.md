@@ -2,6 +2,12 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Hreinsa tölfræði 🧹
+- Nú er hægt að hreinsa prófanirnar út: Dagbók → „📊 Tölfræðin mín“ → „Hreinsa tölfræðina…“, eða Stillingar → Afrit → Hreinsa tölfræði
+- Veldu dag og ýttu tvisvar. Þá eyðast rjúpur, skot, ferðir, kúkar, spor og bæli til og með þeim degi
+- Bíllinn og aðrir punktar haldast og hægt er að afturkalla strax á eftir
+- Hópurinn fær hreinsuðu tölurnar, svo gömlu prófin hverfa líka úr stigatöflunni hjá hinum
+
 ## Tölfræði 📊
 - „📊 Tölfræðin mín“ í Dagbók, eða ýttu á tölurnar efst þar
 - Ýttu á nafn í stigatöflunni til að sjá tölfræði félaga
