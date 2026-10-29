@@ -2,6 +2,14 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Tölfræði 📊
+- „📊 Tölfræðin mín“ í Dagbók, eða ýttu á tölurnar efst þar
+- Ýttu á nafn í stigatöflunni til að sjá tölfræði félaga
+- Rjúpur, veiðidagar, skotnýting, skot á rjúpu, km, hækkun, klukkustundir, rjúpur á klst og bjórar brenndir
+- Besti tími dagsins (súlurit), bestu staðirnir eftir örnefnum og met tímabilsins
+- 🥇🥈🥉 röð í hópnum og samanburður við meðaltal hópsins
+- Merkjasafnið: öll merki sem þú hefur unnið í keppninni
+
 ## Spor og bæli deilast með hópnum 👣
 - Þegar einhver merkir spor eða bæli sjá allir í hópnum það á kortinu, með upphafsstaf þess sem merkti
 - Ýttu á merkið: hver, hvenær, við hvaða örnefni og hve langt frá þér

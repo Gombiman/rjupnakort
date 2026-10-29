@@ -500,6 +500,28 @@ details.tl li.obs i{background:#3d6b8c}
 .ornl span{display:inline-block;transform:translate(-50%,-50%);white-space:nowrap;font:italic 600 11px/1 var(--f-body);color:#1d1b18;letter-spacing:.02em;
   text-shadow:0 0 2px #fff,0 0 3px #fff,0 0 5px rgba(255,255,255,.9)}
 .leaflet-tile.demshade,.demshade{mix-blend-mode:multiply}
+.st-who{display:flex;align-items:center;gap:12px;min-width:0}
+.st-who h2{font-size:22px}
+.sttiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.stt{position:relative;background:var(--bg);border-radius:18px;padding:10px 12px;display:grid;gap:1px}
+.stt b{font:600 24px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.stt span{font-size:11.5px;color:var(--muted)}
+.stt .rk{position:absolute;top:6px;right:8px;font-size:14px;color:var(--fg);font-weight:700}
+.sthist{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;height:90px;align-items:end}
+.sthist div{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px}
+.sthist i{display:block;width:100%;min-height:2px;border-radius:4px;background:var(--line)}
+.sthist i.top{background:var(--accent)}
+.sthist span{font-size:10px;color:var(--muted);height:12px}
+.strec{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.strec li{display:flex;align-items:baseline;gap:10px;padding:8px 2px;border-bottom:1px solid var(--soft)}
+.strec li span{flex:1;color:var(--muted);font-size:14px}
+.strec li b{font-weight:600;font-variant-numeric:tabular-nums}
+.strec.cmp li i{font-style:normal;font-size:12px;color:var(--muted);min-width:90px;text-align:right}
+.stshelf{display:flex;flex-wrap:wrap;gap:8px}
+.stshelf span{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--bg);font-size:18px}
+.stshelf b{font-size:12.5px;font-weight:600}
+.stshelf i{font-style:normal;font-size:12px;color:var(--muted);font-weight:700}
+#board .ptrow{cursor:pointer}
 .obpin{position:relative;width:28px;height:28px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:grid;place-items:center;box-sizing:border-box}
 .obpin svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .obpin b{position:absolute;right:-6px;bottom:-5px;min-width:15px;height:15px;border-radius:8px;background:#fff;color:#1b1f20;font:700 9.5px/15px var(--f-body);text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}
@@ -677,14 +699,14 @@ details.tl li.obs i{background:#3d6b8c}
 <section id="pgLog" class="page" hidden aria-label="Dagbók">
   <div class="wrapmax">
     <h1>Dagbók</h1>
-    <div class="tiles" style="margin-top:0">
+    <div class="tiles" id="logTiles" style="margin-top:0;cursor:pointer" role="button" tabindex="0" aria-label="Opna tölfræðina mína">
       <div class="tile"><div class="k" id="logKillsK">Rjúpur</div><div class="v" id="logKills">0</div></div>
       <div class="tile"><div class="k">Veiðidagar</div><div class="v" id="logDays">0</div></div>
       <div class="tile"><div class="k">Gengið, km</div><div class="v" id="logKm">0</div></div>
     </div>
     <div class="sect">Ferðir á tímabilinu</div>
     <div id="logTrips"></div>
-    <div style="margin-top:12px"><button class="btn sec wide" id="logCopy" type="button">Afrita fyrir veiðiskýrslu</button></div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="logStats" type="button">📊 Tölfræðin mín</button><button class="btn sec" id="logCopy" type="button">Afrita fyrir veiðiskýrslu</button></div>
     <p class="note" style="margin:10px 4px 0">Ýttu á ferð til að sjá slóðina og hvar rjúpurnar féllu. Tímabilið telst frá 1. september.</p>
   </div>
 </section>
@@ -920,6 +942,12 @@ details.tl li.obs i{background:#3d6b8c}
   <div class="group" id="srchWeb" hidden></div>
   <p class="msg" id="srchMsg" style="margin-top:8px"></p>
   <p class="note" style="margin-top:12px">Örnefni koma frá OpenStreetMap og þarf netsamband til að leita í þeim.</p>
+</section>
+
+<section id="statSheet" class="sheet" hidden aria-label="Tölfræði">
+  <div class="grab"></div>
+  <div class="sh-head"><div class="st-who"><span id="stAv"></span><div><h2 id="stName">Tölfræði</h2><span class="note" id="stWho"></span></div></div><button class="x" data-close type="button" aria-label="Loka">×</button></div>
+  <div id="stBody"></div>
 </section>
 
 <section id="permitSheet" class="sheet" hidden aria-label="Leyfi keypt">
@@ -3589,8 +3617,8 @@ const maxAlt = list => { let a = -1; for (const q of list || []) if (q[2] != nul
 
 /* Dagsstaða */
 const EMPTY = Object.freeze({k:0, kt:0, km:0, gain:0, first:-1, last:-1, start:-1, sofa:0, far:0, trio:0, beer:-1, shots:-1, hi:-1, fin:-1, bat:-1, alt:-1, am:0, ms:[], jw:0, mk:0, seen:0, inv:0});
-function myDays(){
-  const ss = compFrom(), out = {};
+function myDays(from){
+  const ss = from != null ? from : compFrom(), out = {};
   const get = d => out[d] || (out[d] = {k:0, kt:0, km:0, gain:0, first:-1, last:-1, start:-1, sofa:0, far:0, trio:0, beer:-1,
     shots:0, hi:-1, fin:-1, bat:-1, alt:-1, am:0, ms:[], jw:0, mk:0, seen:0, inv:0, ks:[], ev:[], grp:{}, live:false});
   for (const k of kills) if (k.ts >= ss){
@@ -4031,7 +4059,8 @@ function renderBoard(){
       const sc = r.extra ? `${r.base} 🦃 ${r.extra > 0 ? "+" : "−"} ${Math.abs(r.extra)} aukastig` : "";
       const sub = [sc, r.p.me ? "þú" : r.p.guest ? "gestur" : r.p.ts ? "uppfært " + ago(r.p.ts) : ""].filter(Boolean).join(" · ");
       const wanted = r.badges.includes("wanted") && !compEnded();
-      const row = document.createElement("div"); row.className = "ptrow" + (wanted ? " wanted" : ""); row.style.cursor = "default";
+      const row = document.createElement("div"); row.className = "ptrow" + (wanted ? " wanted" : ""); row.setAttribute("role", "button"); row.tabIndex = 0;
+      row.onclick = () => openStats(r.p.id); row.onkeydown = e => { if (e.key === "Enter") openStats(r.p.id); };
       row.innerHTML = `<span class="rank${i === 0 && r.pts > 0 ? " lead" : ""}">${i + 1}</span>${avatar(r.p.name, r.p.id)}
         <div class="t"><b>${wanted ? "💀 WANTED: " : ""}${esc(dispName(r.p.name))}</b>${wanted ? `<span class="wtag">For crimes against the ptarmigan population · bounty ${bountyVal()} stig</span>` : ""}${bits.length ? `<span class="badges">${esc(bits.join("  "))}</span>` : ""}<span>${esc(sub)}</span></div>
         <span class="score">${r.pts}</span>`;
@@ -4624,6 +4653,120 @@ function allPoops(){
   for (const r of Object.values(board)) for (const q of r.pp || []) out.push({ts:q[0], lat:q[1], lon:q[2], alt:q[3], who:r.name});
   const ss = compFrom(); return out.filter(p => p.ts >= ss);
 }
+
+/* ---------- Tölfræði: hver og einn sér sínar tölur og röð í hópnum ---------- */
+function statPeople(){
+  const me = {id:myId(), name:LS.get("me", "") || "Ég", me:true, days:myDays(seasonStart())};
+  const out = [me];
+  for (const r of Object.values(board)){
+    if (!r || !r.id || r.id === me.id) continue;
+    if (comp && r.cid && r.cid !== comp.id && !r.joined) continue;
+    out.push({id:r.id, name:r.name, me:false, days:decDays(Object.values(r.hm || {}))});
+  }
+  if (comp) for (const g of comp.guests || []) out.push({id:g.id, name:g.name, guest:true, days:{}});
+  // Skráningar keppnisstjóra fyrir aðra (gestir, iPhone) bætast við
+  try{ for (const x of ownerPx()){ const p = out.find(q => q.id === x.id); if (!p || !x.day) continue;
+    const o = p.days[x.day] || (p.days[x.day] = Object.assign({}, EMPTY, {ms:[], shots:0}));
+    if (o.shots < 0) o.shots = o.k; o.k += x.k || 0; o.shots += (x.k || 0) + (x.s || 0); } }catch(e){}
+  return out;
+}
+function statsOf(p){
+  const ds = Object.entries(p.days || {}).filter(([d, o]) => o && (o.k > 0 || o.km > 0 || o.shots > 0)).sort();
+  const t = {kills:0, days:0, shots:0, shotDays:0, killsShot:0, km:0, gain:0, min:0, beers:0, best:null, longest:null, climb:null, jw:0, far:0, doubles:0, triples:0, hours:Array(24).fill(0)};
+  for (const [d, o] of ds){
+    t.days++; t.kills += o.k; t.km += o.km || 0; t.gain += o.gain || 0;
+    if (o.shots >= 0 && o.shots >= o.k){ t.shots += o.shots; t.killsShot += o.k; t.shotDays++; }
+    if (o.start >= 0 && o.fin > o.start) t.min += o.fin - o.start;
+    if (!t.best || o.k > t.best.k) t.best = {d, k:o.k};
+    if (!t.longest || o.km > t.longest.km) t.longest = {d, km:o.km};
+    if (!t.climb || o.gain > t.climb.gain) t.climb = {d, gain:o.gain};
+    t.jw = Math.max(t.jw, o.jw || 0); t.far = Math.max(t.far, o.far || 0);
+    if (o.mk >= 2) t.doubles++; if (o.mk >= 3) t.triples++;
+    for (const m of o.ms || []) if (m >= 0) t.hours[Math.floor(m / 60)]++;
+    t.beers += beersFor(o.km || 0, o.gain || 0);
+  }
+  if (p.me){
+    // Nákvæmari tölur úr eigin gögnum: tími úr ferðum, Double/Triple úr hverju skoti
+    const ss = seasonStart(), trips = LS.get("trips", []).filter(x => x.start >= ss);
+    t.min = trips.reduce((a, x) => a + Math.max(0, ((x.end || x.start) - x.start) / 60000), 0) + (hunt && track ? (Date.now() - track.start) / 60000 : 0);
+    const g = {}; kills.filter(k => k.ts >= ss).forEach(k => { const r = k.same || k.id; g[r] = (g[r] || 0) + 1; });
+    t.doubles = Object.values(g).filter(n => n === 2).length; t.triples = Object.values(g).filter(n => n >= 3).length;
+  }
+  t.acc = t.shots ? t.killsShot / t.shots : null;
+  t.spk = t.killsShot ? t.shots / t.killsShot : null;
+  t.kph = t.min >= 30 ? t.kills / (t.min / 60) : null;
+  t.kpkm = t.km >= 1000 ? t.kills / (t.km / 1000) : null;
+  return t;
+}
+const pct = v => v == null ? "—" : Math.round(v * 100) + "%";
+const dec1 = v => v == null ? "—" : v.toFixed(1).replace(".", ",");
+function myPlaces(){
+  if (!window.__nearestOrn) return [];
+  const c = {}; kills.filter(k => k.ts >= seasonStart() && k.lat).forEach(k => { const o = window.__nearestOrn(k.lat, k.lon, 1500); if (o) c[o.name] = (c[o.name] || 0) + 1; });
+  return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 4);
+}
+function badgeShelf(id){
+  if (!comp) return [];
+  try{
+    const people = competitors(); if (!people.some(p => p.id === id)) return [];
+    const all = scoreAll(people, compEnded()), c = {};
+    for (const d in all.days){ const r = all.days[d][id]; if (r) r.badges.forEach(k => c[k] = (c[k] || 0) + 1); }
+    (all.tot[id] ? all.tot[id].badges : []).forEach(k => c[k] = (c[k] || 0) + 1);
+    return Object.entries(c).filter(([k]) => k !== "wanted" && badgeOf(k)).sort((a, b) => b[1] - a[1]);
+  }catch(e){ return []; }
+}
+function openStats(id){
+  const people = statPeople(), p = people.find(x => x.id === (id || myId())) || people[0];
+  const all = people.map(x => ({p:x, t:statsOf(x)})), mine = all.find(x => x.p.id === p.id).t;
+  const n = all.filter(x => x.t.days > 0).length;
+  const rank = (key, min) => {
+    const list = all.filter(x => x.t[key] != null && (!min || min(x.t))).sort((a, b) => b.t[key] - a.t[key]);
+    const i = list.findIndex(x => x.p.id === p.id); return i < 0 || list.length < 2 ? "" : `<span class="rk">${["🥇", "🥈", "🥉"][i] || (i + 1) + "."}</span>`;
+  };
+  const avg = key => { const v = all.filter(x => x.t[key] != null && x.t.days > 0).map(x => x.t[key]); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  document.getElementById("stAv").innerHTML = avatar(p.name, p.id);
+  document.getElementById("stName").textContent = p.me ? "Tölfræðin mín" : dispName(p.name);
+  document.getElementById("stWho").textContent = `${p.me ? dispName(p.name) + " · " : ""}${p.me ? "tímabilið" : comp ? "frá upphafi keppninnar" : "það sem hefur borist"}${n > 1 ? ` · borið saman við ${n - 1} ${n - 1 === 1 ? "félaga" : "félaga"}` : ""}`;
+  const tile = (v, l, r) => `<div class="stt"><b>${v}</b><span>${l}</span>${r || ""}</div>`;
+  const hrs = mine.hours.slice(5, 21), mx = Math.max(1, ...hrs), bestH = mine.hours.indexOf(Math.max(...mine.hours));
+  const places = p.me ? myPlaces() : [], shelf = badgeShelf(p.id);
+  const rec = (l, v) => `<li><span>${l}</span><b>${v}</b></li>`;
+  const cmp = (l, key, f) => { const a = avg(key); return a == null || mine[key] == null || n < 2 ? "" : `<li><span>${l}</span><b>${f(mine[key])}</b><i>meðaltal ${f(a)}</i></li>`; };
+  document.getElementById("stBody").innerHTML = mine.days ? `
+    <div class="sttiles">
+      ${tile(mine.kills, mine.kills === 1 ? "rjúpa" : "rjúpur", rank("kills"))}
+      ${tile(mine.days, "veiðidagar")}
+      ${tile(pct(mine.acc), "skotnýting", rank("acc", t => t.shots >= 5))}
+      ${tile(dec1(mine.spk), "skot á rjúpu")}
+      ${tile(dec1(mine.km / 1000), "km gengnir", rank("km"))}
+      ${tile(String(Math.round(mine.gain)).replace(/\B(?=(\d{3})+(?!\d))/g, "."), "m hækkun", rank("gain"))}
+      ${tile(dec1(mine.min / 60), "klst á veiðum")}
+      ${tile(dec1(mine.kph), "rjúpur á klst", rank("kph"))}
+      ${tile(fmtBeer(mine.beers), "bjórar brenndir 🍺")}
+    </div>
+    ${mine.kills ? `<h3>Besti tími dagsins</h3>
+    <div class="sthist" aria-label="Rjúpur eftir klukkutíma">${hrs.map((v, i) => `<div><i style="height:${Math.round(v / mx * 100)}%"${i + 5 === bestH ? ' class="top"' : ""}></i><span>${(i + 5) % 3 === 0 ? i + 5 : ""}</span></div>`).join("")}</div>
+    <p class="note">Flestar rjúpur hafa fallið milli ${bestH} og ${bestH + 1}.</p>` : ""}
+    ${places.length ? `<h3>Bestu staðirnir</h3><ul class="strec">${places.map(([nm, c]) => rec(esc(nm), `${c} ${c === 1 ? "rjúpa" : "rjúpur"}`)).join("")}</ul>` : ""}
+    <h3>Met</h3>
+    <ul class="strec">
+      ${mine.best && mine.best.k ? rec("Besti dagurinn", `${mine.best.k} rjúpur · ${fmtD(mine.best.d)}`) : ""}
+      ${mine.longest && mine.longest.km ? rec("Lengsta ferðin", `${fmtKm(mine.longest.km)} · ${fmtD(mine.longest.d)}`) : ""}
+      ${mine.climb && mine.climb.gain ? rec("Mesta hækkun", `${Math.round(mine.climb.gain)} m · ${fmtD(mine.climb.d)}`) : ""}
+      ${mine.jw ? rec("Lengsta röð án þess að skjóta framhjá", `${mine.jw} ${mine.jw === 1 ? "rjúpa" : "rjúpur"}`) : ""}
+      ${mine.far ? rec("Lengst frá bílnum", fmtKm(mine.far)) : ""}
+      ${rec("Double / Triple Kill", `${mine.doubles} / ${mine.triples}`)}
+    </ul>
+    ${n > 1 ? `<h3>Miðað við hópinn</h3><ul class="strec cmp">
+      ${cmp("Rjúpur", "kills", v => Number.isInteger(v) ? v : dec1(v))}${cmp("Skotnýting", "acc", pct)}${cmp("Km gengnir", "km", v => dec1(v / 1000))}${cmp("Rjúpur á klst", "kph", dec1)}</ul>` : ""}
+    ${shelf.length ? `<h3>Merkjasafnið</h3><div class="stshelf">${shelf.map(([k, c]) => { const b = badgeOf(k); return `<span title="${esc(b.n)}">${b.e}<b>${esc(b.n)}</b>${c > 1 ? `<i>×${c}</i>` : ""}</span>`; }).join("")}</div>` : ""}
+    ${p.me ? "" : `<p class="note" style="margin-top:12px">Tölur félaga byggja á því sem síminn þeirra hefur sent hópnum. Staðir þeirra sjást ekki.</p>`}`
+    : `<div class="empty">Engar veiðitölur enn á tímabilinu.</div>`;
+  openPanel(document.getElementById("statSheet"));
+}
+window.__openStats = openStats;
+document.getElementById("logStats").onclick = () => openStats(myId());
+document.getElementById("logTiles").onclick = () => openStats(myId());
 
 /* ---------- Spor og bæli: deilt með hópnum ---------- */
 const OB_DAYS = 3;
