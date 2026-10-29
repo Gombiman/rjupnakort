@@ -490,9 +490,15 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 .pop .pb button,.pop .pb .pbl{border:1px solid #c9cfcf;background:#fff;color:#1b1f20;border-radius:999px;padding:6px 12px;font:600 13px var(--f-body);text-decoration:none}
 .pop a{color:#2577c4}
 .ornl{pointer-events:none;width:auto!important;height:auto!important}
+.ornseg{margin:-4px 0 6px 26px}
 .ornl span{display:inline-block;transform:translate(-50%,-50%);white-space:nowrap;font:italic 600 11px/1 var(--f-body);color:#1d1b18;letter-spacing:.02em;
   text-shadow:0 0 2px #fff,0 0 3px #fff,0 0 5px rgba(255,255,255,.9)}
 .leaflet-tile.demshade,.demshade{mix-blend-mode:multiply}
+.hlpin.paid{width:34px;height:34px;background:#2f9e4f;color:#fff;font-size:18px;font-weight:800;border-color:#fff;box-shadow:0 0 0 3px rgba(47,158,79,.35),0 2px 8px rgba(0,0,0,.35)}
+.hlpin.soon{width:32px;height:32px;border-width:3px}
+.pop .pb .pbpaid{background:#2f9e4f;border-color:#2f9e4f;color:#fff}
+.pop .hlok{background:#eef8f0;border-radius:12px;padding:8px 10px}
+.pop .hlok.now{background:#dff3e4}
 .hlpin{width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #2f9e4f;box-shadow:0 2px 6px rgba(0,0,0,.35);display:grid;place-items:center;font-size:15px;line-height:1;box-sizing:border-box}
 .pop .dist{font:500 13px var(--f-mono);margin:4px 0}
 .me{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 0 0 2px var(--accent),0 2px 8px rgba(0,0,0,.4);box-sizing:border-box;position:relative}
@@ -870,9 +876,10 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 
   <h3>Svæði</h3>
   <div id="layerList"></div>
-  <label class="layer" for="ornTog"><span class="sw" style="color:#1d1b18;background:#1d1b1822;border-radius:50%"></span>
+  <div class="layer"><span class="sw" style="color:#1d1b18;background:#1d1b1822;border-radius:50%"></span>
     <div class="t"><div class="n">Örnefni (IS 50V)</div><div class="m" id="ornStat">Náttúrufræðistofnun · virka líka án nets þar sem þau hafa verið sótt</div></div>
-    <input type="checkbox" class="tog" id="ornTog"></label>
+    <input type="checkbox" class="tog" id="ornTog" hidden></div>
+  <div class="seg sm ornseg" id="ornSeg" role="group" aria-label="Örnefni á kortinu"><button type="button" data-l="0">Af</button><button type="button" data-l="1">Fá</button><button type="button" data-l="2">Öll</button></div>
   <label class="layer" for="demTog"><span class="sw" style="color:#6b6a63;background:#6b6a6333;border-radius:50%"></span>
     <div class="t"><div class="n">Skuggar landslags (ÍslandsDEM)</div><div class="m">Hæðarlíkan Náttúrufræðistofnunar ofan á kortið · þarf net</div></div>
     <input type="checkbox" class="tog" id="demTog"></label>
@@ -904,6 +911,23 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
   <div class="group" id="srchWeb" hidden></div>
   <p class="msg" id="srchMsg" style="margin-top:8px"></p>
   <p class="note" style="margin-top:12px">Örnefni koma frá OpenStreetMap og þarf netsamband til að leita í þeim.</p>
+</section>
+
+<section id="permitSheet" class="sheet" hidden aria-label="Leyfi keypt">
+  <div class="grab"></div>
+  <div class="sh-head"><h2>Leyfi keypt</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
+  <p class="note" id="pmArea" style="margin-top:8px"></p>
+  <div class="row" style="margin-top:10px">
+    <label class="f">Fyrsti veiðidagur<input type="date" id="pmFrom"></label>
+    <label class="f">Fjöldi daga<select id="pmDays"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></label>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <label class="f">Fjöldi leyfa<select id="pmCount"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+    <label class="f">Kvittunarnúmer (má sleppa)<input type="text" id="pmRec" maxlength="30" inputmode="numeric" placeholder="t.d. 12345"></label>
+  </div>
+  <button class="btn wide" id="pmSave" type="button" style="margin-top:14px">Vista leyfi</button>
+  <div id="pmList" style="margin-top:12px"></div>
+  <p class="note" style="margin-top:10px">Leyfin eru bara geymd í símanum þínum. Hafðu kvittunina frá hlunnindi.is við höndina, landeigandi getur beðið um hana.</p>
 </section>
 
 <section id="ptSheet" class="sheet" hidden aria-label="Nýr punktur">
@@ -2941,13 +2965,29 @@ async function ornView(){
   if (ornBoxes.some(x => x[0] <= box[0] && x[1] <= box[1] && x[2] >= box[2] && x[3] >= box[3])) return;
   ornBusy = true; try{ await ornLoadBox(box, true); } finally { ornBusy = false; }
 }
+// Stærri kennileiti fyrst (fjöll, gil, skörð, dalir, vötn…), svo hólar, holt og móar
+const ORN_BIG = /(fjall|fell|hnjúkur|hnúkur|tindur|núpur|múli|háls|hryggur|heiði|dalur|gil|skarð|vatn|tjörn|foss|jökull|öxl|kollur|bunga|alda|hraun|tunga)$/i;
+const ORN_SMALL = /(hóll|holt|mór|melur|lág|laut|gerði|garður|stekkur|tóft|varða|steinn|klettur|hola|vað|brú|nes)$/i;
+const ornScore = n => ORN_BIG.test(n) ? 2 : ORN_SMALL.test(n) ? 0 : 1;
+function ornLevel(){ return ornTog.checked ? LS.get("ornLvl", 1) : 0; }
 function ornDraw(){
   ornLayer.clearLayers();
-  if (!ornTog.checked || map.getZoom() < ORN.labelZoom) return;
-  const b = map.getBounds(), z = map.getZoom(), lim = z >= 14 ? 220 : z >= 13 ? 140 : 80;
+  const lvl = ornLevel(), z = map.getZoom();
+  if (!lvl || z < ORN.labelZoom) return;
+  const b = map.getBounds().pad(0.05);
+  const cand = ornList.filter(o => b.contains([o[1], o[2]]));
+  // Fá: bara stærri kennileiti fyrr en þysjað er mjög nærri
+  const minScore = lvl === 1 ? (z >= 15 ? 0 : z >= 14 ? 1 : 2) : 0;
+  cand.sort((a, c) => ornScore(c[0]) - ornScore(a[0]) || a[0].length - c[0].length);
+  const lim = lvl === 1 ? (z >= 15 ? 70 : z >= 14 ? 45 : z >= 13 ? 28 : 16) : (z >= 15 ? 220 : z >= 14 ? 140 : z >= 13 ? 90 : 50);
+  const pad = lvl === 1 ? 26 : 6, boxes = [];
   let n = 0;
-  for (const o of ornList){
-    if (!b.contains([o[1], o[2]])) continue;
+  for (const o of cand){
+    if (ornScore(o[0]) < minScore) continue;
+    const p = map.latLngToContainerPoint([o[1], o[2]]), w = o[0].length * 6.4 + 6, h = 14;
+    const r = [p.x - w / 2 - pad, p.y - h / 2 - pad / 2, p.x + w / 2 + pad, p.y + h / 2 + pad / 2];
+    if (boxes.some(q => r[0] < q[2] && r[2] > q[0] && r[1] < q[3] && r[3] > q[1])) continue;   // engin nöfn ofan í hvert annað
+    boxes.push(r);
     L.marker([o[1], o[2]], {icon:L.divIcon({className:"ornl", html:`<span>${esc(o[0])}</span>`, iconSize:null}), interactive:false, keyboard:false, pane:"zones"}).addTo(ornLayer);
     if (++n >= lim) break;
   }
@@ -2963,7 +3003,14 @@ function nearestOrn(lat, lon, maxM){
 }
 window.__nearestOrn = nearestOrn;
 ornTog.checked = LS.get("orn", true);
-ornTog.onchange = () => { LS.set("orn", ornTog.checked); ornTog.checked ? ornLayer.addTo(map) : map.removeLayer(ornLayer); ornDraw(); ornView(); };
+ornTog.onchange = () => { LS.set("orn", ornTog.checked); ornTog.checked ? ornLayer.addTo(map) : map.removeLayer(ornLayer); ornDraw(); ornView(); ornSegUi(); };
+const ornSeg = document.getElementById("ornSeg");
+function ornSegUi(){ const l = ornLevel(); ornSeg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", +x.dataset.l === l)); }
+ornSeg.querySelectorAll("button").forEach(x => x.onclick = () => {
+  const l = +x.dataset.l; if (l) LS.set("ornLvl", l);
+  ornTog.checked = l > 0; ornTog.onchange();
+});
+ornSegUi();
 IDB.get("orn:list").then(v => { if (Array.isArray(v)) ornList = v; if (ornList.length) ornStat.textContent = `${ornList.length.toLocaleString("is-IS")} örnefni í símanum · virka án nets`; if (ornTog.checked) ornLayer.addTo(map); ornDraw(); setTimeout(ornView, 3000); });
 map.on("moveend", () => { ornDraw(); clearTimeout(ornTimer); ornTimer = setTimeout(ornView, 900); });
 window.__ornLoadBounds = b => ornLoadBox([b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(v => +v.toFixed(4)), true);
@@ -3028,12 +3075,13 @@ function hlPopup(a){
   const g = hlGeo[a.id], [la, lo] = hlPos(a);
   const rel = typeof relFromMe === "function" ? relFromMe({lat:la, lon:lo}) : null;
   return `<div class="pop"><b>${esc(a.n)}</b><span class="zbadge" style="--c:#2f9e4f">Leyfi á hlunnindi.is</span>
+    ${hlPermitHtml(a)}
     <div class="zkind">${esc(a.r)}${a.ha ? ` · um ${String(a.ha).replace(/\B(?=(\d{3})+(?!\d))/g, ".")} ha` : ""}${rel ? " · " + esc(rel.text) + " frá þér" : ""}</div>
     <p class="ztxt">${esc(a.x)}</p>
     <p class="ztxt">Tengiliður: ${esc(a.c)}${a.t ? ` · <a href="tel:${a.t}">${hlPhone(a.t)}</a>` : ""}</p>
     <p class="ztxt" style="color:#5c6668">${g && g.lat ? `📍 Merkið er við ${esc(g.nm || a.q)} (aðkoman sem lýsingin miðar við), staðsett eftir OpenStreetMap. Svæðið sjálft liggur þar í kring.` : "Staðsetning merkis er u.þ.b."} Nákvæm mörk eru á kortinu hjá hlunnindi.is.</p>
     ${a.sub ? `<div class="pb">${a.sub.map(([id, l]) => `<a class="pbl" href="${HL}/mapview/index.html?areaid=${id}" target="_blank" rel="noopener">${l}: mörk</a>`).join("")}</div>` : ""}
-    <div class="pb"><a class="pbl" href="${HL}/mapview/index.html?areaid=${a.id}" target="_blank" rel="noopener">Mörk á korti</a><a class="pbl" href="${HL}/Area/Details/${a.id}" target="_blank" rel="noopener">Upplýsingar</a><a class="pbl" href="${HL}/SalesLine" target="_blank" rel="noopener">Kaupa leyfi</a></div></div>`;
+    <div class="pb"><a class="pbl" href="${HL}/mapview/index.html?areaid=${a.id}" target="_blank" rel="noopener">Mörk á korti</a><a class="pbl" href="${HL}/Area/Details/${a.id}" target="_blank" rel="noopener">Upplýsingar</a><a class="pbl" href="${HL}/SalesLine" target="_blank" rel="noopener">Kaupa leyfi</a><button type="button" class="pbpaid" data-hlpaid="${a.id}">✓ Ég er með leyfi</button></div></div>`;
 }
 const hlMarkers = {};
 for (const a of HLUNN){
@@ -3041,6 +3089,56 @@ for (const a of HLUNN){
   m.bindPopup(() => hlPopup(a), {maxWidth:290});
   hlMarkers[a.id] = m;
 }
+
+/* Keypt leyfi: merkt á svæðið (geymt í símanum) */
+let hlPaid = LS.get("hlPaid", {}); if (!hlPaid || typeof hlPaid !== "object") hlPaid = {};
+const hlDays = pm => { const out = []; for (let i = 0; i < (pm.days || 1); i++) out.push(addDays(pm.from, i)); return out; };
+function hlStatus(a){
+  const list = hlPaid[a.id] || [], t = today();
+  if (list.some(pm => hlDays(pm).includes(t))) return "today";
+  if (list.some(pm => hlDays(pm).some(d => d > t))) return "soon";
+  return list.length ? "past" : "";
+}
+const hlFmt = k => { const [y, m, d] = k.split("-"); return `${+d}.${+m}.`; };
+function hlPermitHtml(a){
+  const list = (hlPaid[a.id] || []).slice().sort((x, y) => x.from < y.from ? -1 : 1);
+  if (!list.length) return "";
+  const st = hlStatus(a);
+  return `<p class="ztxt hlok${st === "today" ? " now" : ""}">${st === "today" ? "✅ <b>Þú ert með leyfi hér í dag</b>" : st === "soon" ? "🎫 <b>Leyfi keypt</b>" : "🎫 Leyfi (liðin)"}<br>${list.map(pm => {
+    const ds = hlDays(pm); return `${hlFmt(ds[0])}${ds.length > 1 ? "–" + hlFmt(ds[ds.length - 1]) : ""}${pm.n > 1 ? ` · ${pm.n} leyfi` : ""}${pm.rec ? ` · kvittun ${esc(pm.rec)}` : ""}`; }).join("<br>")}</p>`;
+}
+const hlIconPaid = L.divIcon({className:"", iconSize:[34,34], iconAnchor:[17,17], popupAnchor:[0,-16], html:'<div class="hlpin paid" title="Þú ert með leyfi">✓</div>'});
+const hlIconSoon = L.divIcon({className:"", iconSize:[32,32], iconAnchor:[16,16], popupAnchor:[0,-15], html:'<div class="hlpin soon" title="Leyfi keypt">🎫</div>'});
+function hlRefreshIcons(){ for (const a of HLUNN){ const st = hlStatus(a), m = hlMarkers[a.id]; if (m) m.setIcon(st === "today" ? hlIconPaid : st === "soon" ? hlIconSoon : hlIcon); } }
+const permitSheet = document.getElementById("permitSheet");
+let pmArea = null;
+function openPermit(id){
+  pmArea = HLUNN.find(a => a.id === id); if (!pmArea) return;
+  map.closePopup();
+  document.getElementById("pmArea").textContent = `${pmArea.n} · ${pmArea.r}`;
+  document.getElementById("pmFrom").value = today();
+  document.getElementById("pmDays").value = "1"; document.getElementById("pmCount").value = "1"; document.getElementById("pmRec").value = "";
+  renderPmList(); openPanel(permitSheet);
+}
+function renderPmList(){
+  const box = document.getElementById("pmList"), list = hlPaid[pmArea.id] || [];
+  box.innerHTML = list.length ? `<div class="group">${list.map((pm, i) => { const ds = hlDays(pm);
+    return `<div class="ptrow" style="cursor:default"><div class="t"><b>${hlFmt(ds[0])}${ds.length > 1 ? "–" + hlFmt(ds[ds.length - 1]) : ""}${pm.n > 1 ? ` · ${pm.n} leyfi` : ""}</b><span>${pm.rec ? "Kvittun " + esc(pm.rec) : "Engin kvittun skráð"}</span></div><button type="button" class="del" data-pmdel="${i}" aria-label="Eyða leyfi">✕</button></div>`; }).join("")}</div>` : "";
+  box.querySelectorAll("[data-pmdel]").forEach(b => b.onclick = () => {
+    hlPaid[pmArea.id].splice(+b.dataset.pmdel, 1); if (!hlPaid[pmArea.id].length) delete hlPaid[pmArea.id];
+    LS.set("hlPaid", hlPaid); renderPmList(); hlRefreshIcons();
+  });
+}
+document.getElementById("pmSave").onclick = () => {
+  const from = document.getElementById("pmFrom").value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from)){ toast("Veldu fyrsta veiðidag."); return; }
+  (hlPaid[pmArea.id] = hlPaid[pmArea.id] || []).push({from, days:+document.getElementById("pmDays").value, n:+document.getElementById("pmCount").value, rec:document.getElementById("pmRec").value.trim(), ts:Date.now()});
+  LS.set("hlPaid", hlPaid); hlRefreshIcons(); closeSheet();
+  toast(`🎫 Leyfi skráð á ${pmArea.n}. Merkið á kortinu er nú grænt á veiðidögunum.`, 6000);
+};
+map.on("popupopen", e => { const el = e.popup.getElement(); if (!el) return; el.querySelectorAll("[data-hlpaid]").forEach(b => b.onclick = () => openPermit(+b.dataset.hlpaid)); });
+setTimeout(hlRefreshIcons, 0);   // eftir að allur kóðinn hefur keyrt (addDays o.fl.)
+setInterval(hlRefreshIcons, 10 * 60000);
 let hlBusy = false;
 async function hlVerify(){
   if (hlBusy || !navigator.onLine || !LS.get("hlunn", true)) return;

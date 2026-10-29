@@ -2,6 +2,11 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Örnefni af, fá eða öll · Leyfi merkt á svæðin 🎫
+- Örnefni: veldu Af, Fá eða Öll í Lög og grunnkort. „Fá“ sýnir helstu kennileiti (fjöll, gil, skörð, dali, vötn) og nöfnin lenda aldrei ofan í hvert annað
+- Ýttu á hlunnindamerki og „✓ Ég er með leyfi“: skráðu veiðidaga, fjölda leyfa og kvittunarnúmer
+- Merkið verður grænt með ✓ á veiðidögunum og spjaldið segir „Þú ert með leyfi hér í dag“
+
 ## Örnefni, landslag og afréttir frá Náttúrufræðistofnun 🏔️
 - Örnefni úr IS 50V á kortinu þegar þú þysjar nær: fjöll, gil, skörð, heiðar og vötn
 - Örnefnin vistast í símanum og finnast í leitinni líka án netsambands. Þau sækjast líka þegar þú vistar kort án nets
