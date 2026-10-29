@@ -2,6 +2,11 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Áttaviti með einu ýti og nákvæmari hlunnindamerki 🧭
+- Ýttu á áttavitann (á kortinu eða stóra áttavitann) til að kveikja eða slökkva á honum. Slökktur er hann grár og sparar rafhlöðu
+- Hlunnindamerkin færast sjálfkrafa á bæinn eða kennileitið sem lýsing svæðisins miðar við (eftir OpenStreetMap) þegar netsamband er
+- Þeistareykir eru eitt merki með tenglum á mörk allra fjögurra svæðanna
+
 ## Veiðileyfi á hlunnindi.is 🎫
 - 21 veiðisvæði þar sem leyfi eru seld á hlunnindi.is eru merkt á kortið
 - Ýttu á merkið: lýsing, sérreglur (t.d. hámark á dag), stærð, tengiliður með símanúmeri og fjarlægð frá þér

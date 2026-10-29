@@ -77,6 +77,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 #mapside{position:fixed;z-index:900;right:max(14px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 76px);
   display:flex;flex-direction:column;align-items:center;gap:12px}
 .mini{border:none;background:transparent;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.mini button{font:inherit;color:var(--fg);padding:0;cursor:pointer}
+.mini .dial .off{display:none;position:absolute;bottom:4px;font-size:8px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+body.nocompass .mini .dial svg{opacity:.35}
+body.nocompass .mini .dial .off{display:block}
+.dialwrap{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:filter .2s,opacity .2s}
+body.nocompass .dialwrap{filter:grayscale(1);opacity:.55}
 .mini .dial{width:50px;height:50px;box-sizing:border-box;border-radius:50%;background:var(--glass);border:1px solid var(--glass-line);box-shadow:var(--gshadow),var(--glass-hi);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);display:grid;place-items:center;position:relative}
 .mini .dial .n{position:absolute;top:3px;font-size:9px;font-weight:700;color:var(--muted)}
 .mini svg{width:26px;height:26px;transition:transform .15s linear}
@@ -526,10 +532,10 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
   <button class="rbtn" id="btnLayers" type="button" aria-label="Lög, grunnkort og leit">
     <svg viewBox="0 0 24 24"><path d="M12 3 2 8.5 12 14l10-5.5z"/><path d="m2 13 10 5.5L22 13"/></svg>
   </button>
-  <button class="mini" id="carChip" type="button" hidden aria-label="Opna áttavita">
-    <span class="dial"><span class="n">N</span><svg viewBox="0 0 24 24" id="carArrow"><path d="M12 2 18 20 12 16 6 20Z"/></svg></span>
-    <span class="tx" id="carTx">Bíll</span>
-  </button>
+  <div class="mini" id="carChip" hidden>
+    <button type="button" class="dial" id="cmpTog" aria-pressed="true" aria-label="Áttaviti: ýttu til að kveikja eða slökkva"><span class="n">N</span><span class="off">AF</span><svg viewBox="0 0 24 24" id="carArrow"><path d="M12 2 18 20 12 16 6 20Z"/></svg></button>
+    <button type="button" class="tx" id="carTx" aria-label="Opna áttavitasíðuna">Bíll</button>
+  </div>
 </div>
 
 <div id="capFrame" hidden><span class="capdim" id="capW"></span><span class="capdim" id="capH"></span></div>
@@ -573,7 +579,7 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
 <section id="pgCompass" class="page" hidden aria-label="Áttaviti">
   <div class="wrapmax">
     <h1>Áttaviti</h1>
-    <div class="dialwrap">
+    <div class="dialwrap" id="bigDial" role="button" tabindex="0" aria-pressed="true" aria-label="Áttaviti: ýttu til að kveikja eða slökkva">
       <svg viewBox="0 0 300 300" aria-hidden="true">
         <circle cx="150" cy="150" r="146" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>
         <g id="roseG">
@@ -600,6 +606,7 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
       </div>
     </div>
 
+    <p class="note" id="cmpHint" style="text-align:center;margin:10px 0 0"></p>
     <div class="sect">Vísa á</div>
     <div class="group" id="ptList"></div>
     <div class="row2">
@@ -860,7 +867,7 @@ details.tl li span{font-size:12.5px;color:var(--muted)}
   <h3>Svæði</h3>
   <div id="layerList"></div>
   <label class="layer" for="hlTog"><span class="sw" style="color:#2f9e4f;background:#2f9e4f33;border-radius:50%"></span>
-    <div class="t"><div class="n">Veiðileyfi á hlunnindi.is</div><div class="m">21 svæði þar sem leyfi eru seld · staðsetning u.þ.b., mörkin á hlunnindi.is</div></div>
+    <div class="t"><div class="n">Veiðileyfi á hlunnindi.is</div><div class="m">18 staðir (21 svæði) þar sem leyfi eru seld · merkið er við aðkomuna, mörkin á hlunnindi.is</div></div>
     <input type="checkbox" class="tog" id="hlTog"></label>
 
   <h3>Litir</h3>
@@ -2191,7 +2198,7 @@ function renderPtList(){
   ptList.innerHTML = "";
   document.getElementById("clrPings").hidden = !pts.some(p => p.type === "ping");
   document.getElementById("clrKills").hidden = !pts.some(p => p.type === "felld");
-  if (!pts.length){ ptList.innerHTML = '<div class="empty">Engir punktar enn. Merktu bílinn með + á kortinu.</div>'; return; }
+  if (!pts.length){ ptList.innerHTML = '<div class="empty">Engir punktar enn. Haltu fingri á kortinu og veldu Bíllinn.</div>'; return; }
   const cur = currentTarget();
   const sorted = pts.slice().sort((a, b) => (a.type === "bill" ? -1 : 0) - (b.type === "bill" ? -1 : 0) || b.ts - a.ts);
   for (const p of sorted){
@@ -2258,7 +2265,7 @@ function updateCar(){
   if (!tg){
     document.getElementById("bdName").textContent = "Ekkert skotmark";
     document.getElementById("bdDist").textContent = "—";
-    document.getElementById("bdTurn").textContent = "Merktu bílinn með + á kortinu";
+    document.getElementById("bdTurn").textContent = "Haltu fingri á kortinu og veldu Bíllinn";
     document.getElementById("bdEta").textContent = "";
     bigArrow.setAttribute("visibility", "hidden");
     return;
@@ -2295,7 +2302,31 @@ function updateCar(){
     document.getElementById("bdEta").textContent = "";
   }
 }
-carChip.onclick = () => setTab("compass");
+carTx.onclick = () => setTab("compass");
+/* Áttavitinn: ýtt á myndina kveikir eða slekkur á honum */
+function compassUi(){
+  const on = S.compass !== false;
+  document.body.classList.toggle("nocompass", !on);
+  ["cmpTog", "bigDial"].forEach(id => { const el = document.getElementById(id); if (el) el.setAttribute("aria-pressed", on); });
+  const cb = document.getElementById("set_compass"); if (cb) cb.checked = on;
+  const h = document.getElementById("cmpHint");
+  if (h) h.textContent = on ? (saverActive() ? "Áttavitinn bíður: sparnaðarhamur er á" : "Ýttu á áttavitann til að slökkva á honum") : "Áttavitinn er af · ýttu á hann til að kveikja";
+}
+function toggleCompass(){
+  S.compass = S.compass === false; LS.set("set", S);
+  if (S.compass && typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function"){
+    try{ DeviceOrientationEvent.requestPermission().catch(() => {}); }catch(e){}
+  }
+  if (window.__applyAll) window.__applyAll(); else applyPower();
+  compassUi();
+  try{ S.vib && navigator.vibrate && navigator.vibrate(20); }catch(e){}
+  toast(S.compass ? (saverActive() ? "Áttaviti á, en hann bíður á meðan sparnaðarhamur er á." : "🧭 Áttaviti á: örin snýst með símanum.") : "Áttaviti af: örin vísar í norður og sparar rafhlöðu.");
+}
+document.getElementById("cmpTog").onclick = e => { e.stopPropagation(); toggleCompass(); };
+const bigDial = document.getElementById("bigDial");
+bigDial.onclick = toggleCompass;
+bigDial.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); toggleCompass(); } };
+setTimeout(compassUi, 0);
 tgtClear.onclick = () => { LS.set("target", null); updateCar(); renderPtList(); toast("Vísar aftur á bílinn"); };
 function setTarget(id){ LS.set("target", id); updateCar(); if (!document.getElementById("pgCompass").hidden) renderPtList(); }
 
@@ -2596,7 +2627,7 @@ if (navigator.getBattery){
     onBatt();
   }).catch(() => {});
 }
-window.__applyAll = () => { applyPower(); onBatt(); updateSun(); updateCar(); };
+window.__applyAll = () => { applyPower(); onBatt(); updateSun(); updateCar(); if (typeof compassUi === "function") compassUi(); };
 
 /* ---------- Síður og flipar ---------- */
 const pgCompass = document.getElementById("pgCompass"), pgFriends = document.getElementById("pgFriends"), pgSettings = document.getElementById("pgSettings");
@@ -2815,28 +2846,28 @@ function srchRow(r){
    Staðsetning er u.þ.b. miðja svæðis eftir lýsingu á hlunnindi.is. Nákvæm mörk eru í kortasjá hlunnindi.is. */
 const HL = "https://hlunnindi.is";
 const HLUNN = [
-  {id:6,  n:"Gilsárdalur – Hallormsstaðaháls", r:"Austurland", lat:65.055, lon:-14.70, ha:8500, c:"Þór Þorfinnsson", t:"8923535", x:"Ofan skógargirðingar á Hallormsstaðahálsi. Ekið inn við Buðlungavelli."},
-  {id:7,  n:"Heiðarlönd ofan Haukadalsskógar", r:"Suðurland", lat:64.385, lon:-20.275, ha:1200, c:"Trausti Jóhannsson", t:"8658770", x:"Á Haukadalsheiði. Bannað að veiða inni í skóginum og aka skógarslóða."},
-  {id:8,  n:"Bakkasel í Fnjóskadal", r:"Norðausturland", lat:65.55, lon:-17.83, c:"Rúnar Ísleifsson", t:"8963112", x:"Austan Fnjóskár, frá Belgsá suður að Bakka. Snjóflóðahætta í hlíðum."},
-  {id:10, n:"Melar og Skuggabjörg", r:"Norðausturland", lat:65.745, lon:-17.86, ha:1120, c:"Rúnar Ísleifsson", t:"8963112", x:"Afleggjari 834 að Draflastöðum, slóði 2,5 km að Melum. Oft ófær á vetrum."},
-  {id:11, n:"Jórvík í Breiðdal", r:"Austurland", lat:64.795, lon:-14.36, ha:600, c:"Þór Þorfinnsson", t:"8923535", x:"Innan girðingar ofan þjóðvegar 1. Hlið með skilti."},
-  {id:13, n:"Hof – Hofsborgartunga", r:"Austurland (Vopnafjörður)", lat:65.665, lon:-15.05, c:"Sigríður Bragadóttir", t:"8552174", x:"Milli Hofsár og Sunnudalsár. Hámark 10 fuglar á leyfi á dag."},
-  {id:14, n:"Hof – Hofsháls", r:"Austurland (Vopnafjörður)", lat:65.705, lon:-14.995, c:"Sigríður Bragadóttir", t:"8552174", x:"Hlíðin ofan vegar á landi Hofs. Aðkoma frá vegi 85."},
-  {id:17, n:"Þórðarstaðaskógur í Fnjóskadal", r:"Norðausturland", lat:65.585, lon:-17.835, ha:900, c:"Rúnar Ísleifsson", t:"8963112", x:"Lagt sunnan Þórðarstaða og gengið. Ekki aka inn í skóginn. Snjóflóðahætta."},
-  {id:18, n:"Vaglir í Hörgársveit", r:"Norðvesturland", lat:65.735, lon:-18.30, ha:800, c:"Rúnar Ísleifsson", t:"8963112", x:"Um 15 km vestan Akureyrar, ofan þjóðvegar 1. Bílastæði neðst á svæðinu."},
-  {id:19, n:"Sveinatunga og Gestsstaðir", r:"Vesturland", lat:64.83, lon:-21.36, ha:2000, c:"Yngvi Óttarsson", t:"", x:"Milli Sanddalsár og Norðurár. Ekki skjóta nær húsum en 500 m. Skila veiðitölum."},
-  {id:23, n:"Víðidalur á Fjöllum – Víðidalsfjöll", r:"Austurland", lat:65.44, lon:-15.52, c:"Þorlákur Páll Jónsson", t:"8947744", x:"Austan Víðidals, slóði upp í Sótaskarð. Brattlendi og gil."},
-  {id:24, n:"Víðidalur á Fjöllum – Þjóðfellsbungur", r:"Austurland", lat:65.48, lon:-15.70, c:"Þorlákur Páll Jónsson", t:"8947744", x:"Norðan og vestan Langadals, norðan Svartfells. Enginn slóði, góður gangur."},
-  {id:25, n:"Litluvellir í Bárðardal", r:"Norðausturland", lat:65.60, lon:-17.47, ha:913, c:"Kristján Jónsson", t:"8610006", x:"Ekki skjóta neðan bæjar eða nálægt vegi 842. Mörk við Lækjarvelli um Sexhólagil."},
-  {id:26, n:"Skógar í Fnjóskadal", r:"Norðausturland", lat:65.69, lon:-17.92, ha:930, c:"Bergljót Þorsteinsdóttir", t:"8469674", x:"Ofan girðingar upp að Vaðlaheiði. Lagt við bæinn."},
-  {id:27, n:"Draflastaðir í Fnjóskadal", r:"Norðausturland", lat:65.735, lon:-17.83, c:"Sigurður Arnar Jónsson", t:"8980444", x:"Ofan Draflastaða, norðan Víkurskarðsvegar. Vegur 834, lagt við bæinn."},
-  {id:29, n:"Þeistareykir – Svæði 1", r:"Norðausturland", lat:65.92, lon:-17.02, ha:4365, c:"Daði Lange", t:"8944215", x:"Veiðibann við Þeistareykjavirkjun og suður með Bæjarfjalli."},
-  {id:30, n:"Þeistareykir – Svæði 2", r:"Norðausturland", lat:65.93, lon:-16.92, c:"Daði Lange", t:"8944215", x:"Eitt af fjórum svæðum Þeistareykja. Veiðibann við virkjunina."},
-  {id:31, n:"Þeistareykir – Svæði 3", r:"Norðausturland", lat:65.84, lon:-17.03, c:"Daði Lange", t:"8944215", x:"Eitt af fjórum svæðum Þeistareykja. Veiðibann við virkjunina."},
-  {id:32, n:"Þeistareykir – Svæði 4", r:"Norðausturland", lat:65.84, lon:-16.90, c:"Daði Lange", t:"8944215", x:"Eitt af fjórum svæðum Þeistareykja. Veiðibann við virkjunina."},
-  {id:33, n:"Hlíðskógar í Bárðardal", r:"Norðausturland", lat:65.52, lon:-17.42, ha:1200, c:"Snædís Róbertsdóttir", t:"8207210", x:"Vallafjall og bakkar Skjálfandafljóts. Ekki skjóta nálægt húsum eða vegum."},
-  {id:34, n:"Hrappstaðir í Bárðardal", r:"Norðausturland", lat:65.585, lon:-17.39, ha:500, c:"Daði Lange", t:"8944215", x:"Vegur 844, næsti bær við Jarlsstaði. Íbúðarhús innan svæðis."}
+  {id:6,  n:"Gilsárdalur – Hallormsstaðaháls", r:"Austurland", q:"Buðlungavellir", lat:65.055, lon:-14.70, ha:8500, c:"Þór Þorfinnsson", t:"8923535", x:"Ofan skógargirðingar á Hallormsstaðahálsi. Ekið inn við Buðlungavelli."},
+  {id:7,  n:"Heiðarlönd ofan Haukadalsskógar", r:"Suðurland", q:"Haukadalskirkja", lat:64.385, lon:-20.275, ha:1200, c:"Trausti Jóhannsson", t:"8658770", x:"Á Haukadalsheiði, ekið frá Geysi framhjá kirkjunni í Haukadal. Bannað að veiða inni í skóginum og aka skógarslóða."},
+  {id:8,  n:"Bakkasel í Fnjóskadal", r:"Norðausturland", q:"Bakkasel", lat:65.55, lon:-17.83, c:"Rúnar Ísleifsson", t:"8963112", x:"Austan Fnjóskár, frá Belgsá suður að Bakka. Ekið yfir brúna við Þórðarstaði. Snjóflóðahætta í hlíðum."},
+  {id:10, n:"Melar og Skuggabjörg", r:"Norðausturland", q:"Skuggabjörg", lat:65.745, lon:-17.86, ha:1120, c:"Rúnar Ísleifsson", t:"8963112", x:"Afleggjari 834 að Draflastöðum, slóði 2,5 km að Melum. Oft ófær á vetrum."},
+  {id:11, n:"Jórvík í Breiðdal", r:"Austurland", q:"Jórvík", lat:64.795, lon:-14.36, ha:600, c:"Þór Þorfinnsson", t:"8923535", x:"Innan girðingar ofan þjóðvegar 1. Hlið með skilti."},
+  {id:13, n:"Hof – Hofsborgartunga", r:"Austurland (Vopnafjörður)", q:"Síreksstaðir", lat:65.665, lon:-15.05, c:"Sigríður Bragadóttir", t:"8552174", x:"Milli Hofsár og Sunnudalsár, ekið af vegi 919 inn í Tunguna. Hámark 10 fuglar á leyfi á dag."},
+  {id:14, n:"Hof – Hofsháls", r:"Austurland (Vopnafjörður)", q:"Hof", lat:65.705, lon:-14.995, c:"Sigríður Bragadóttir", t:"8552174", x:"Hlíðin ofan vegar á landi Hofs. Aðkoma frá vegi 85."},
+  {id:17, n:"Þórðarstaðaskógur í Fnjóskadal", r:"Norðausturland", q:"Þórðarstaðir", lat:65.585, lon:-17.835, ha:900, c:"Rúnar Ísleifsson", t:"8963112", x:"Lagt sunnan Þórðarstaða og gengið. Ekki aka inn í skóginn. Snjóflóðahætta."},
+  {id:18, n:"Vaglir í Hörgársveit", r:"Norðvesturland", q:"Vaglir", lat:65.735, lon:-18.30, ha:800, c:"Rúnar Ísleifsson", t:"8963112", x:"Um 15 km vestan Akureyrar, ofan þjóðvegar 1. Bílastæði neðst á svæðinu."},
+  {id:19, n:"Sveinatunga og Gestsstaðir", r:"Vesturland", q:"Sveinatunga", lat:64.83, lon:-21.36, ha:2000, c:"Yngvi Óttarsson", t:"", x:"Milli Sanddalsár og Norðurár. Ekki skjóta nær húsum en 500 m. Skila veiðitölum."},
+  {id:23, n:"Víðidalur á Fjöllum – Víðidalsfjöll", r:"Austurland", q:"Víðidalsfjöll", lat:65.44, lon:-15.52, c:"Þorlákur Páll Jónsson", t:"8947744", x:"Austan Víðidals, slóði upp í Sótaskarð. Brattlendi og gil."},
+  {id:24, n:"Víðidalur á Fjöllum – Þjóðfellsbungur", r:"Austurland", q:"Þjóðfell", lat:65.48, lon:-15.70, c:"Þorlákur Páll Jónsson", t:"8947744", x:"Norðan og vestan Langadals, norðan Svartfells. Enginn slóði, góður gangur."},
+  {id:25, n:"Litluvellir í Bárðardal", r:"Norðausturland", q:"Litluvellir", lat:65.60, lon:-17.47, ha:913, c:"Kristján Jónsson", t:"8610006", x:"Ekki skjóta neðan bæjar eða nálægt vegi 842. Mörk við Lækjarvelli um Sexhólagil."},
+  {id:26, n:"Skógar í Fnjóskadal", r:"Norðausturland", q:"Skógar", lat:65.69, lon:-17.92, ha:930, c:"Bergljót Þorsteinsdóttir", t:"8469674", x:"Ofan girðingar upp að Vaðlaheiði. Lagt við bæinn."},
+  {id:27, n:"Draflastaðir í Fnjóskadal", r:"Norðausturland", q:"Draflastaðir", lat:65.735, lon:-17.83, c:"Sigurður Arnar Jónsson", t:"8980444", x:"Ofan Draflastaða, norðan Víkurskarðsvegar. Vegur 834, lagt við bæinn."},
+  {id:28, n:"Þeistareykir á Reykjaheiði (4 svæði)", r:"Norðausturland", q:"Þeistareykir", lat:65.885, lon:-16.97, ha:4365, c:"Daði Lange", t:"8944215", x:"Fjögur svæði sem vegir og slóðar skipta. Veiðibann við Þeistareykjavirkjun og suður með Bæjarfjalli.", sub:[[29, "Svæði 1"], [30, "Svæði 2"], [31, "Svæði 3"], [32, "Svæði 4"]]},
+  {id:33, n:"Hlíðskógar í Bárðardal", r:"Norðausturland", q:"Hlíðskógar", lat:65.52, lon:-17.42, ha:1200, c:"Snædís Róbertsdóttir", t:"8207210", x:"Vallafjall og bakkar Skjálfandafljóts. Ekki skjóta nálægt húsum eða vegum."},
+  {id:34, n:"Hrappstaðir í Bárðardal", r:"Norðausturland", q:"Hrappstaðir", lat:65.585, lon:-17.39, ha:500, c:"Daði Lange", t:"8944215", x:"Vegur 844, næsti bær við Jarlsstaði. Íbúðarhús innan svæðis."}
 ];
+// Staðfest staðsetning: bærinn eða kennileitið sem lýsingin miðar við, sótt einu sinni úr OpenStreetMap og geymt
+let hlGeo = LS.get("hlGeo1", {}); if (!hlGeo || typeof hlGeo !== "object") hlGeo = {};
+const hlPos = a => { const g = hlGeo[a.id]; return g && g.lat ? [g.lat, g.lon] : [a.lat, a.lon]; };
 // Spjöld á kortinu færa kortið svo þau lendi ekki undir stöðustikunni eða ferðaspjaldinu
 L.Popup.prototype.options.autoPanPaddingTopLeft = L.point(16, 96);
 L.Popup.prototype.options.autoPanPaddingBottomRight = L.point(70, 210);
@@ -2844,22 +2875,50 @@ const hlLayer = L.layerGroup();
 const hlIcon = L.divIcon({className:"", iconSize:[30,30], iconAnchor:[15,15], popupAnchor:[0,-14], html:'<div class="hlpin" title="Veiðileyfi á hlunnindi.is">🎫</div>'});
 const hlPhone = t => t ? `${t.slice(0, 3)} ${t.slice(3)}` : "";
 function hlPopup(a){
-  const rel = typeof relFromMe === "function" ? relFromMe(a) : null;
+  const g = hlGeo[a.id], [la, lo] = hlPos(a);
+  const rel = typeof relFromMe === "function" ? relFromMe({lat:la, lon:lo}) : null;
   return `<div class="pop"><b>${esc(a.n)}</b><span class="zbadge" style="--c:#2f9e4f">Leyfi á hlunnindi.is</span>
     <div class="zkind">${esc(a.r)}${a.ha ? ` · um ${String(a.ha).replace(/\B(?=(\d{3})+(?!\d))/g, ".")} ha` : ""}${rel ? " · " + esc(rel.text) + " frá þér" : ""}</div>
     <p class="ztxt">${esc(a.x)}</p>
     <p class="ztxt">Tengiliður: ${esc(a.c)}${a.t ? ` · <a href="tel:${a.t}">${hlPhone(a.t)}</a>` : ""}</p>
-    <p class="ztxt" style="color:#5c6668">Staðsetning merkis er u.þ.b. Nákvæm mörk eru á kortinu hjá hlunnindi.is.</p>
+    <p class="ztxt" style="color:#5c6668">${g && g.lat ? `📍 Merkið er við ${esc(g.nm || a.q)} (aðkoman sem lýsingin miðar við), staðsett eftir OpenStreetMap. Svæðið sjálft liggur þar í kring.` : "Staðsetning merkis er u.þ.b."} Nákvæm mörk eru á kortinu hjá hlunnindi.is.</p>
+    ${a.sub ? `<div class="pb">${a.sub.map(([id, l]) => `<a class="pbl" href="${HL}/mapview/index.html?areaid=${id}" target="_blank" rel="noopener">${l}: mörk</a>`).join("")}</div>` : ""}
     <div class="pb"><a class="pbl" href="${HL}/mapview/index.html?areaid=${a.id}" target="_blank" rel="noopener">Mörk á korti</a><a class="pbl" href="${HL}/Area/Details/${a.id}" target="_blank" rel="noopener">Upplýsingar</a><a class="pbl" href="${HL}/SalesLine" target="_blank" rel="noopener">Kaupa leyfi</a></div></div>`;
 }
+const hlMarkers = {};
 for (const a of HLUNN){
-  const m = L.marker([a.lat, a.lon], {icon:hlIcon, keyboard:false}).addTo(hlLayer);
-  m.bindPopup(() => hlPopup(a), {maxWidth:280});
+  const m = L.marker(hlPos(a), {icon:hlIcon, keyboard:false}).addTo(hlLayer);
+  m.bindPopup(() => hlPopup(a), {maxWidth:290});
+  hlMarkers[a.id] = m;
 }
+let hlBusy = false;
+async function hlVerify(){
+  if (hlBusy || !navigator.onLine || !LS.get("hlunn", true)) return;
+  const todo = HLUNN.filter(a => !hlGeo[a.id] || (!hlGeo[a.id].lat && Date.now() - (hlGeo[a.id].ts || 0) > 7 * 864e5));
+  if (!todo.length) return;
+  hlBusy = true;
+  for (const a of todo){
+    try{
+      const box = `${a.lon - 0.22},${a.lat + 0.1},${a.lon + 0.22},${a.lat - 0.1}`;   // þröngt, svo ekki komi samnefndur bær annars staðar
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=is&accept-language=is&limit=1&bounded=1&viewbox=${box}&q=${encodeURIComponent(a.q)}`;
+      const r = await fetch(url); if (!r.ok) throw new Error(r.status);
+      const j = await r.json(), hit = j && j[0];
+      if (hit && Math.abs(+hit.lat - a.lat) < 0.1 && Math.abs(+hit.lon - a.lon) < 0.22){
+        hlGeo[a.id] = {lat:+(+hit.lat).toFixed(5), lon:+(+hit.lon).toFixed(5), nm:hit.name || a.q, ts:Date.now()};
+        hlMarkers[a.id].setLatLng(hlPos(a));
+      } else hlGeo[a.id] = {ts:Date.now()};
+      LS.set("hlGeo1", hlGeo);
+    }catch(e){ break; }
+    await new Promise(res => setTimeout(res, 1200));   // OpenStreetMap leyfir eina fyrirspurn á sekúndu
+  }
+  hlBusy = false;
+}
+window.addEventListener("online", () => setTimeout(hlVerify, 4000));
+setTimeout(hlVerify, 6000);
 const hlTog = document.getElementById("hlTog");
 hlTog.checked = LS.get("hlunn", true);
 const hlApply = () => { hlTog.checked ? hlLayer.addTo(map) : map.removeLayer(hlLayer); };
-hlTog.onchange = () => { LS.set("hlunn", hlTog.checked); hlApply(); };
+hlTog.onchange = () => { LS.set("hlunn", hlTog.checked); hlApply(); if (hlTog.checked) hlVerify(); };
 hlApply();
 
 function localSearch(q){
@@ -2879,7 +2938,7 @@ function localSearch(q){
     }
   }
   for (const a of HLUNN) if (norm(a.n).includes(n) || norm(a.r).includes(n))
-    out.push({name:a.n, kind:"Veiðileyfi á hlunnindi.is", where:a.r, lat:a.lat, lon:a.lon, color:"#2f9e4f", icon:'<circle cx="12" cy="12" r="6"/>'});
+    out.push({name:a.n, kind:"Veiðileyfi á hlunnindi.is", where:a.r, lat:hlPos(a)[0], lon:hlPos(a)[1], color:"#2f9e4f", icon:'<circle cx="12" cy="12" r="6"/>'});
   return out.slice(0, 25);
 }
 async function webSearch(q){
