@@ -3689,13 +3689,17 @@ function mySnapshot(kind){
   o.pp = poops.filter(p => p.ts >= Date.now() - 2 * 864e5).map(p => [p.ts, +p.lat.toFixed(5), +p.lon.toFixed(5), p.alt != null ? Math.round(p.alt) : null]);
   o.rs = LS.get("statReset", 0) || undefined;
   o.ob = myObs().map(p => [p.ts, +p.lat.toFixed(5), +p.lon.toFixed(5), p.type === "baeli" ? 1 : 0]);
+  o.mk = myMarks();
+  if (S.shareloc === true) o.sl = 1;
   o.du = Object.values(duels).filter(d => (d.a === me || d.b === me) && d.day >= addDays(today(), -2));
   o.cd = myCards.filter(c => c.day >= addDays(today(), -8));
   if (comp && comp.owner === me){ o.comp = comp; o.px = judge.px.filter(p => p.day >= addDays(today(), -3)); }
   if (hunt && S.shareloc === true && pos && Date.now() - (pos.t || 0) < 5 * 60000){ o.lat = +pos.lat.toFixed(5); o.lon = +pos.lon.toFixed(5); o.acc = Math.round(pos.acc || 0); o.pt = pos.t; }
   // ntfy tekur ~4 KB: elstu dagarnir detta út ef þarf (hinir geyma þá frá fyrri skilaboðum)
   while (JSON.stringify(o).length > 2700 && o.h.length > 1) o.h.shift();
+  while (JSON.stringify(o).length > 2800 && o.mk.length > 3) o.mk.pop();
   while (JSON.stringify(o).length > 2900 && o.ob && o.ob.length > 4) o.ob.shift();
+  lastMkSig = mkSig();
   return o;
 }
 
@@ -4816,14 +4820,51 @@ document.getElementById("clrStats").onclick = async e => {
 /* ---------- Spor og bæli: deilt með hópnum ---------- */
 const OB_DAYS = 3;
 const myObs = () => pts.filter(p => (p.type === "spor" || p.type === "baeli") && p.ts >= Date.now() - OB_DAYS * 864e5).slice(-18);
+// Allt annað sem ég merki: felldar rjúpur, rjúpur séðar, bíllinn, skálar, hættur og annað
+var MK_TYPES = ["felld", "rjupa", "bill", "skali", "haetta", "annad"];
+var MK_PRI = {bill:0, haetta:1, felld:2, skali:3, rjupa:4, annad:5};
+var lastMkSig = null, mkTimer = null;
+function myMarks(){
+  const cut = Date.now() - OB_DAYS * 864e5;
+  const own = pts.filter(p => MK_TYPES.includes(p.type) && !p.from && isFinite(p.lat) && isFinite(p.lon) && (p.type !== "rjupa" || p.ts >= cut));
+  const car = own.filter(p => p.type === "bill").sort((a, b) => b.ts - a.ts)[0];
+  return own.filter(p => p.type !== "bill" || p === car)
+    .sort((a, b) => MK_PRI[a.type] - MK_PRI[b.type] || b.ts - a.ts).slice(0, 24)
+    .map(p => { const q = [p.ts, +p.lat.toFixed(5), +p.lon.toFixed(5), p.type]; const nm = String(p.name || "").trim().slice(0, 24); if (nm) q.push(nm); return q; });
+}
+const mkSig = () => JSON.stringify([myMarks(), myObs().map(p => p.ts)]);
+function mkCheck(){ if (lastMkSig !== null && mkSig() !== lastMkSig) groupSend("obs"); }
+const prevPtsSaved = window.__onPtsSaved;
+window.__onPtsSaved = () => { if (prevPtsSaved) prevPtsSaved(); clearTimeout(mkTimer); mkTimer = setTimeout(mkCheck, 1500); };
+setInterval(mkCheck, 20000);
+setTimeout(() => { if (lastMkSig === null) lastMkSig = mkSig(); }, 0);
+const MK_EMO = {felld:"🎯", rjupa:"🐦", bill:"🚗", skali:"🏠", haetta:"⚠️", annad:"📍"};
+let obItems = [];
 const obsLayer = L.layerGroup().addTo(map);
 function allObs(){
   const out = [];
   for (const r of Object.values(board)) for (const q of r.ob || []) out.push({ts:q[0], lat:q[1], lon:q[2], type:q[3] ? "baeli" : "spor", who:r.name, id:r.id});
   return out;
 }
+function allMarks(){
+  const out = [];
+  for (const r of Object.values(board)) for (const q of r.mk || []) out.push({ts:q[0], lat:q[1], lon:q[2], type:q[3], name:q[4] || "", who:r.name, id:r.id});
+  return out;
+}
 function renderObs(){
-  obsLayer.clearLayers();
+  obsLayer.clearLayers(); obItems = [];
+  for (const o of allMarks()){
+    if (o.type === "felld" && Date.now() - o.ts > 24 * 3600e3) continue;
+    const t = TYPES[o.type], ini = (dispName(o.who) || "?").charAt(0).toUpperCase(), i = obItems.push(o) - 1;
+    const icon = L.divIcon({className:"", iconSize:[30,30], iconAnchor:[15,15], popupAnchor:[0,-14],
+      html:`<div class="obpin" style="--c:${t.color}"><svg viewBox="0 0 24 24">${SVG[o.type]}</svg><b>${esc(ini)}</b></div>`});
+    L.marker([o.lat, o.lon], {icon, keyboard:false}).bindPopup(() => {
+      const rel = relFromMe(o), on = window.__nearestOrn ? window.__nearestOrn(o.lat, o.lon, 1500) : null;
+      const what = o.type === "bill" ? `Bíllinn hjá ${esc(dispName(o.who))}` : `${esc(t.label)} · ${esc(dispName(o.who))}`;
+      return `<div class="pop"><b>${MK_EMO[o.type]} ${what}</b>${o.name ? `<div>${esc(o.name)}</div>` : ""}<div class="zkind">${ago(o.ts)}${on ? " · við " + esc(on.name) : ""}</div><div class="dist">${rel ? rel.text + " frá þér" : ""}</div>
+        <div class="pb"><button type="button" data-obgo="${i}">Vísa leið</button></div></div>`;
+    }, {minWidth:190}).addTo(obsLayer);
+  }
   for (const o of allObs()){
     if (Date.now() - o.ts > 14 * 864e5) continue;
     const t = TYPES[o.type], ini = (dispName(o.who) || "?").charAt(0).toUpperCase();
@@ -4837,6 +4878,14 @@ function renderObs(){
   }
 }
 window.__renderObs = renderObs;
+map.on("popupopen", e => {
+  const el = e.popup.getElement(); if (!el) return;
+  el.querySelectorAll("[data-obgo]").forEach(b => b.onclick = () => {
+    const o = obItems[+b.dataset.obgo]; if (!o) return;
+    const p = addRemotePoint({lat:o.lat, lon:o.lon, ts:o.ts, type:"ping", name:o.type === "bill" ? "Bíllinn" : (o.name || TYPES[o.type].label), from:o.who});
+    setTarget(p.id); map.closePopup(); toast(`Örin vísar á ${o.type === "bill" ? "bílinn hjá " + dispName(o.who) : TYPES[o.type].label.toLowerCase() + " frá " + dispName(o.who)}`);
+  });
+});
 function renderPoops(){
   poopLayer.clearLayers();
   if (!isMasson() || S.poopmap === false) return;
@@ -5041,6 +5090,9 @@ function onGroupMsg(msg, live){
   const pps = reset ? [] : ((prev && prev.pp) || []).slice(); (Array.isArray(msg.pp) ? msg.pp : []).forEach(q => { if (!pps.some(x => x[0] === q[0])) pps.push(q); });
   const obCut = Date.now() - OB_DAYS * 864e5;
   const obs = Array.isArray(msg.ob) ? [...((prev && prev.ob) || []).filter(q => q[0] < obCut), ...msg.ob.filter(q => Array.isArray(q) && isFinite(q[1]) && isFinite(q[2]))] : ((prev && prev.ob) || []);
+  const okMk = q => Array.isArray(q) && isFinite(q[1]) && isFinite(q[2]) && MK_TYPES.includes(q[3]);
+  const mks = (prev && (msg.ts || 0) < (prev.ts || 0)) || !Array.isArray(msg.mk) ? ((prev && prev.mk) || []) : msg.mk.filter(okMk).slice(0, 40);
+  const newMks = live && Array.isArray(msg.mk) ? mks.filter(q => !((prev && prev.mk) || []).some(x => x[0] === q[0] && x[3] === q[3])) : [];
   const newObs = live && Array.isArray(msg.ob) ? msg.ob.filter(q => !((prev && prev.ob) || []).some(x => x[0] === q[0])) : [];
   const cds = ((prev && prev.cdAll) || []).slice(); (Array.isArray(msg.cd) ? msg.cd : []).forEach(c => { if (!cds.some(x => x.ts === c.ts && x.c === c.c)) cds.push(c); });
   const pcut = addDays(today(), -3);
@@ -5053,11 +5105,18 @@ function onGroupMsg(msg, live){
   board[msg.id] = Object.assign(base, {hm:hmap, fd:Object.assign({}, (prev && prev.fd) || {}, msg.fd || {}), phone:msg.phone || (prev && prev.phone) || "",
                                        vbDays:[...new Set([...((prev && prev.vbDays) || []), ...Object.keys(msg.vb || {})])].slice(-30),
                                        rs:Math.max(msg.rs || 0, (prev && prev.rs) || 0) || undefined,
-                                       wit:wits.slice(-60), pp:pps.slice(-80), cdAll:cds.slice(-60), pxAll:pxs.slice(-200), ob:obs.filter(q => q[0] >= Date.now() - 14 * 864e5).slice(-120)});
+                                       wit:wits.slice(-60), pp:pps.slice(-80), cdAll:cds.slice(-60), pxAll:pxs.slice(-200), ob:obs.filter(q => q[0] >= Date.now() - 14 * 864e5).slice(-120),
+                                       mk:mks, sl:msg.sl || msg.lat != null ? 1 : Array.isArray(msg.mk) ? 0 : prev && prev.sl});
   // Nýtt spor eða bæli frá félaga í grennd: láta vita
   if (newObs.length && pos && document.visibilityState === "visible"){
     const q = newObs[newObs.length - 1], rel = relFromMe({lat:q[1], lon:q[2]});
     if (rel && rel.d < 5000) toast(`${q[3] ? "🪹 " : "👣 "}${dispName(msg.name)} merkti ${q[3] ? "bæli" : "spor"} · ${rel.text}`, 6000);
+  }
+  // Hætta eða felld rjúpa hjá félaga í grennd
+  const mkNear = newMks.filter(q => (q[3] === "haetta" || q[3] === "felld") && Date.now() - q[0] < 3 * 3600e3);
+  if (mkNear.length && pos && document.visibilityState === "visible" && !newObs.length){
+    const q = mkNear[mkNear.length - 1], rel = relFromMe({lat:q[1], lon:q[2]});
+    if (rel && rel.d < 5000) toast(q[3] === "haetta" ? `⚠️ ${dispName(msg.name)} merkti hættu${q[4] ? ": " + q[4] : ""} · ${rel.text}` : `🎯 ${dispName(msg.name)} felldi rjúpu · ${rel.text}`, 6000);
   }
   LS.set("board", board);
   if (Array.isArray(msg.du)){ let ch = false; msg.du.forEach(d => { if (d && d.day && d.a && d.b && putDuel(d)) ch = true; }); if (ch) LS.set("duels", duels);
@@ -5173,10 +5232,14 @@ function renderJoin(){
   } else {
     const n = Object.keys(board).length + 1;
     box.innerHTML = `<div class="group"><div class="ginner">
-      <div class="jrow"><div class="t"><b>Hópur ${esc(groupCode())}</b><span>${n} í hópnum · þú ert ${esc(dispName(String(LS.get("me", ""))))}<br>${S.shareloc === true ? "📍 Deilir staðsetningu í ferðum" : "Deilir ekki staðsetningu"}</span></div></div>
+      <div class="jrow"><div class="t"><b>Hópur ${esc(groupCode())}</b><span>${n} í hópnum · þú ert ${esc(dispName(String(LS.get("me", ""))))}<br>${S.shareloc === true ? "📍 Deilir staðsetningu í ferðum" : "Deilir ekki staðsetningu"}${shareWho()}</span></div></div>
       <div class="row"><button class="btn" type="button" data-j="invite">Bjóða félögum</button><button class="btn sec" type="button" data-j="open">Breyta</button></div></div></div>`;
   }
   box.querySelectorAll("[data-j]").forEach(b => b.onclick = () => b.dataset.j === "open" ? openJoin() : openInvite());
+}
+function shareWho(){
+  const rs = Object.values(board), yes = rs.filter(r => r.sl === 1).map(r => esc(dispName(r.name))), no = rs.filter(r => r.sl === 0).map(r => esc(dispName(r.name)));
+  return (yes.length ? `<br>👀 Sjást á kortinu í ferðum: ${yes.join(", ")}` : "") + (no.length ? `<br>Deila ekki staðsetningu: ${no.join(", ")}` : "");
 }
 let jMode = "join";
 function setJMode(mo){
@@ -5333,6 +5396,11 @@ renderLive();
 let lastPosSent = 0;
 window.__massonHunt = on => {
   lastPosSent = 0;
+  // Svo allir sjái hvern annan: spyrja einu sinni á dag í ferð ef ekki er deilt
+  if (on && groupReady() && S.shareloc !== true && LS.get("shareAskDay", "") !== today()){
+    LS.set("shareAskDay", today());
+    setTimeout(() => askShare(() => { setShare(true); lastPosSent = 0; groupSend("pos"); refreshAll(); }), 900);
+  }
   if (!on && track && track.end){
     const trips = LS.get("trips", []), t = trips.find(x => x.start === track.start);
     if (t){

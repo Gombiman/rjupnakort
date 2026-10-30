@@ -2,6 +2,14 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Allir sjá allt 👀
+- Allt sem þú merkir sést nú á korti félaganna, með upphafsstafnum þínum: felldar rjúpur, rjúpur séðar, bíllinn, skálar, hættur og annað (spor og bæli sáust áður)
+- Ýttu á merki félaga til að sjá hvað það er og hversu langt í burtu, og „Vísa leið“ beinir örinni þangað, t.d. á bílinn hans
+- Ef þú eyðir merki hverfur það líka hjá hinum
+- Tilkynning ef félagi fellir rjúpu eða merkir hættu innan 5 km frá þér
+- Þegar ferð hefst spyr appið (einu sinni á dag) hvort þú viljir að hinir sjái þig á kortinu
+- Í Hópnum sést hverjir sjást á kortinu í ferðum og hverjir deila ekki
+
 ## Hreinsa tölfræði 🧹
 - Nú er hægt að hreinsa prófanirnar út: Dagbók → „📊 Tölfræðin mín“ → „Hreinsa tölfræðina…“, eða Stillingar → Afrit → Hreinsa tölfræði
 - Veldu dag og ýttu tvisvar. Þá eyðast rjúpur, skot, ferðir, kúkar, spor og bæli til og með þeim degi
