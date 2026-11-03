@@ -2,6 +2,12 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Nýr sími? Keppnin bjargast 📲
+- Ef síminn týnist eða bilar: settu appið upp í nýja símanum og skráðu þig með sama nafni, símanúmeri og hópkóða
+- Símar félaganna skila þá keppninni, rjúpunum þínum og skráningum dómarans til baka
+- Keppnisstjórinn verður aftur dómari með nýjum lykli og leynileg atkvæði berast aftur þegar félagarnir opna appið
+- Úrslitin bíða í sólarhring eftir atkvæðunum, eða þar til dómarinn ýtir á „Ljúka keppni og opinbera“
+
 ## Allir sjá allt 👀
 - Allt sem þú merkir sést nú á korti félaganna, með upphafsstafnum þínum: felldar rjúpur, rjúpur séðar, bíllinn, skálar, hættur og annað (spor og bæli sáust áður)
 - Ýttu á merki félaga til að sjá hvað það er og hversu langt í burtu, og „Vísa leið“ beinir örinni þangað, t.d. á bílinn hans

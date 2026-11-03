@@ -3664,6 +3664,8 @@ function myDays(from){
     o.ms = o.ms.slice(0, 30);
     delete o.ks; delete o.ev; delete o.grp; delete o.live;
   }
+  // Dagar sem félagarnir geymdu og skiluðu eftir að síminn týndist (bara dagar sem þessi sími á ekkert um)
+  for (const a of LS.get("restDays", []) || []) if (Array.isArray(a) && a.length >= 12 && dayStart(a[0]) >= ss && !out[a[0]]) out[a[0]] = decArr(a);
   return out;
 }
 const encDays = days => Object.keys(days).sort().map(d => { const o = days[d];
@@ -4347,7 +4349,13 @@ document.getElementById("rLeave").onclick = e => {
 function takeComp(msg){
   const c = msg.comp;
   if (!c || !c.id || c.owner !== msg.id || !c.from || !c.to) return;
-  if (comp && comp.id === c.id){ if ((c.rev || 0) > (comp.rev || 0) || ((c.rev || 0) === (comp.rev || 0) && (c.ts || 0) > (comp.ts || 0))){ comp = c; saveComp(); } return; }
+  if (comp && comp.id === c.id){
+    if ((c.rev || 0) > (comp.rev || 0) || ((c.rev || 0) === (comp.rev || 0) && (c.ts || 0) > (comp.ts || 0))){
+      const oldKey = comp.pub && comp.pub.x; comp = c; saveComp();
+      if (c.pub && oldKey && c.pub.x !== oldKey && !isOwner()) resealVotes();
+    }
+    return;
+  }
   const replace = !comp || compEnded() || ((c.created || 0) < (comp.created || 0) && today() <= c.to);
   if (!replace) return;
   comp = c; saveComp(); revealCache = null;
@@ -4403,6 +4411,62 @@ async function collectBallots(msg){
     try{ const v = await openBallot(msg.vb[d]); judge.ballots[d] = judge.ballots[d] || {}; judge.ballots[d][msg.id] = v; ch = true; }catch(e){}
   }
   if (ch){ saveJudge(); renderBoard(); }
+}
+
+/* Nýr sími: félagarnir skila keppninni, dögunum og skráningum dómarans */
+const relayedAt = {};
+function relayBack(msg, prev){
+  // Félagi sem var í keppninni birtist án hennar (nýr eða endurstilltur sími)
+  if (!comp || !prev || prev.cid !== comp.id || !prev.joined || msg.cid != null || msg.t === "leave") return;
+  if (Date.now() - (relayedAt[msg.id] || 0) < 10 * 60000) return;
+  relayedAt[msg.id] = Date.now();
+  const lite = () => { const o = mySnapshot("relay"); ["h", "mk", "ob", "pp", "wit", "cd", "vb", "fd", "du", "px", "comp"].forEach(k => delete o[k]); return o; };
+  const rh = Object.values(prev.hm || {}), rpx = msg.id === comp.owner ? (prev.pxAll || []) : [];
+  setTimeout(() => {
+    if (!window.__groupSend) return;
+    window.__groupSend(Object.assign({t:"relay"}, lite(), {to:msg.id, rc:comp}));
+    setTimeout(() => window.__groupSend(Object.assign({t:"relay"}, lite(), {to:msg.id, rh, rpx})), 900);
+  }, 400 + Math.random() * 2500);
+}
+async function takeRelay(msg){
+  if (msg.to !== myId()) return;
+  if (msg.rc && msg.rc.id){
+    const c = msg.rc;
+    if (comp && comp.id !== c.id) return;          // þessi sími er þegar með aðra keppni
+    if (comp && (c.rev || 0) <= (comp.rev || 0)) return;
+    comp = c; saveComp(); LS.set("compJoin", c.id); revealCache = null;
+    if (c.owner === myId()){
+      // Dómaralykillinn týndist með gamla símanum: nýr lykill, kjósendur dulkóða atkvæðin aftur
+      let pub = null; try{ pub = await judgeKey(); }catch(e){}
+      if (pub && (!comp.pub || comp.pub.x !== pub.x)){ comp.pub = pub; LS.set("holdReveal:" + comp.id, Date.now()); }
+      bumpComp();
+      toast(`🏆 ${comp.name} er komin aftur og þú ert dómarinn. Atkvæðin berast þegar félagarnir opna appið.`, 9000);
+    } else { groupSend("join"); toast(`🏆 ${comp.name} er komin aftur í símann.`, 7000); }
+    renderBoard();
+  }
+  if (Array.isArray(msg.rh) && msg.rh.length){
+    const have = LS.get("restDays", []) || [], m = {};
+    for (const a of [...have, ...msg.rh]) if (Array.isArray(a) && a[0] && (!m[a[0]] || (a[1] || 0) >= (m[a[0]][1] || 0))) m[a[0]] = a;
+    LS.set("restDays", Object.values(m));
+    if (Array.isArray(msg.rpx) && msg.rpx.length && isOwner()){
+      for (const x of msg.rpx) if (!judge.px.some(y => y.ts === x.ts && y.id === x.id)) judge.px.push(x);
+      saveJudge();
+    }
+    groupSend("score"); refreshAll();
+  }
+}
+async function resealVotes(){
+  if (!comp || !comp.bal) return;
+  const days = Object.keys(votes).filter(d => comp.bal[d] && votes[d] && Object.keys(votes[d]).length);
+  const out = {};
+  for (const d of days){ try{ out[d] = vbEnc[d] = await sealBallot(votes[d]); }catch(e){} }
+  if (!Object.keys(out).length) return;
+  LS.set("vbEnc", vbEnc);
+  const ks = Object.keys(out);
+  for (let i = 0; i < ks.length; i += 2){
+    const vb = {}; ks.slice(i, i + 2).forEach(d => vb[d] = out[d]);
+    setTimeout(() => groupSend("vote", {vb}), (i / 2) * 900);
+  }
 }
 
 /* Kvöldkosningin (leynileg) */
@@ -4531,6 +4595,7 @@ document.getElementById("jEnd").onclick = () => {
 // Opinberun: leyndu gögnin send til allra í bútum (ntfy tekur ~4 KB)
 function publishReveal(force){
   if (!isOwner() || !compEnded()) return;
+  if (!force && LS.get("holdReveal:" + comp.id, 0) > Date.now() - 24 * 3600e3) return;   // nýr sími: atkvæðin eru að berast aftur
   let r = getReveal();
   if (!r){ r = {cid:comp.id, votes:tallyVotes(judge.ballots, competitors()), adj:judge.adj, quotes:judge.quotes, ts:Date.now()};
     LS.set("reveal:" + comp.id, r); revealCache = r; }
@@ -5078,6 +5143,8 @@ function onGroupMsg(msg, live){
   if (!msg || !msg.id || msg.id === myId()) return;
   checkGroup();
   if (msg.phone && window.__addGroupFriend) window.__addGroupFriend(msg.name, msg.phone);
+  if (msg.t === "relay"){ takeRelay(msg); return; }
+  relayBack(msg, board[msg.id]);
   liveUpdate(msg);
   if (msg.comp) takeComp(msg);
   const prev = board[msg.id];
