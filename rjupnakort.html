@@ -1072,9 +1072,10 @@ details.tl li.obs i{background:#3d6b8c}
   <h3>🎲 Áskorun dagsins</h3>
   <select id="jChal"></select>
   <h3>📝 Skrá fyrir keppanda (sést strax)</h3>
+  <p class="note" style="margin:0 0 6px">Til að færa rjúpur á milli: t.d. −3 hjá Hans og +3 hjá þér sama dag. Virkar líka eftir að keppni lýkur.</p>
   <div class="jbox">
     <div class="row"><select id="jPxWho"></select><input type="date" id="jPxDay"></div>
-    <div class="row"><input type="number" id="jPxK" min="0" max="50" inputmode="numeric" placeholder="Rjúpur"><input type="number" id="jPxS" min="0" max="200" inputmode="numeric" placeholder="Skot framhjá"></div>
+    <div class="row"><input type="number" id="jPxK" min="-50" max="50" inputmode="numeric" placeholder="Rjúpur (+ eða −)"><input type="number" id="jPxS" min="0" max="200" inputmode="numeric" placeholder="Skot framhjá"></div>
     <button class="btn sec" type="button" id="jPxAdd">Skrá</button>
   </div>
   <h3>⚖️ Stigabreyting (falin)</h3>
@@ -3816,8 +3817,9 @@ function dealt(id, w){
 /* Keppendur: ég, aðrir í keppninni og gestir; skráningar keppnisstjórans bætast við */
 function ownerPx(){
   if (!comp) return [];
-  if (isOwner()) return judge.px;
-  const o = board[comp.owner]; return (o && o.pxAll) || [];
+  const fix = Array.isArray(comp.fix) ? comp.fix : [];
+  if (isOwner()) return [...judge.px, ...fix];
+  const o = board[comp.owner]; return [...((o && o.pxAll) || []), ...fix];
 }
 function competitors(){
   if (!comp) return [];
@@ -3830,7 +3832,7 @@ function competitors(){
     const x = people.find(q => q.id === p.id); if (!x || !p.day) continue;
     const o = x.days[p.day] || (x.days[p.day] = Object.assign({}, EMPTY, {ms:[], shots:0}));
     if (o.shots < 0) o.shots = o.k;
-    o.k += p.k || 0; o.kt += p.k || 0; o.shots += (p.k || 0) + (p.s || 0);
+    o.k = Math.max(0, o.k + (p.k || 0)); o.kt = Math.max(0, o.kt + (p.k || 0)); o.shots = Math.max(o.k, o.shots + (p.k || 0) + (p.s || 0));
     if ((p.k || 0) > 0 && o.start < 0) o.start = 0;
   }
   return people;
@@ -4124,6 +4126,12 @@ function compRulesHtml(c){
 }
 const ballotOpen = () => { const t = today(); if (!comp || !comp.bal) return null;
   for (const d of [t, addDays(t, -1)]){ const b = comp.bal[d]; if (b && b.open && !b.closed) return d; } return null; };
+function judgeEndBox(){
+  const sent = !!LS.get("revealSent:" + comp.id, ""), dirty = !!LS.get("revealDirty:" + comp.id, 0);
+  const txt = !sent ? "Úrslitin sjást bara hjá þér. Hinir sjá þau þegar þú sendir þau út." : dirty ? "Þú hefur breytt einhverju síðan úrslitin voru send." : "Úrslitin hafa verið send til hópsins.";
+  return `<p class="note" style="margin-top:10px">⚖️ ${txt}</p>
+    <div class="row"><button class="btn sec" type="button" data-c="judge">⚖️ Dómarinn</button><button class="btn${!sent || dirty ? "" : " sec"}" type="button" data-c="reveal">${!sent ? "📣 Senda úrslitin" : "📣 Senda aftur"}</button></div>`;
+}
 function myDuelToday(){ return Object.values(duels).find(d => d.day === today() && (d.a === myId() || d.b === myId()) && d.st !== "no"); }
 function cursesNow(){
   const out = [], t = Date.now();
@@ -4165,6 +4173,7 @@ function renderComp(){
         <div class="sect" style="margin:6px 0 0">🎖️ Legendary Awards</div>
         <ul class="blist">${LEGENDS.filter(l => leg[l.k]).map(l => `<li><span class="be">${l.e}</span><b>${esc(l.n)}</b> ${esc(leg[l.k].map(nm).join(" og "))}</li>`).join("") || "<li>Engin gögn</li>"}</ul>
         ${quotes.length ? `<div class="sect" style="margin:6px 0 0">🙈 Hall of Shame</div><ul class="blist">${quotes.slice(0, 15).map(q => `<li><span class="be">🗨️</span><span><b>${esc(nm(q.id))}</b> ${fmtD(q.day)}: „${esc(q.txt)}“ <i>${esc(q.kind || "")}</i></span></li>`).join("")}</ul>` : ""}
+        ${isOwner() ? judgeEndBox() : ""}
         <button class="btn wide" type="button" data-c="new">Stofna nýja keppni</button></div></div>`;
     }
   } else if (!joined()){
@@ -4214,6 +4223,7 @@ function renderComp(){
     else if (a === "brag") openBrag();
     else if (a === "cards") openCards();
     else if (a === "judge") openJudge();
+    else if (a === "reveal") confirmReveal();
     else openInvite();
   });
 }
@@ -4517,13 +4527,15 @@ function openJudge(){
   const t = today(), b = comp.bal && comp.bal[t];
   const people = competitors(), voters = people.filter(p => !p.guest);
   const got = judge.ballots[t] || {}, nv = Object.keys(got).length;
-  document.getElementById("jBallot").innerHTML = !b || !b.open
+  document.getElementById("jEnd").textContent = compEnded() ? "📣 Senda úrslitin til hópsins" : "Ljúka keppni og opinbera";
+  document.getElementById("jBallot").innerHTML = compEnded() ? `<p class="note">Keppninni er lokið. ${Object.keys(judge.ballots).length ? `Atkvæði frá ${Object.keys(judge.ballots).length} kvöldum eru komin.` : "Engin atkvæði komin enn."}</p>`
+    : !b || !b.open
     ? `<p class="note">${Date.now() >= beerTime(t) ? "🍺 Bjórtími! " : ""}Veldu flokkana í kvöld og sendu kosninguna út. Allir fá tilkynningu.</p>
        <div id="jCats"></div><button class="btn wide" type="button" id="jSendBallot">🗳️ Senda út kvöldkosninguna</button>`
     : b.closed ? `<p class="note">Kosningu kvöldsins er lokað. ${nv} af ${voters.length} kusu.</p>`
     : `<p class="note"><b>Kosning í gangi:</b> ${nv} af ${voters.length} hafa kosið (${voters.filter(p => got[p.id]).map(p => esc(dispName(p.name))).join(", ") || "enginn enn"}).</p>
        <button class="btn sec wide" type="button" id="jCloseBallot">Loka kosningunni</button>`;
-  if (!b || !b.open) togList("jCats", VOTES.filter(v => compVoteKeys().includes(v.k)), compVoteKeys(), false);
+  if (!compEnded() && (!b || !b.open)) togList("jCats", VOTES.filter(v => compVoteKeys().includes(v.k)), compVoteKeys(), false);
   ["jPxWho", "jAdjWho", "jQWho"].forEach(id => document.getElementById(id).innerHTML = personOptions());
   ["jPxDay", "jAdjDay", "jQDay"].forEach(id => document.getElementById(id).value = t);
   document.getElementById("jChal").innerHTML = `<option value="">Appið dregur</option>` + CHALLENGES.map((c, i) => `<option value="${i}"${comp.chal && comp.chal[t] === i ? " selected" : ""}>${esc(c.t)}</option>`).join("");
@@ -4544,7 +4556,8 @@ function openJudge(){
 function renderJudgeLog(){
   const nm = id => { const p = competitors().find(x => x.id === id); return p ? dispName(p.name) : id; };
   const rows = [
-    ...judge.px.map(p => ({t:p.ts, h:`📝 <b>${esc(nm(p.id))}</b> ${fmtD(p.day)}: ${p.k ? `${p.k} 🦃` : ""}${p.s ? ` ${p.s} 💥` : ""} <small>(sést strax)</small>`, del:() => { judge.px = judge.px.filter(x => x !== p); }})),
+    ...judge.px.map(p => ({t:p.ts, h:`📝 <b>${esc(nm(p.id))}</b> ${fmtD(p.day)}: ${p.k ? `${p.k > 0 ? "+" : ""}${p.k} 🦃` : ""}${p.s ? ` ${p.s} 💥` : ""} <small>(sést strax)</small>`, del:() => { judge.px = judge.px.filter(x => x !== p); }})),
+    ...(comp && comp.fix || []).map(p => ({t:p.ts, h:`📝 <b>${esc(nm(p.id))}</b> ${fmtD(p.day)}: ${p.k ? `${p.k > 0 ? "+" : ""}${p.k} 🦃` : ""}${p.s ? ` ${p.s} 💥` : ""} <small>(leiðrétting)</small>`, del:() => { comp.fix = comp.fix.filter(x => x !== p); bumpComp(); revealDirty(); }})),
     ...judge.adj.map(a => ({t:a.ts, h:`⚖️ <b>${esc(nm(a.id))}</b> ${fmtD(a.day)}: ${a.pts > 0 ? "+" : ""}${a.pts} · ${esc(a.why || "")} <small>(falið)</small>`, del:() => { judge.adj = judge.adj.filter(x => x !== a); }})),
     ...judge.quotes.map(q => ({t:q.ts, h:`🗨️ <b>${esc(nm(q.id))}</b> ${fmtD(q.day)}: „${esc(q.txt)}“ <i>${esc(q.kind)}</i> <small>(falið)</small>`, del:() => { judge.quotes = judge.quotes.filter(x => x !== q); }}))
   ].sort((a, b) => b.t - a.t);
@@ -4560,21 +4573,23 @@ function renderJudgeLog(){
 document.getElementById("jPxAdd").onclick = () => {
   const k = parseInt(document.getElementById("jPxK").value, 10) || 0, s = parseInt(document.getElementById("jPxS").value, 10) || 0;
   if (!k && !s){ toast("Skráðu rjúpur eða skot."); return; }
-  judge.px.push({pid:"x" + Date.now().toString(36), id:document.getElementById("jPxWho").value, day:document.getElementById("jPxDay").value || today(), k, s, ts:Date.now()});
-  saveJudge(); groupSend("score"); renderJudgeLog(); renderBoard(); toast("Skráð 📝");
+  const e = {pid:"x" + Date.now().toString(36), id:document.getElementById("jPxWho").value, day:document.getElementById("jPxDay").value || today(), k, s, ts:Date.now()};
+  if (compEnded() || e.day < addDays(today(), -2)){ comp.fix = [...(comp.fix || []), e]; bumpComp(); revealDirty(); }
+  else { judge.px.push(e); saveJudge(); groupSend("score"); }
+  renderJudgeLog(); renderBoard(); toast(compEnded() ? "Skráð 📝 Allir sjá breytinguna þegar þeir opna appið." : "Skráð 📝");
   document.getElementById("jPxK").value = ""; document.getElementById("jPxS").value = "";
 };
 document.getElementById("jAdjAdd").onclick = () => {
   const p = parseInt(document.getElementById("jAdjPts").value, 10);
   if (!p){ toast("Settu inn stig, t.d. -1 eða 2."); return; }
   judge.adj.push({id:document.getElementById("jAdjWho").value, day:document.getElementById("jAdjDay").value || today(), pts:p, why:document.getElementById("jAdjWhy").value.trim().slice(0, 80), ts:Date.now()});
-  saveJudge(); renderJudgeLog(); renderBoard(); toast("Stigabreyting skráð í leyni ⚖️");
+  saveJudge(); revealDirty(); renderJudgeLog(); renderBoard(); toast("Stigabreyting skráð í leyni ⚖️");
   document.getElementById("jAdjPts").value = ""; document.getElementById("jAdjWhy").value = "";
 };
 document.getElementById("jQAdd").onclick = () => {
   const txt = document.getElementById("jQTxt").value.trim(); if (!txt){ toast("Skrifaðu hvað var sagt."); return; }
   judge.quotes.push({id:document.getElementById("jQWho").value, day:document.getElementById("jQDay").value || today(), txt:txt.slice(0, 160), kind:document.getElementById("jQKind").value, ts:Date.now()});
-  saveJudge(); renderJudgeLog(); toast("Tilvitnun skráð í leyni 🗨️");
+  saveJudge(); revealDirty(); renderJudgeLog(); toast("Tilvitnun skráð í leyni 🗨️");
   document.getElementById("jQTxt").value = "";
 };
 document.getElementById("jGuestAdd").onclick = () => {
@@ -4587,18 +4602,29 @@ document.getElementById("jChal").onchange = e => {
   bumpComp(); renderBoard(); toast("Áskorun dagsins uppfærð");
 };
 document.getElementById("jEnd").onclick = () => {
+  if (compEnded()){ confirmReveal(); return; }
   askDialog("Ljúka keppni?", `<li>Úrslitin, kosningin, faldar stigabreytingar og tilvitnanir verða opinber hjá öllum.</li><li>Verðlaunaafhendingin birtist og keppnin fer í heiðurshöllina.</li><li>Ekki hægt að afturkalla.</li>`,
     isMasson() ? "Skál 🍺 Ljúka" : "Ljúka keppni", "Hætta við", () => {
       comp.ended = true; if (comp.to > today()) comp.to = today(); bumpComp(); closeSheet();
       publishReveal(true); renderBoard();
     });
 };
+function confirmReveal(){
+  const again = !!getReveal();
+  askDialog(again ? "Senda úrslitin aftur?" : "Opinbera úrslitin?", `<li>Úrslitin, kosningin, faldar stigabreytingar og tilvitnanir ${again ? "uppfærast" : "birtast"} hjá öllum.</li><li>Leiðréttingar á rjúpum sjást hjá öllum um leið og þeir opna appið.</li>`,
+    isMasson() ? "Skál 🍺 Senda" : "Senda", "Hætta við", () => {
+      LS.set("holdReveal:" + comp.id, 0); LS.set("revealDirty:" + comp.id, 0);
+      if (!comp.ended){ comp.ended = true; bumpComp(); }
+      closeSheet(); publishReveal(true); renderBoard(); toast("🏆 Úrslitin send til hópsins");
+    });
+}
+function revealDirty(){ if (comp && getReveal()) LS.set("revealDirty:" + comp.id, 1); }
 // Opinberun: leyndu gögnin send til allra í bútum (ntfy tekur ~4 KB)
 function publishReveal(force){
   if (!isOwner() || !compEnded()) return;
   if (!force && LS.get("holdReveal:" + comp.id, 0) > Date.now() - 24 * 3600e3) return;   // nýr sími: atkvæðin eru að berast aftur
   let r = getReveal();
-  if (!r){ r = {cid:comp.id, votes:tallyVotes(judge.ballots, competitors()), adj:judge.adj, quotes:judge.quotes, ts:Date.now()};
+  if (!r || force){ r = {cid:comp.id, votes:tallyVotes(judge.ballots, competitors()), adj:judge.adj, quotes:judge.quotes, ts:Date.now()};
     LS.set("reveal:" + comp.id, r); revealCache = r; }
   if (!force && LS.get("revealSent:" + comp.id, "") === today()) return;
   LS.set("revealSent:" + comp.id, today());
@@ -4609,7 +4635,8 @@ function publishReveal(force){
 }
 const revealParts = {};
 function takeReveal(msg){
-  const rv = msg.rv; if (!rv || !comp || rv.cid !== comp.id || msg.id !== comp.owner || getReveal()) return;
+  const rv = msg.rv; if (!rv || !comp || rv.cid !== comp.id || msg.id !== comp.owner) return;
+  const cur = getReveal(); if (cur && (cur.ts || 0) >= (rv.ts || 0)) return;   // uppfærð úrslit koma í stað þeirra eldri
   const k = rv.cid + "|" + rv.ts; revealParts[k] = revealParts[k] || [];
   revealParts[k][rv.i] = rv.part;
   if (revealParts[k].filter(x => x != null).length === rv.n){

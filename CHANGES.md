@@ -2,6 +2,12 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## Dómarinn eftir lok keppni ⚖️
+- Eftir að keppni lýkur sér keppnisstjórinn ⚖️ Dómarinn og 📣 Senda úrslitin beint undir úrslitunum
+- Hægt að leiðrétta rjúpur eftir á, líka með mínus: t.d. −3 hjá Hans og +3 hjá þér sama dag ef einhver taldi rjúpur fyrir annan
+- Leiðréttingar á eldri dögum berast nú til allra og stigin uppfærast hjá öllum
+- Hægt að senda úrslitin aftur eftir breytingar og hinir fá uppfærðu útgáfuna
+
 ## Nýr sími? Keppnin bjargast 📲
 - Ef síminn týnist eða bilar: settu appið upp í nýja símanum og skráðu þig með sama nafni, símanúmeri og hópkóða
 - Símar félaganna skila þá keppninni, rjúpunum þínum og skráningum dómarans til baka
