@@ -179,6 +179,18 @@ body.capture #huntCard,body.capture #mapfabs,body.capture #carChip,body.capture 
 
 /* Listar (skotmörk, félagar) */
 .ptrow{display:flex;align-items:center;gap:12px;padding:11px 14px;border-top:1px solid var(--soft);cursor:pointer}
+.numhead,.numrow{display:grid;grid-template-columns:1fr 110px 110px;align-items:center;column-gap:14px}
+#numSave:disabled,#numReset:disabled{opacity:.45}
+.numhead{margin:12px 14px 6px;font-size:12px;font-weight:700;color:var(--muted);text-align:center}
+.numrow{padding:10px 10px 10px 14px;border-top:1px solid var(--soft)}
+.numrow:first-child{border-top:none}
+.numrow b{font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.numrow small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.stp{display:flex;align-items:center;justify-content:space-between;gap:2px}
+.stp button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font:700 18px/1 var(--f-body);color:var(--fg);padding:0}
+.stp button:active{background:var(--soft)}
+.stp output{min-width:30px;text-align:center;font:700 18px/1 var(--f-body)}
+.stp output.ch{color:var(--accent)}
 .ptrow:first-child{border-top:none}
 .ptrow .dotp{width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center}
 .ptrow .dotp svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
@@ -1071,6 +1083,7 @@ details.tl li.obs i{background:#3d6b8c}
   <div id="jBallot"></div>
   <h3>🎲 Áskorun dagsins</h3>
   <select id="jChal"></select>
+  <button class="btn wide" type="button" id="jNums" style="margin:10px 0 4px">✏️ Breyta tölum: rjúpur og skot</button>
   <h3>📝 Skrá fyrir keppanda (sést strax)</h3>
   <p class="note" style="margin:0 0 6px">Til að færa rjúpur á milli: t.d. −3 hjá Hans og +3 hjá þér sama dag. Virkar líka eftir að keppni lýkur.</p>
   <div class="jbox">
@@ -1117,6 +1130,17 @@ details.tl li.obs i{background:#3d6b8c}
   <p class="note" style="margin-top:6px">Leynileg: bara keppnisstjórinn sér atkvæðin og úrslitin birtast þegar keppni lýkur. Veldu einn í hverjum flokki, ekki sjálfan þig.</p>
   <div id="voteList"></div>
   <button class="btn wide" id="voteSave" type="button" style="margin-top:16px">Kjósa</button>
+</section>
+
+<section id="numSheet" class="sheet" hidden aria-label="Breyta tölum">
+  <div class="grab"></div>
+  <div class="sh-head"><h2>✏️ Breyta tölum</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
+  <p class="note" style="margin-top:6px">Ýttu á − og + og svo Vista. Breytingarnar haldast og þú getur breytt aftur þar til þú sendir úrslitin.</p>
+  <div class="seg" id="numDays" style="margin-top:10px"></div>
+  <div class="numhead"><span></span><span>🦃 Rjúpur</span><span>💥 Skot</span></div>
+  <div class="group" id="numList"></div>
+  <p class="note" id="numNote" style="margin-top:8px"></p>
+  <div class="row" style="margin-top:10px"><button class="btn sec" type="button" id="numReset">Hætta við breytingar</button><button class="btn" type="button" id="numSave">Vista</button></div>
 </section>
 
 <section id="duelSheet" class="sheet" hidden aria-label="Einvígi">
@@ -4126,11 +4150,83 @@ function compRulesHtml(c){
 }
 const ballotOpen = () => { const t = today(); if (!comp || !comp.bal) return null;
   for (const d of [t, addDays(t, -1)]){ const b = comp.bal[d]; if (b && b.open && !b.closed) return d; } return null; };
+/* ✏️ Breyta tölum: nöfn, rjúpur og skot með − og + (dómarinn) */
+let numDay = "all";
+const numKey = () => "numDraft:" + (comp ? comp.id : "");
+const numDraft = () => LS.get(numKey(), {}) || {};
+function compDays(){ const out = []; if (!comp) return out; for (let d = comp.from; d <= comp.to && out.length < 120; d = addDays(d, 1)) out.push(d); return out; }
+function numBase(p, d){
+  const o = p.days[d]; if (!o) return {k:0, s:0, act:false};
+  return {k:o.k || 0, s:Math.max(o.shots >= 0 ? o.shots : 0, o.k || 0), act:(o.k || 0) > 0 || (o.km || 0) > 0 || (o.shots || 0) > 0};
+}
+function numVal(p, d){
+  const b = numBase(p, d), x = (numDraft()[p.id] || {})[d] || {k:0, s:0};
+  const k = Math.max(0, b.k + x.k); return {k, s:Math.max(k, b.s + x.k + x.s), act:b.act};
+}
+function numTotal(p){
+  if (numDay !== "all") return numVal(p, numDay);
+  let k = 0, s = 0; for (const d of compDays()){ const v = numVal(p, d); k += v.k; s += v.s; } return {k, s};
+}
+// Á hvaða dag fer breytingin þegar „Allt tímabilið“ er valið
+function numPickDay(p, what, sign){
+  if (numDay !== "all") return numDay;
+  const ds = compDays().slice().reverse();
+  if (sign < 0) return ds.find(d => { const v = numVal(p, d); return what === "k" ? v.k > 0 : v.s > v.k; }) || null;
+  return ds.find(d => numVal(p, d).act || numVal(p, d).k > 0) || comp.to;
+}
+function numStep(id, what, sign){
+  const p = competitors().find(x => x.id === id); if (!p) return;
+  const d = numPickDay(p, what, sign); if (!d) return;
+  const dr = numDraft(); dr[id] = dr[id] || {}; const x = dr[id][d] = dr[id][d] || {k:0, s:0};
+  x[what] += sign;
+  const v = numBase(p, d);
+  if (v.k + x.k < 0) x.k = -v.k;
+  if (v.s + x.k + x.s < Math.max(0, v.k + x.k)) x.s = Math.max(0, v.k + x.k) - v.s - x.k;
+  if (!x.k && !x.s) delete dr[id][d];
+  if (!Object.keys(dr[id]).length) delete dr[id];
+  LS.set(numKey(), dr); renderNums();
+}
+function numChanged(){ const dr = numDraft(); return Object.values(dr).some(o => Object.values(o).some(x => x.k || x.s)); }
+function renderNums(){
+  const days = compDays(), box = document.getElementById("numDays");
+  box.innerHTML = [["all", "Allt tímabilið"], ...days.map(d => [d, fmtD(d)])].map(([k, t]) => `<button type="button" data-nd="${k}" aria-pressed="${numDay === k}">${t}</button>`).join("");
+  box.querySelectorAll("[data-nd]").forEach(b => b.onclick = () => { numDay = b.dataset.nd; renderNums(); });
+  const dr = numDraft(), list = document.getElementById("numList"); list.innerHTML = "";
+  for (const p of competitors()){
+    const v = numTotal(p), ch = !!dr[p.id] && (numDay === "all" || !!dr[p.id][numDay]);
+    let base = {k:0, s:0}; const bd = numDay === "all" ? days : [numDay];
+    for (const d of bd){ const b = numBase(p, d); base.k += b.k; base.s += b.s; }
+    const row = document.createElement("div"); row.className = "numrow";
+    row.innerHTML = `<div><b>${esc(dispName(p.name))}</b><small>${ch ? `var ${base.k} 🦃 · ${base.s} 💥` : p.guest ? "gestur" : ""}</small></div>
+      <div class="stp"><button type="button" data-st="k-" aria-label="Fækka rjúpum hjá ${esc(dispName(p.name))}">−</button><output class="${v.k !== base.k ? "ch" : ""}">${v.k}</output><button type="button" data-st="k+" aria-label="Fjölga rjúpum hjá ${esc(dispName(p.name))}">+</button></div>
+      <div class="stp"><button type="button" data-st="s-" aria-label="Fækka skotum hjá ${esc(dispName(p.name))}">−</button><output class="${v.s !== base.s ? "ch" : ""}">${v.s}</output><button type="button" data-st="s+" aria-label="Fjölga skotum hjá ${esc(dispName(p.name))}">+</button></div>`;
+    row.querySelectorAll("[data-st]").forEach(b => b.onclick = () => numStep(p.id, b.dataset.st[0], b.dataset.st[1] === "+" ? 1 : -1));
+    list.appendChild(row);
+  }
+  const n = numChanged();
+  document.getElementById("numNote").textContent = numDay === "all"
+    ? "Á „Allt tímabilið“ fer breytingin á síðasta veiðidag viðkomandi. Veldu dag ef þú vilt hafa hana á ákveðnum degi."
+    : `Breytingar fara á ${fmtD(numDay)}.`;
+  document.getElementById("numSave").disabled = !n; document.getElementById("numReset").disabled = !n;
+  document.getElementById("numSave").textContent = n ? "Vista" : "Engar breytingar";
+}
+function openNums(){ if (!isOwner()) return; numDay = "all"; renderNums(); openPanel(document.getElementById("numSheet")); }
+document.getElementById("jNums").onclick = openNums;
+document.getElementById("numReset").onclick = () => { LS.set(numKey(), {}); renderNums(); };
+document.getElementById("numSave").onclick = () => {
+  const dr = numDraft(), add = [], now = Date.now();
+  for (const id in dr) for (const d in dr[id]){ const x = dr[id][d]; if (x.k || x.s) add.push({pid:"n" + now.toString(36) + add.length, id, day:d, k:x.k, s:x.s, ts:now}); }
+  if (!add.length) return;
+  comp.fix = [...(comp.fix || []), ...add]; bumpComp(); revealDirty();
+  LS.set(numKey(), {}); closeSheet(); renderBoard();
+  toast(compEnded() && !LS.get("revealSent:" + comp.id, "") ? "Vistað ✏️ Sendu úrslitin þegar þú ert sáttur." : "Vistað ✏️ Allir sjá nýju tölurnar.", 6000);
+};
 function judgeEndBox(){
   const sent = !!LS.get("revealSent:" + comp.id, ""), dirty = !!LS.get("revealDirty:" + comp.id, 0);
   const txt = !sent ? "Úrslitin sjást bara hjá þér. Hinir sjá þau þegar þú sendir þau út." : dirty ? "Þú hefur breytt einhverju síðan úrslitin voru send." : "Úrslitin hafa verið send til hópsins.";
   return `<p class="note" style="margin-top:10px">⚖️ ${txt}</p>
-    <div class="row"><button class="btn sec" type="button" data-c="judge">⚖️ Dómarinn</button><button class="btn${!sent || dirty ? "" : " sec"}" type="button" data-c="reveal">${!sent ? "📣 Senda úrslitin" : "📣 Senda aftur"}</button></div>`;
+    <div class="row"><button class="btn sec" type="button" data-c="nums">✏️ Breyta tölum</button><button class="btn${!sent || dirty ? "" : " sec"}" type="button" data-c="reveal">${!sent ? "📣 Senda úrslitin" : "📣 Senda aftur"}</button></div>
+    <button class="btn sec wide" type="button" data-c="judge" style="margin-top:8px">⚖️ Dómarinn: atkvæði, faldar stigabreytingar og orð dagsins</button>`;
 }
 function myDuelToday(){ return Object.values(duels).find(d => d.day === today() && (d.a === myId() || d.b === myId()) && d.st !== "no"); }
 function cursesNow(){
@@ -4224,6 +4320,7 @@ function renderComp(){
     else if (a === "cards") openCards();
     else if (a === "judge") openJudge();
     else if (a === "reveal") confirmReveal();
+    else if (a === "nums") openNums();
     else openInvite();
   });
 }

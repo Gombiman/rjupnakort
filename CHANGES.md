@@ -2,6 +2,12 @@
 
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
+## ✏️ Breyta tölum
+- Keppnisstjórinn sér öll nöfnin með rjúpum og skotum og breytir með − og +
+- Ýttu á Vista. Óvistaðar breytingar haldast þó þú lokir glugganum, og þú getur breytt aftur þar til þú sendir úrslitin
+- Veldu „Allt tímabilið“ eða ákveðinn dag
+- Finnst undir úrslitunum (✏️ Breyta tölum) og í Dómaranum á meðan keppni stendur
+
 ## Dómarinn eftir lok keppni ⚖️
 - Eftir að keppni lýkur sér keppnisstjórinn ⚖️ Dómarinn og 📣 Senda úrslitin beint undir úrslitunum
 - Hægt að leiðrétta rjúpur eftir á, líka með mínus: t.d. −3 hjá Hans og +3 hjá þér sama dag ef einhver taldi rjúpur fyrir annan
