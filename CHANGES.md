@@ -3,7 +3,8 @@
 Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 
 ## ✏️ Breyta tölum
-- Keppnisstjórinn sér öll nöfnin með rjúpum og skotum og breytir með − og +
+- Keppnisstjórinn sér öll nöfnin með rjúpum, skotum og stigum og breytir með − og +
+- Stigin reiknast strax upp á nýtt þegar rjúpum eða skotum er breytt
 - Ýttu á Vista. Óvistaðar breytingar haldast þó þú lokir glugganum, og þú getur breytt aftur þar til þú sendir úrslitin
 - Veldu „Allt tímabilið“ eða ákveðinn dag
 - Finnst undir úrslitunum (✏️ Breyta tölum) og í Dómaranum á meðan keppni stendur

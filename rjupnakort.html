@@ -179,17 +179,20 @@ body.capture #huntCard,body.capture #mapfabs,body.capture #carChip,body.capture 
 
 /* Listar (skotmörk, félagar) */
 .ptrow{display:flex;align-items:center;gap:12px;padding:11px 14px;border-top:1px solid var(--soft);cursor:pointer}
-.numhead,.numrow{display:grid;grid-template-columns:1fr 110px 110px;align-items:center;column-gap:14px}
+.numrow{display:block}
+.numrow .nt{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
+.stps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.stps>div{background:var(--bg);border-radius:14px;padding:6px 4px 8px;text-align:center;min-width:0}
+.stps>div>span{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px}
 #numSave:disabled,#numReset:disabled{opacity:.45}
-.numhead{margin:12px 14px 6px;font-size:12px;font-weight:700;color:var(--muted);text-align:center}
-.numrow{padding:10px 10px 10px 14px;border-top:1px solid var(--soft)}
+.numrow{padding:12px 10px 12px 12px;border-top:1px solid var(--soft)}
 .numrow:first-child{border-top:none}
 .numrow b{font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .numrow small{display:block;font-size:12px;color:var(--muted);font-weight:400}
 .stp{display:flex;align-items:center;justify-content:space-between;gap:2px}
-.stp button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font:700 18px/1 var(--f-body);color:var(--fg);padding:0}
+.stp button{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font:700 18px/1 var(--f-body);color:var(--fg);padding:0}
 .stp button:active{background:var(--soft)}
-.stp output{min-width:30px;text-align:center;font:700 18px/1 var(--f-body)}
+.stp output{min-width:22px;text-align:center;font:700 18px/1 var(--f-body)}
 .stp output.ch{color:var(--accent)}
 .ptrow:first-child{border-top:none}
 .ptrow .dotp{width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center}
@@ -1135,9 +1138,8 @@ details.tl li.obs i{background:#3d6b8c}
 <section id="numSheet" class="sheet" hidden aria-label="Breyta tölum">
   <div class="grab"></div>
   <div class="sh-head"><h2>✏️ Breyta tölum</h2><button class="x" data-close type="button" aria-label="Loka">×</button></div>
-  <p class="note" style="margin-top:6px">Ýttu á − og + og svo Vista. Breytingarnar haldast og þú getur breytt aftur þar til þú sendir úrslitin.</p>
+  <p class="note" style="margin-top:6px">Ýttu á − og + við rjúpur, skot eða stig og svo Vista. Breytingarnar haldast og þú getur breytt aftur þar til þú sendir úrslitin.</p>
   <div class="seg" id="numDays" style="margin-top:10px"></div>
-  <div class="numhead"><span></span><span>🦃 Rjúpur</span><span>💥 Skot</span></div>
   <div class="group" id="numList"></div>
   <p class="note" id="numNote" style="margin-top:8px"></p>
   <div class="row" style="margin-top:10px"><button class="btn sec" type="button" id="numReset">Hætta við breytingar</button><button class="btn" type="button" id="numSave">Vista</button></div>
@@ -4154,7 +4156,7 @@ const ballotOpen = () => { const t = today(); if (!comp || !comp.bal) return nul
 let numDay = "all";
 const numKey = () => "numDraft:" + (comp ? comp.id : "");
 const numDraft = () => LS.get(numKey(), {}) || {};
-function compDays(){ const out = []; if (!comp) return out; for (let d = comp.from; d <= comp.to && out.length < 120; d = addDays(d, 1)) out.push(d); return out; }
+function numCompDays(){ const out = []; if (!comp) return out; for (let d = comp.from; d <= comp.to && out.length < 120; d = addDays(d, 1)) out.push(d); return out; }
 function numBase(p, d){
   const o = p.days[d]; if (!o) return {k:0, s:0, act:false};
   return {k:o.k || 0, s:Math.max(o.shots >= 0 ? o.shots : 0, o.k || 0), act:(o.k || 0) > 0 || (o.km || 0) > 0 || (o.shots || 0) > 0};
@@ -4165,12 +4167,12 @@ function numVal(p, d){
 }
 function numTotal(p){
   if (numDay !== "all") return numVal(p, numDay);
-  let k = 0, s = 0; for (const d of compDays()){ const v = numVal(p, d); k += v.k; s += v.s; } return {k, s};
+  let k = 0, s = 0; for (const d of numCompDays()){ const v = numVal(p, d); k += v.k; s += v.s; } return {k, s};
 }
 // Á hvaða dag fer breytingin þegar „Allt tímabilið“ er valið
 function numPickDay(p, what, sign){
   if (numDay !== "all") return numDay;
-  const ds = compDays().slice().reverse();
+  const ds = numCompDays().slice().reverse();
   if (sign < 0) return ds.find(d => { const v = numVal(p, d); return what === "k" ? v.k > 0 : v.s > v.k; }) || null;
   return ds.find(d => numVal(p, d).act || numVal(p, d).k > 0) || comp.to;
 }
@@ -4186,39 +4188,80 @@ function numStep(id, what, sign){
   if (!Object.keys(dr[id]).length) delete dr[id];
   LS.set(numKey(), dr); renderNums();
 }
-function numChanged(){ const dr = numDraft(); return Object.values(dr).some(o => Object.values(o).some(x => x.k || x.s)); }
+const numPtsKey = () => "numPts:" + (comp ? comp.id : "");
+const numPts = () => LS.get(numPtsKey(), {}) || {};
+function numChanged(){ const dr = numDraft(); return Object.values(dr).some(o => Object.values(o).some(x => x.k || x.s)) || Object.values(numPts()).some(n => n); }
+// Keppendur með óvistuðu breytingunum, svo stigin reiknist strax
+function numPeople(){
+  const people = competitors(), dr = numDraft();
+  for (const p of people) for (const d in (dr[p.id] || {})){
+    const x = dr[p.id][d], o = p.days[d] || (p.days[d] = Object.assign({}, EMPTY, {ms:[], shots:0}));
+    if (o.shots < 0) o.shots = o.k;
+    o.k = Math.max(0, o.k + x.k); o.kt = Math.max(0, (o.kt || 0) + x.k); o.shots = Math.max(o.k, o.shots + x.k + x.s);
+    if (x.k > 0 && o.start < 0) o.start = 0;
+  }
+  return people;
+}
+// Óvistuð stig sem stigabreytingar dómara (sami dagur og þegar vistað er)
+function numAdjDraft(people){
+  const dp = numPts(), out = [];
+  for (const id in dp) if (dp[id]){
+    const p = people.find(x => x.id === id); if (!p) continue;
+    const d = numDay !== "all" ? numDay : (numCompDays().slice().reverse().find(x => p.days[x]) || comp.to);
+    out.push({id, day:d, pts:dp[id], why:"Leiðrétting dómara", ts:Date.now()});
+  }
+  return out;
+}
+function numScore(){
+  const people = numPeople(), keep = judge.adj;
+  judge.adj = [...keep, ...numAdjDraft(people)];
+  try{ return scoreAll(people, true).tot; } finally { judge.adj = keep; }
+}
+function numPtsStep(id, sign){ const d = numPts(); d[id] = (d[id] || 0) + sign; if (!d[id]) delete d[id]; LS.set(numPtsKey(), d); renderNums(); }
 function renderNums(){
-  const days = compDays(), box = document.getElementById("numDays");
+  const days = numCompDays(), box = document.getElementById("numDays");
   box.innerHTML = [["all", "Allt tímabilið"], ...days.map(d => [d, fmtD(d)])].map(([k, t]) => `<button type="button" data-nd="${k}" aria-pressed="${numDay === k}">${t}</button>`).join("");
   box.querySelectorAll("[data-nd]").forEach(b => b.onclick = () => { numDay = b.dataset.nd; renderNums(); });
-  const dr = numDraft(), list = document.getElementById("numList"); list.innerHTML = "";
+  const dr = numDraft(), dp = numPts(), list = document.getElementById("numList"); list.innerHTML = "";
+  const now = scoreAll(competitors(), true).tot, nxt = numScore();
   for (const p of competitors()){
     const v = numTotal(p), ch = !!dr[p.id] && (numDay === "all" || !!dr[p.id][numDay]);
     let base = {k:0, s:0}; const bd = numDay === "all" ? days : [numDay];
     for (const d of bd){ const b = numBase(p, d); base.k += b.k; base.s += b.s; }
+    const pt0 = (now[p.id] || {}).pts || 0, pt1 = (nxt[p.id] || {}).pts || 0, nm = esc(dispName(p.name));
+    const was = [v.k !== base.k ? `${base.k} 🦃` : "", v.s !== base.s ? `${base.s} 💥` : "", pt1 !== pt0 ? `${pt0} stig` : ""].filter(Boolean).join(" · ");
     const row = document.createElement("div"); row.className = "numrow";
-    row.innerHTML = `<div><b>${esc(dispName(p.name))}</b><small>${ch ? `var ${base.k} 🦃 · ${base.s} 💥` : p.guest ? "gestur" : ""}</small></div>
-      <div class="stp"><button type="button" data-st="k-" aria-label="Fækka rjúpum hjá ${esc(dispName(p.name))}">−</button><output class="${v.k !== base.k ? "ch" : ""}">${v.k}</output><button type="button" data-st="k+" aria-label="Fjölga rjúpum hjá ${esc(dispName(p.name))}">+</button></div>
-      <div class="stp"><button type="button" data-st="s-" aria-label="Fækka skotum hjá ${esc(dispName(p.name))}">−</button><output class="${v.s !== base.s ? "ch" : ""}">${v.s}</output><button type="button" data-st="s+" aria-label="Fjölga skotum hjá ${esc(dispName(p.name))}">+</button></div>`;
-    row.querySelectorAll("[data-st]").forEach(b => b.onclick = () => numStep(p.id, b.dataset.st[0], b.dataset.st[1] === "+" ? 1 : -1));
+    row.innerHTML = `<div class="nt"><b>${nm}</b><small>${was ? "var " + was : p.guest ? "gestur" : ""}</small></div>
+      <div class="stps">
+        <div><span>🦃 Rjúpur</span><div class="stp"><button type="button" data-st="k-" aria-label="Fækka rjúpum hjá ${nm}">−</button><output class="${v.k !== base.k ? "ch" : ""}">${v.k}</output><button type="button" data-st="k+" aria-label="Fjölga rjúpum hjá ${nm}">+</button></div></div>
+        <div><span>💥 Skot</span><div class="stp"><button type="button" data-st="s-" aria-label="Fækka skotum hjá ${nm}">−</button><output class="${v.s !== base.s ? "ch" : ""}">${v.s}</output><button type="button" data-st="s+" aria-label="Fjölga skotum hjá ${nm}">+</button></div></div>
+        <div><span>🏆 Stig</span><div class="stp"><button type="button" data-st="p-" aria-label="Fækka stigum hjá ${nm}">−</button><output class="${pt1 !== pt0 ? "ch" : ""}">${pt1}</output><button type="button" data-st="p+" aria-label="Fjölga stigum hjá ${nm}">+</button></div></div>
+      </div>`;
+    row.querySelectorAll("[data-st]").forEach(b => b.onclick = () => {
+      const w = b.dataset.st[0], sg = b.dataset.st[1] === "+" ? 1 : -1;
+      if (w === "p") numPtsStep(p.id, sg); else numStep(p.id, w, sg);
+    });
     list.appendChild(row);
   }
   const n = numChanged();
   document.getElementById("numNote").textContent = numDay === "all"
-    ? "Á „Allt tímabilið“ fer breytingin á síðasta veiðidag viðkomandi. Veldu dag ef þú vilt hafa hana á ákveðnum degi."
-    : `Breytingar fara á ${fmtD(numDay)}.`;
+    ? "Stigin reiknast upp á nýtt þegar þú breytir rjúpum og skotum, og þú getur líka bætt við eða dregið frá stig. Á „Allt tímabilið“ fer breytingin á síðasta veiðidag viðkomandi."
+    : `Breytingar fara á ${fmtD(numDay)}. Stigin sýna allt tímabilið.`;
   document.getElementById("numSave").disabled = !n; document.getElementById("numReset").disabled = !n;
   document.getElementById("numSave").textContent = n ? "Vista" : "Engar breytingar";
 }
 function openNums(){ if (!isOwner()) return; numDay = "all"; renderNums(); openPanel(document.getElementById("numSheet")); }
 document.getElementById("jNums").onclick = openNums;
-document.getElementById("numReset").onclick = () => { LS.set(numKey(), {}); renderNums(); };
+document.getElementById("numReset").onclick = () => { LS.set(numKey(), {}); LS.set(numPtsKey(), {}); renderNums(); };
 document.getElementById("numSave").onclick = () => {
   const dr = numDraft(), add = [], now = Date.now();
   for (const id in dr) for (const d in dr[id]){ const x = dr[id][d]; if (x.k || x.s) add.push({pid:"n" + now.toString(36) + add.length, id, day:d, k:x.k, s:x.s, ts:now}); }
-  if (!add.length) return;
-  comp.fix = [...(comp.fix || []), ...add]; bumpComp(); revealDirty();
-  LS.set(numKey(), {}); closeSheet(); renderBoard();
+  const adj = numAdjDraft(numPeople());
+  if (!add.length && !adj.length) return;
+  if (adj.length){ judge.adj.push(...adj); saveJudge(); }
+  if (add.length){ comp.fix = [...(comp.fix || []), ...add]; bumpComp(); }
+  revealDirty();
+  LS.set(numKey(), {}); LS.set(numPtsKey(), {}); closeSheet(); renderBoard();
   toast(compEnded() && !LS.get("revealSent:" + comp.id, "") ? "Vistað ✏️ Sendu úrslitin þegar þú ert sáttur." : "Vistað ✏️ Allir sjá nýju tölurnar.", 6000);
 };
 function judgeEndBox(){
