@@ -5,6 +5,7 @@ Efsti kaflinn birtist í appinu eftir uppfærslu og í uppfærslutilkynningunni.
 ## Nýr sími? Keppnin bjargast 📲
 - Ef síminn týnist eða bilar: settu appið upp í nýja símanum og skráðu þig með sama nafni, símanúmeri og hópkóða
 - Símar félaganna skila þá keppninni, rjúpunum þínum og skráningum dómarans til baka
+- Nýi síminn biður sjálfur um keppnina um leið og hann sér félaga sem er með hana, svo það þarf ekki að hitta á réttan tíma
 - Keppnisstjórinn verður aftur dómari með nýjum lykli og leynileg atkvæði berast aftur þegar félagarnir opna appið
 - Úrslitin bíða í sólarhring eftir atkvæðunum, eða þar til dómarinn ýtir á „Ljúka keppni og opinbera“
 
